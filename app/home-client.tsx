@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
-  SPORT_META,
   SPORTS,
   Sport,
   SportFilter,
@@ -186,31 +185,6 @@ export function HomeClient({ initialUser }: HomeClientProps) {
             <span><b>{stats.people}</b>명 참여 중</span>
             <i />
             <span><b>{stats.remaining}</b>자리 남음</span>
-          </div>
-        </section>
-
-        {/* 종목 선택 */}
-        <section className="quick-section" aria-label="운동 종목 선택">
-          <div className="section-title-row">
-            <div>
-              <p className="section-kicker">QUICK START</p>
-              <h2>어떤 운동을 할까요?</h2>
-            </div>
-          </div>
-          <div className="sport-grid">
-            {SPORTS.filter((sport): sport is Sport => sport !== "전체").map((sport) => (
-              <button
-                key={sport}
-                className={`sport-card ${selectedSport === sport ? "active" : ""}`}
-                onClick={() => setSelectedSport((c) => (c === sport ? "전체" : sport))}
-              >
-                <span className="sport-emoji" style={{ background: SPORT_META[sport].softColor }}>
-                  {SPORT_META[sport].icon}
-                </span>
-                <strong>{sport}</strong>
-                <small>{activities.filter((a) => a.sport === sport).length}개 모임</small>
-              </button>
-            ))}
           </div>
         </section>
 
