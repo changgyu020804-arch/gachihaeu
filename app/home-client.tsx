@@ -202,13 +202,13 @@ export function HomeClient({ initialUser }: HomeClientProps) {
               { venue: "대운동장 잔디구장", sport: "축구" as const, icon: "⚽" },
               { venue: "대운동장 러닝트랙", sport: "러닝" as const, icon: "🏃" },
               { venue: "실외농구장", sport: "농구" as const, icon: "🏀" },
-              { venue: "족구장", sport: "축구" as const, icon: "🦶" },
+              { venue: "족구장", sport: "족구" as const, icon: "🦶" },
               { venue: "실외테니스장", sport: "테니스" as const, icon: "🎾" },
               { venue: "실내테니스장", sport: "테니스" as const, icon: "🎾" },
-              { venue: "스쿼시장", sport: "배드민턴" as const, icon: "🏸" },
+              { venue: "스쿼시장", sport: "스쿼시" as const, icon: "🎾" },
               { venue: "100주년 기념관 농구장", sport: "농구" as const, icon: "🏀" },
               { venue: "100주년 기념관 배드민턴장", sport: "배드민턴" as const, icon: "🏸" },
-              { venue: "100주년 기념관 배구장", sport: "배드민턴" as const, icon: "🏐" },
+              { venue: "100주년 기념관 배구장", sport: "배구" as const, icon: "🏐" },
             ]).map((item) => {
               const count = activities.filter((a) => a.venue === item.venue).length;
               return (

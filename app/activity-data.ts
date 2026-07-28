@@ -6,6 +6,9 @@ export const SPORTS = [
   "테니스",
   "배드민턴",
   "헬스",
+  "스쿼시",
+  "족구",
+  "배구",
 ] as const;
 export type SportFilter = (typeof SPORTS)[number];
 export type Sport = Exclude<SportFilter, "전체">;
@@ -20,6 +23,9 @@ export const SPORT_META: Record<
   테니스: { icon: "🎾", color: "#7653e8", softColor: "#f0ecff" },
   배드민턴: { icon: "🏸", color: "#d8437a", softColor: "#fdebf2" },
   헬스: { icon: "🏋️", color: "#5c6572", softColor: "#edf0f3" },
+  스쿼시: { icon: "🎾", color: "#0891b2", softColor: "#ecfeff" },
+  족구: { icon: "🦶", color: "#d97706", softColor: "#fff7ed" },
+  배구: { icon: "🏐", color: "#7c3aed", softColor: "#f3e8ff" },
 };
 
 export const VENUES = [

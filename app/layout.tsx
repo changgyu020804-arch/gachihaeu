@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
     (host.startsWith("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
   const origin = `${protocol}://${host}`;
   const description =
-    "서울시립대학교 안에서 축구, 농구, 러닝, 테니스, 배드민턴, 헬스를 함께할 친구를 찾아보세요.";
+    "서울시립대학교 안에서 축구, 농구, 러닝, 테니스, 배드민턴, 헬스, 스쿼시, 족구, 배구를 함께할 친구를 찾아보세요.";
 
   return {
     metadataBase: new URL(origin),
