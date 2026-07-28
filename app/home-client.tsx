@@ -31,6 +31,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
   const [showProfile, setShowProfile] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [myOnly, setMyOnly] = useState(false);
+  const [activeNav, setActiveNav] = useState<"home" | "matches" | "mine" | "profile">("home");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -309,21 +310,42 @@ export function HomeClient({ initialUser }: HomeClientProps) {
         {/* 하단 네비게이션 */}
         <nav className="bottom-nav" aria-label="주요 메뉴">
           <button
-            className={!myOnly ? "nav-item active" : "nav-item"}
-            onClick={() => { setMyOnly(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            className={activeNav === "home" ? "nav-item active" : "nav-item"}
+            onClick={() => {
+              setActiveNav("home");
+              setMyOnly(false);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
           >
             <span>⌂</span>홈
           </button>
+          <button
+            className={activeNav === "matches" ? "nav-item active" : "nav-item"}
+            onClick={() => {
+              setActiveNav("matches");
+              setMyOnly(false);
+              document.getElementById("matches")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          >
+            <span>⌕</span>모임
+          </button>
           <button className="create-button" onClick={() => openCreate()} aria-label="새 모임 만들기">+</button>
           <button
-            className={myOnly ? "nav-item active" : "nav-item"}
-            onClick={() => requireLogin(() => { setMyOnly(true); document.getElementById("matches")?.scrollIntoView({ behavior: "smooth" }); })}
+            className={activeNav === "mine" ? "nav-item active" : "nav-item"}
+            onClick={() => requireLogin(() => {
+              setActiveNav("mine");
+              setMyOnly(true);
+              document.getElementById("matches")?.scrollIntoView({ behavior: "smooth" });
+            })}
           >
             <span>♡</span>내 운동
           </button>
           <button
-            className="nav-item"
-            onClick={() => (currentUser ? setShowProfile(true) : setShowLogin(true))}
+            className={activeNav === "profile" ? "nav-item active" : "nav-item"}
+            onClick={() => {
+              setActiveNav("profile");
+              currentUser ? setShowProfile(true) : setShowLogin(true);
+            }}
           >
             <span>○</span>MY
           </button>
