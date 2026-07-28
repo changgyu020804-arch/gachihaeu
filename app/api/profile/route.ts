@@ -1,6 +1,6 @@
 import { getSessionUser } from "../../auth";
 import { DEPARTMENTS, SPORTS } from "../../activity-data";
-import { getRecentRatings, getReputation } from "../../reputation";
+import { getActivityStats, getRecentRatings, getReputation } from "../../reputation";
 import { ensureSchema, getD1 } from "../../../db";
 
 function cleanString(value: unknown, maxLength: number) {
@@ -25,8 +25,9 @@ export async function GET() {
       preferred_sports: string;
     }>();
 
-  const [reputation, recentRatings] = await Promise.all([
+  const [reputation, activityStats, recentRatings] = await Promise.all([
     getReputation(db, user.email),
+    getActivityStats(db, user.email),
     getRecentRatings(db, user.email),
   ]);
 
@@ -42,6 +43,7 @@ export async function GET() {
       bio: profile?.bio || "",
       preferredSports,
       ...reputation,
+      ...activityStats,
     },
     recentRatings,
   });

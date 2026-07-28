@@ -15,8 +15,12 @@ export const activities = sqliteTable(
     capacity: integer("capacity").notNull(),
     level: text("level").notNull(),
     description: text("description").notNull().default(""),
+    notice: text("notice").notNull().default(""),
+    noticeUpdatedAt: text("notice_updated_at"),
     status: text("status").notNull().default("open"),
     facilityReserved: integer("facility_reserved").notNull().default(0),
+    cancellationDeadlineMinutes: integer("cancellation_deadline_minutes").notNull().default(60),
+    cancellationReason: text("cancellation_reason").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [
@@ -146,5 +150,33 @@ export const notifications = sqliteTable(
     uniqueIndex("notifications_user_dedupe_idx").on(table.userEmail, table.dedupeKey),
     index("notifications_user_created_idx").on(table.userEmail, table.createdAt),
     index("notifications_user_read_idx").on(table.userEmail, table.readAt),
+  ],
+);
+
+export const userReports = sqliteTable(
+  "user_reports",
+  {
+    id: text("id").primaryKey(),
+    reporterEmail: text("reporter_email").notNull(),
+    reportedEmail: text("reported_email").notNull(),
+    reason: text("reason").notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("user_reports_pair_idx").on(table.reporterEmail, table.reportedEmail),
+    index("user_reports_reported_idx").on(table.reportedEmail),
+  ],
+);
+
+export const userBlocks = sqliteTable(
+  "user_blocks",
+  {
+    blockerEmail: text("blocker_email").notNull(),
+    blockedEmail: text("blocked_email").notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    primaryKey({ columns: [table.blockerEmail, table.blockedEmail] }),
+    index("user_blocks_blocked_idx").on(table.blockedEmail),
   ],
 );

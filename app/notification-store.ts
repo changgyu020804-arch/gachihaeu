@@ -10,7 +10,8 @@ export type NotificationType =
   | "reminder"
   | "rating"
   | "attendance"
-  | "rated";
+  | "rated"
+  | "notice";
 
 type NewNotification = {
   userEmail: string;

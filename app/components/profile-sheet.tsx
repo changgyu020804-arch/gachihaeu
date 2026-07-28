@@ -2,7 +2,6 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
-  Activity,
   DEPARTMENTS,
   RecentRating,
   SPORT_META,
@@ -16,7 +15,6 @@ import { ReputationPanel } from "./reputation-panel";
 
 type ProfileSheetProps = {
   user: Viewer;
-  activities: Activity[];
   onClose: () => void;
   onLogout: () => void;
   onToast: (msg: string) => void;
@@ -29,7 +27,7 @@ type ProfileForm = {
   preferredSports: Sport[];
 };
 
-export function ProfileSheet({ user, activities, onClose, onLogout, onToast }: ProfileSheetProps) {
+export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetProps) {
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [recentRatings, setRecentRatings] = useState<RecentRating[]>([]);
   const [profileForm, setProfileForm] = useState<ProfileForm>({
@@ -219,8 +217,18 @@ export function ProfileSheet({ user, activities, onClose, onLogout, onToast }: P
             )}
 
             <div className="profile-stats">
-              <div><strong>{activities.filter((a) => a.isJoined).length}</strong><span>참여 모임</span></div>
-              <div><strong>{activities.filter((a) => a.isOwner).length}</strong><span>만든 모임</span></div>
+              <div>
+                <strong>{profileData?.participationCount ?? 0}</strong>
+                <span>참석 완료</span>
+              </div>
+              <div>
+                <strong>{profileData?.hostCount ?? 0}</strong>
+                <span>모임장 진행</span>
+              </div>
+              <div className={(profileData?.noShowCount ?? 0) > 0 ? "warning" : ""}>
+                <strong>{profileData?.noShowCount ?? 0}</strong>
+                <span>노쇼</span>
+              </div>
             </div>
 
             <button className="edit-profile-button" onClick={() => setEditing(true)}>

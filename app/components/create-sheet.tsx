@@ -21,6 +21,7 @@ type CreateForm = {
   level: string;
   description: string;
   facilityReserved: boolean;
+  cancellationDeadlineMinutes: number;
 };
 
 const initialForm: CreateForm = {
@@ -33,6 +34,7 @@ const initialForm: CreateForm = {
   level: "초보 환영",
   description: "",
   facilityReserved: false,
+  cancellationDeadlineMinutes: 60,
 };
 
 type CreateSheetProps = {
@@ -144,6 +146,24 @@ export function CreateSheet({ onClose, onCreated, onToast, defaultSport, default
               </select>
             </label>
           </div>
+          <label>
+            참가 취소 마감
+            <select
+              value={form.cancellationDeadlineMinutes}
+              onChange={(e) =>
+                setForm((current) => ({
+                  ...current,
+                  cancellationDeadlineMinutes: Number(e.target.value),
+                }))
+              }
+            >
+              <option value={0}>모임 시작 직전까지</option>
+              <option value={60}>시작 1시간 전</option>
+              <option value={180}>시작 3시간 전</option>
+              <option value={1440}>시작 하루 전</option>
+            </select>
+            <small>마감 이후에는 참가자가 직접 취소할 수 없어요.</small>
+          </label>
           <label>
             장소
             <select

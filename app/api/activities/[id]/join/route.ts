@@ -37,6 +37,24 @@ export async function POST(
   if (new Date(activity.starts_at).getTime() <= Date.now()) {
     return Response.json({ error: "이미 시작된 모임이에요." }, { status: 409 });
   }
+  const blocked = await db
+    .prepare(
+      `SELECT 1
+       FROM user_blocks
+       WHERE
+         (blocker_email = ? AND blocked_email = ?)
+         OR
+         (blocker_email = ? AND blocked_email = ?)
+       LIMIT 1`,
+    )
+    .bind(user.email, activity.creator_email, activity.creator_email, user.email)
+    .first();
+  if (blocked) {
+    return Response.json(
+      { error: "차단 관계인 사용자와 같은 모임에 참여할 수 없어요." },
+      { status: 403 },
+    );
+  }
 
   const result = await db
     .prepare(
@@ -99,15 +117,43 @@ export async function DELETE(
   const { id } = await params;
   const db = getD1();
   const activity = await db
-    .prepare(`SELECT creator_email, title FROM activities WHERE id = ?`)
+    .prepare(
+      `SELECT creator_email, title, starts_at, cancellation_deadline_minutes, status
+       FROM activities WHERE id = ?`,
+    )
     .bind(id)
-    .first<{ creator_email: string; title: string }>();
+    .first<{
+      creator_email: string;
+      title: string;
+      starts_at: string;
+      cancellation_deadline_minutes: number;
+      status: string;
+    }>();
 
   if (!activity) return Response.json({ error: "모임을 찾을 수 없어요." }, { status: 404 });
   if (activity.creator_email === user.email) {
     return Response.json(
       { error: "모임장은 참가 취소 대신 모임을 취소해야 해요." },
       { status: 400 },
+    );
+  }
+  if (activity.status !== "open") {
+    return Response.json({ error: "취소된 모임이에요." }, { status: 400 });
+  }
+
+  const cancellationClosesAt =
+    new Date(activity.starts_at).getTime() -
+    activity.cancellation_deadline_minutes * 60_000;
+  if (Date.now() >= cancellationClosesAt) {
+    const label =
+      activity.cancellation_deadline_minutes === 0
+        ? "모임 시작"
+        : activity.cancellation_deadline_minutes === 1440
+          ? "모임 하루 전"
+          : `모임 ${activity.cancellation_deadline_minutes / 60}시간 전`;
+    return Response.json(
+      { error: `참가 취소 마감(${label})이 지났어요. 모임장에게 알려주세요.` },
+      { status: 409 },
     );
   }
 

@@ -1,5 +1,9 @@
 import { getSessionUser } from "../../../auth";
-import { getRecentRatings, getReputation } from "../../../reputation";
+import {
+  getActivityStats,
+  getRecentRatings,
+  getReputation,
+} from "../../../reputation";
 import { ensureSchema, getD1 } from "../../../../db";
 
 export async function GET(
@@ -31,9 +35,25 @@ export async function GET(
       preferred_sports: string;
     }>();
 
-  const [reputation, recentRatings] = await Promise.all([
+  const [reputation, activityStats, recentRatings, blockedByViewer, blockedViewer] =
+    await Promise.all([
     getReputation(db, decodedEmail),
+    getActivityStats(db, decodedEmail),
     getRecentRatings(db, decodedEmail),
+    db
+      .prepare(
+        `SELECT 1 FROM user_blocks
+         WHERE blocker_email = ? AND blocked_email = ?`,
+      )
+      .bind(user.email, decodedEmail)
+      .first(),
+    db
+      .prepare(
+        `SELECT 1 FROM user_blocks
+         WHERE blocker_email = ? AND blocked_email = ?`,
+      )
+      .bind(decodedEmail, user.email)
+      .first(),
   ]);
 
   return Response.json({
@@ -46,7 +66,13 @@ export async function GET(
         ? profile.preferred_sports.split(",").filter(Boolean)
         : [],
       ...reputation,
+      ...activityStats,
     },
     recentRatings,
+    viewerState: {
+      isSelf: user.email === decodedEmail,
+      isBlocked: Boolean(blockedByViewer),
+      blockedByUser: Boolean(blockedViewer),
+    },
   });
 }

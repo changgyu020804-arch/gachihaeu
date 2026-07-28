@@ -147,7 +147,12 @@ export function HomeClient({ initialUser }: HomeClientProps) {
     });
   };
 
-  const performAction = async (path: string, method: "POST" | "DELETE", successMessage: string, body?: unknown) => {
+  const performAction = async (
+    path: string,
+    method: "POST" | "PATCH" | "DELETE",
+    successMessage: string,
+    body?: unknown,
+  ) => {
     if (!currentUser) { setShowLogin(true); return; }
     setSubmitting(true);
     setError("");
@@ -449,7 +454,6 @@ export function HomeClient({ initialUser }: HomeClientProps) {
         {showProfile && currentUser && (
           <ProfileSheet
             user={currentUser}
-            activities={activities}
             onClose={() => setShowProfile(false)}
             onLogout={() => void handleLogout()}
             onToast={setToast}
@@ -477,6 +481,8 @@ export function HomeClient({ initialUser }: HomeClientProps) {
           <UserProfileSheet
             email={viewingUserEmail}
             onClose={() => setViewingUserEmail(null)}
+            onToast={setToast}
+            onRelationshipChanged={() => void loadActivities()}
           />
         )}
 

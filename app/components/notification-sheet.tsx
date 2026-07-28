@@ -30,6 +30,7 @@ const TYPE_ICONS: Record<string, string> = {
   rating: "★",
   attendance: "✓",
   rated: "★",
+  notice: "📣",
 };
 
 function formatTime(value: string) {

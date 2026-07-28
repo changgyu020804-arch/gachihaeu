@@ -2563,3 +2563,155 @@ textarea:focus-visible {
   border-radius: 14px;
   animation: skeleton-shine 1.2s infinite linear;
 }
+
+/* === Activity operations & profile trust === */
+
+.activity-notice {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 13px 0;
+  padding: 13px 14px;
+  background: #eef5ff;
+  border: 1px solid #d7e6ff;
+  border-radius: 14px;
+}
+
+.activity-notice > span {
+  padding: 4px 7px;
+  color: white;
+  background: var(--blue);
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.activity-notice p {
+  margin: 1px 0 0;
+  color: #34465f;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.notice-editor {
+  margin: 10px 0;
+}
+
+.notice-editor > button,
+.notice-editor > div button,
+.notice-editor + button {
+  cursor: pointer;
+}
+
+.notice-editor > button {
+  width: 100%;
+  padding: 11px;
+  color: var(--blue);
+  background: #edf4ff;
+  border: 0;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.notice-editor textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 12px;
+  color: var(--ink);
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.notice-editor > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.notice-editor > div button {
+  padding: 10px;
+  color: #697382;
+  background: #f0f2f5;
+  border: 0;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.notice-editor > div button:last-child {
+  color: white;
+  background: var(--blue);
+}
+
+.notice-editor > div button:disabled {
+  opacity: 0.5;
+}
+
+.cancellation-policy {
+  margin: 10px 0 2px;
+  color: #7c8490;
+  font-size: 10px;
+  text-align: center;
+}
+
+.cancellation-policy strong {
+  color: #515c6a;
+}
+
+.profile-stats {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.profile-stats div {
+  padding: 14px 8px;
+}
+
+.profile-stats .warning strong {
+  color: #d34855;
+}
+
+.public-profile-stats {
+  margin: 4px 0 16px;
+}
+
+.profile-safety-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.profile-safety-actions button {
+  padding: 11px;
+  color: #6e7784;
+  background: #f1f3f5;
+  border: 0;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.profile-safety-actions button:last-child {
+  color: #bf3946;
+  background: #fff0f2;
+}
+
+.profile-safety-actions button.blocked {
+  color: #3d4958;
+  background: #e8ebef;
+}
+
+.profile-safety-actions button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}

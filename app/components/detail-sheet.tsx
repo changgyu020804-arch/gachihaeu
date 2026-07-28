@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Activity, SPORT_META, isReservationRequired } from "../activity-data";
 import { formatFullDate } from "./utils";
 
@@ -7,7 +8,12 @@ type DetailSheetProps = {
   activity: Activity;
   submitting: boolean;
   onClose: () => void;
-  onPerformAction: (path: string, method: "POST" | "DELETE", msg: string, body?: unknown) => void;
+  onPerformAction: (
+    path: string,
+    method: "POST" | "PATCH" | "DELETE",
+    msg: string,
+    body?: unknown,
+  ) => void;
   onOpenRating: (activityId: string) => void;
   onReport: (activity: Activity) => void;
 };
@@ -21,6 +27,18 @@ export function DetailSheet({
   onReport,
 }: DetailSheetProps) {
   const isFull = activity.participantCount >= activity.capacity;
+  const [editingNotice, setEditingNotice] = useState(false);
+  const [noticeDraft, setNoticeDraft] = useState(activity.notice);
+  const cancellationLabel =
+    activity.cancellationDeadlineMinutes === 0
+      ? "모임 시작 직전까지"
+      : activity.cancellationDeadlineMinutes === 1440
+        ? "시작 하루 전까지"
+        : `시작 ${activity.cancellationDeadlineMinutes / 60}시간 전까지`;
+  const cancellationClosed =
+    Date.now() >=
+    new Date(activity.startsAt).getTime() -
+      activity.cancellationDeadlineMinutes * 60_000;
 
   return (
     <div className="sheet-backdrop" onClick={onClose}>
@@ -58,6 +76,52 @@ export function DetailSheet({
         {activity.description && (
           <div className="detail-description">{activity.description}</div>
         )}
+        {activity.notice && (
+          <div className="activity-notice">
+            <span>공지</span>
+            <p>{activity.notice}</p>
+          </div>
+        )}
+        {activity.isOwner && (
+          <div className="notice-editor">
+            {editingNotice ? (
+              <>
+                <textarea
+                  maxLength={300}
+                  value={noticeDraft}
+                  placeholder="준비물이나 변경 사항을 알려주세요."
+                  onChange={(event) => setNoticeDraft(event.target.value)}
+                />
+                <div>
+                  <button type="button" onClick={() => setEditingNotice(false)}>
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    disabled={submitting || noticeDraft.trim().length === 0}
+                    onClick={() =>
+                      onPerformAction(
+                        `/api/activities/${activity.id}`,
+                        "PATCH",
+                        "참가자에게 공지를 보냈어요.",
+                        { notice: noticeDraft },
+                      )
+                    }
+                  >
+                    공지 보내기
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button type="button" onClick={() => setEditingNotice(true)}>
+                {activity.notice ? "공지 수정하기" : "참가자에게 공지하기"}
+              </button>
+            )}
+          </div>
+        )}
+        <p className="cancellation-policy">
+          참가 취소 가능 시간 · <strong>{cancellationLabel}</strong>
+        </p>
         <div className="detail-host">
           <span>{activity.creatorName.slice(0, 1)}</span>
           <div><small>모임장</small><strong>{activity.creatorName}</strong></div>
@@ -85,8 +149,20 @@ export function DetailSheet({
             className="danger-button"
             disabled={submitting}
             onClick={() => {
-              if (!window.confirm("모임을 취소할까요? 참가자 목록에서도 사라집니다.")) return;
-              onPerformAction(`/api/activities/${activity.id}`, "DELETE", "모임을 취소했어요.");
+              const reason = window.prompt(
+                "참가자에게 전달할 취소 사유를 입력해 주세요.",
+              );
+              if (reason === null) return;
+              if (reason.trim().length < 2) {
+                window.alert("취소 사유를 두 글자 이상 입력해 주세요.");
+                return;
+              }
+              onPerformAction(
+                `/api/activities/${activity.id}`,
+                "DELETE",
+                "취소 사유를 참가자에게 알렸어요.",
+                { cancellationReason: reason },
+              );
             }}
           >
             모임 취소하기
@@ -115,14 +191,18 @@ export function DetailSheet({
             ) : (
               <button
                 className={`primary-button ${activity.isJoined ? "soft" : ""}`}
-                disabled={submitting}
+                disabled={submitting || (activity.isJoined && cancellationClosed)}
                 onClick={() => onPerformAction(
                   `/api/activities/${activity.id}/join`,
                   activity.isJoined ? "DELETE" : "POST",
                   activity.isJoined ? "참가를 취소했어요." : "참가가 완료됐어요!",
                 )}
               >
-                {activity.isJoined ? "참가 취소" : "같이하기"}
+                {activity.isJoined
+                  ? cancellationClosed
+                    ? "참가 취소 마감"
+                    : "참가 취소"
+                  : "같이하기"}
               </button>
             )}
           </div>

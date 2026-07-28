@@ -71,6 +71,8 @@ export type Activity = {
   capacity: number;
   level: string;
   description: string;
+  notice: string;
+  noticeUpdatedAt: string | null;
   creatorName: string;
   participantCount: number;
   isJoined: boolean;
@@ -79,6 +81,7 @@ export type Activity = {
   isWaitlisted: boolean;
   waitlistPosition: number | null;
   facilityReserved: boolean;
+  cancellationDeadlineMinutes: number;
 };
 
 export type Viewer = {
@@ -146,6 +149,9 @@ export type UserProfile = {
   avgAccuracy: number | null;
   avgFacilitation: number | null;
   avgSafety: number | null;
+  participationCount: number;
+  hostCount: number;
+  noShowCount: number;
 };
 
 export type Rating = {

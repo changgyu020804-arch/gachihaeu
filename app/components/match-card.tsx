@@ -18,6 +18,10 @@ export function MatchCard({ activity, submitting, onSelect, onPerformAction, onO
     new Date(activity.startsAt).getTime() +
       activity.durationMinutes * 60_000 <
     Date.now();
+  const cancellationClosed =
+    Date.now() >=
+    new Date(activity.startsAt).getTime() -
+      activity.cancellationDeadlineMinutes * 60_000;
 
   const handleButtonClick = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -34,6 +38,11 @@ export function MatchCard({ activity, submitting, onSelect, onPerformAction, onO
 
     if (activity.isJoined && hasEnded) {
       onOpenRating(activity.id);
+      return;
+    }
+
+    if (activity.isJoined && cancellationClosed) {
+      onSelect(activity);
       return;
     }
 
@@ -58,7 +67,7 @@ export function MatchCard({ activity, submitting, onSelect, onPerformAction, onO
     if (activity.isOwner && hasEnded) return "출석·평가";
     if (activity.isJoined && hasEnded) return "모임장 평가";
     if (activity.isOwner) return "관리하기";
-    if (activity.isJoined) return "참가 완료";
+    if (activity.isJoined) return cancellationClosed ? "취소 마감" : "참가 완료";
     if (activity.isWaitlisted) return `대기 ${activity.waitlistPosition}번째`;
     if (left === 0) return "대기하기";
     return "같이하기";

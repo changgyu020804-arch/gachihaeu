@@ -62,3 +62,38 @@ test("persists and displays user notifications", async () => {
   assert.match(migration, /CREATE TABLE `notifications`/);
   assert.match(migration, /notifications_user_dedupe_idx/);
 });
+
+test("supports activity operations and trustworthy profiles", async () => {
+  const [
+    activityRoute,
+    joinRoute,
+    detailSheet,
+    reputation,
+    userProfile,
+    blockRoute,
+    reportRoute,
+    migration,
+  ] = await Promise.all([
+    readFile(new URL("app/api/activities/[id]/route.ts", root), "utf8"),
+    readFile(new URL("app/api/activities/[id]/join/route.ts", root), "utf8"),
+    readFile(new URL("app/components/detail-sheet.tsx", root), "utf8"),
+    readFile(new URL("app/reputation.ts", root), "utf8"),
+    readFile(new URL("app/components/user-profile-sheet.tsx", root), "utf8"),
+    readFile(new URL("app/api/users/[email]/block/route.ts", root), "utf8"),
+    readFile(new URL("app/api/users/[email]/report/route.ts", root), "utf8"),
+    readFile(new URL("drizzle/0004_low_gabe_jones.sql", root), "utf8"),
+  ]);
+
+  assert.match(activityRoute, /모임장만 공지를 작성할 수 있어요/);
+  assert.match(activityRoute, /취소 사유를 입력해 주세요/);
+  assert.match(joinRoute, /참가 취소 마감/);
+  assert.match(detailSheet, /참가자에게 공지하기/);
+  assert.match(reputation, /participationCount/);
+  assert.match(reputation, /noShowCount/);
+  assert.match(userProfile, /사용자 신고/);
+  assert.match(userProfile, /사용자 차단/);
+  assert.match(blockRoute, /INSERT OR IGNORE INTO user_blocks/);
+  assert.match(reportRoute, /같은 모임에 참여한 사용자만 신고할 수 있어요/);
+  assert.match(migration, /CREATE TABLE `user_blocks`/);
+  assert.match(migration, /cancellation_deadline_minutes/);
+});

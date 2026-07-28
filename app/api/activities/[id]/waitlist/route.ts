@@ -69,6 +69,24 @@ export async function POST(
   if (new Date(activity.starts_at).getTime() <= Date.now()) {
     return Response.json({ error: "이미 시작된 모임이에요." }, { status: 409 });
   }
+  const blocked = await db
+    .prepare(
+      `SELECT 1
+       FROM user_blocks
+       WHERE
+         (blocker_email = ? AND blocked_email = ?)
+         OR
+         (blocker_email = ? AND blocked_email = ?)
+       LIMIT 1`,
+    )
+    .bind(user.email, activity.creator_email, activity.creator_email, user.email)
+    .first();
+  if (blocked) {
+    return Response.json(
+      { error: "차단 관계인 사용자와 같은 모임에 대기할 수 없어요." },
+      { status: 403 },
+    );
+  }
 
   // 이미 참여 중인지 확인
   const alreadyJoined = await db

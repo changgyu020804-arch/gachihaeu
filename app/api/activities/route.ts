@@ -14,6 +14,8 @@ type ActivityRow = {
   capacity: number;
   level: string;
   description: string;
+  notice: string;
+  notice_updated_at: string | null;
   participant_count: number;
   is_joined: number;
   is_owner: number;
@@ -21,6 +23,7 @@ type ActivityRow = {
   is_waitlisted: number;
   waitlist_position: number | null;
   facility_reserved: number;
+  cancellation_deadline_minutes: number;
 };
 
 function cleanString(value: unknown, maxLength: number) {
@@ -53,7 +56,10 @@ export async function GET() {
           a.capacity,
           a.level,
           a.description,
+          a.notice,
+          a.notice_updated_at,
           a.facility_reserved,
+          a.cancellation_deadline_minutes,
           COUNT(p.user_email) AS participant_count,
           CASE WHEN EXISTS (
             SELECT 1 FROM participants mine
@@ -80,6 +86,13 @@ export async function GET() {
               )
             )
           )
+          AND NOT EXISTS (
+            SELECT 1 FROM user_blocks ub
+            WHERE
+              (ub.blocker_email = ? AND ub.blocked_email = a.creator_email)
+              OR
+              (ub.blocker_email = a.creator_email AND ub.blocked_email = ?)
+          )
         GROUP BY a.id
         ORDER BY
           CASE WHEN a.starts_at >= ? THEN 0 ELSE 1 END,
@@ -94,6 +107,8 @@ export async function GET() {
         email,
         upcomingCutoff,
         historyCutoff,
+        email,
+        email,
         email,
         now,
         now,
@@ -111,6 +126,8 @@ export async function GET() {
       capacity: row.capacity,
       level: row.level,
       description: row.description,
+      notice: row.notice,
+      noticeUpdatedAt: row.notice_updated_at,
       creatorName: row.creator_name,
       participantCount: Number(row.participant_count),
       isJoined: Boolean(row.is_joined),
@@ -119,6 +136,7 @@ export async function GET() {
       isWaitlisted: Boolean(row.is_waitlisted),
       waitlistPosition: row.waitlist_position ?? null,
       facilityReserved: Boolean(row.facility_reserved),
+      cancellationDeadlineMinutes: Number(row.cancellation_deadline_minutes ?? 60),
     }));
 
     return Response.json({ activities });
@@ -146,6 +164,7 @@ export async function POST(request: Request) {
     const durationMinutes = Number(payload.durationMinutes);
     const capacity = Number(payload.capacity);
     const facilityReserved = Boolean(payload.facilityReserved);
+    const cancellationDeadlineMinutes = Number(payload.cancellationDeadlineMinutes);
     const startDate = new Date(startsAt);
 
     if (!SPORTS.includes(sport as never) || sport === "전체") {
@@ -175,6 +194,9 @@ export async function POST(request: Request) {
     if (![60, 90, 120].includes(durationMinutes)) {
       return Response.json({ error: "진행 시간을 확인해 주세요." }, { status: 400 });
     }
+    if (![0, 60, 180, 1440].includes(cancellationDeadlineMinutes)) {
+      return Response.json({ error: "참가 취소 마감 시간을 확인해 주세요." }, { status: 400 });
+    }
 
     const id = crypto.randomUUID();
     const displayName = userDisplayName(user);
@@ -184,8 +206,9 @@ export async function POST(request: Request) {
         .prepare(
           `INSERT INTO activities (
             id, creator_email, creator_name, sport, title, venue, starts_at,
-            duration_minutes, capacity, level, description, status, facility_reserved
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
+            duration_minutes, capacity, level, description, status, facility_reserved,
+            cancellation_deadline_minutes
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?)`,
         )
         .bind(
           id,
@@ -200,6 +223,7 @@ export async function POST(request: Request) {
           level,
           description,
           facilityReserved ? 1 : 0,
+          cancellationDeadlineMinutes,
         ),
       db
         .prepare(

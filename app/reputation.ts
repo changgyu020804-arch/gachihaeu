@@ -104,3 +104,43 @@ export async function getRecentRatings(
     title: row.title || "종료된 모임",
   }));
 }
+
+export async function getActivityStats(db: D1Database, email: string) {
+  const stats = await db
+    .prepare(
+      `SELECT
+        (
+          SELECT COUNT(*)
+          FROM participants p
+          INNER JOIN activities a ON a.id = p.activity_id
+          WHERE p.user_email = ?
+            AND p.attendance_status = 'attended'
+            AND a.status = 'open'
+            AND datetime(a.starts_at, '+' || a.duration_minutes || ' minutes') <= datetime('now')
+        ) AS participation_count,
+        (
+          SELECT COUNT(*)
+          FROM activities a
+          WHERE a.creator_email = ?
+            AND a.status = 'open'
+            AND datetime(a.starts_at, '+' || a.duration_minutes || ' minutes') <= datetime('now')
+        ) AS host_count,
+        (
+          SELECT COUNT(*)
+          FROM participants p
+          WHERE p.user_email = ? AND p.attendance_status = 'no_show'
+        ) AS no_show_count`,
+    )
+    .bind(email, email, email)
+    .first<{
+      participation_count: number;
+      host_count: number;
+      no_show_count: number;
+    }>();
+
+  return {
+    participationCount: Number(stats?.participation_count ?? 0),
+    hostCount: Number(stats?.host_count ?? 0),
+    noShowCount: Number(stats?.no_show_count ?? 0),
+  };
+}

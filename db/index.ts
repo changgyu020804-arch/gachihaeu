@@ -31,8 +31,12 @@ export async function ensureSchema() {
             capacity INTEGER NOT NULL,
             level TEXT NOT NULL,
             description TEXT DEFAULT '' NOT NULL,
+            notice TEXT DEFAULT '' NOT NULL,
+            notice_updated_at TEXT,
             status TEXT DEFAULT 'open' NOT NULL,
             facility_reserved INTEGER DEFAULT 0 NOT NULL,
+            cancellation_deadline_minutes INTEGER DEFAULT 60 NOT NULL,
+            cancellation_reason TEXT DEFAULT '' NOT NULL,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
           )`,
         ),
@@ -156,6 +160,32 @@ export async function ensureSchema() {
         db.prepare(
           "CREATE INDEX IF NOT EXISTS notifications_user_read_idx ON notifications(user_email, read_at)",
         ),
+        db.prepare(
+          `CREATE TABLE IF NOT EXISTS user_reports (
+            id TEXT PRIMARY KEY NOT NULL,
+            reporter_email TEXT NOT NULL,
+            reported_email TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+          )`,
+        ),
+        db.prepare(
+          "CREATE UNIQUE INDEX IF NOT EXISTS user_reports_pair_idx ON user_reports(reporter_email, reported_email)",
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS user_reports_reported_idx ON user_reports(reported_email)",
+        ),
+        db.prepare(
+          `CREATE TABLE IF NOT EXISTS user_blocks (
+            blocker_email TEXT NOT NULL,
+            blocked_email TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY (blocker_email, blocked_email)
+          )`,
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS user_blocks_blocked_idx ON user_blocks(blocked_email)",
+        ),
       ]);
 
       // CREATE TABLE IF NOT EXISTS는 기존 테이블에 새 컬럼을 추가하지 않으므로,
@@ -171,6 +201,34 @@ export async function ensureSchema() {
         await db
           .prepare(
             "ALTER TABLE activities ADD COLUMN facility_reserved INTEGER DEFAULT 0 NOT NULL",
+          )
+          .run();
+      }
+      if (!activityColumns.results.some((column) => column.name === "notice")) {
+        await db
+          .prepare("ALTER TABLE activities ADD COLUMN notice TEXT DEFAULT '' NOT NULL")
+          .run();
+      }
+      if (!activityColumns.results.some((column) => column.name === "notice_updated_at")) {
+        await db
+          .prepare("ALTER TABLE activities ADD COLUMN notice_updated_at TEXT")
+          .run();
+      }
+      if (
+        !activityColumns.results.some(
+          (column) => column.name === "cancellation_deadline_minutes",
+        )
+      ) {
+        await db
+          .prepare(
+            "ALTER TABLE activities ADD COLUMN cancellation_deadline_minutes INTEGER DEFAULT 60 NOT NULL",
+          )
+          .run();
+      }
+      if (!activityColumns.results.some((column) => column.name === "cancellation_reason")) {
+        await db
+          .prepare(
+            "ALTER TABLE activities ADD COLUMN cancellation_reason TEXT DEFAULT '' NOT NULL",
           )
           .run();
       }
