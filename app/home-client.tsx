@@ -199,7 +199,8 @@ export function HomeClient({ initialUser }: HomeClientProps) {
           </div>
           <div className="venue-list">
             {([
-              { venue: "축구장", sport: "축구" as const, icon: "⚽" },
+              { venue: "대운동장 잔디구장", sport: "축구" as const, icon: "⚽" },
+              { venue: "대운동장 러닝트랙", sport: "러닝" as const, icon: "🏃" },
               { venue: "실외농구장", sport: "농구" as const, icon: "🏀" },
               { venue: "족구장", sport: "축구" as const, icon: "🦶" },
               { venue: "실외테니스장", sport: "테니스" as const, icon: "🎾" },

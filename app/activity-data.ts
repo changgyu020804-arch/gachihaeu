@@ -23,7 +23,8 @@ export const SPORT_META: Record<
 };
 
 export const VENUES = [
-  "축구장",
+  "대운동장 잔디구장",
+  "대운동장 러닝트랙",
   "실외농구장",
   "족구장",
   "실외테니스장",
@@ -37,7 +38,7 @@ export const VENUES = [
 
 // WISE 시설예약이 필요한 장소
 export const RESERVATION_REQUIRED_VENUES: string[] = [
-  "축구장",
+  "대운동장 잔디구장",
   "실외농구장",
   "족구장",
   "실외테니스장",

@@ -148,6 +148,13 @@ export async function ensureSchema() {
           )
           .run();
       }
+
+      // 이전 이름으로 저장된 모임도 새 장소명으로 통일한다.
+      await db
+        .prepare(
+          "UPDATE activities SET venue = '대운동장 잔디구장' WHERE venue = '축구장'",
+        )
+        .run();
     })().catch((error) => {
       schemaReady = null;
       throw error;
