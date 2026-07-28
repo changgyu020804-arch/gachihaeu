@@ -1,4 +1,4 @@
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { getSessionUser } from "../../auth";
 import { LEVELS, SPORTS, VENUES } from "../../activity-data";
 import { ensureSchema, getD1 } from "../../../db";
 
@@ -17,6 +17,10 @@ type ActivityRow = {
   participant_count: number;
   is_joined: number;
   is_owner: number;
+  waitlist_count: number;
+  is_waitlisted: number;
+  waitlist_position: number | null;
+  facility_reserved: number;
 };
 
 function cleanString(value: unknown, maxLength: number) {
@@ -30,7 +34,7 @@ function userDisplayName(user: { fullName: string | null; email: string }) {
 export async function GET() {
   try {
     await ensureSchema();
-    const user = await getChatGPTUser();
+    const user = await getSessionUser();
     const email = user?.email ?? "";
     const now = new Date(Date.now() - 30 * 60_000).toISOString();
     const result = await getD1()
@@ -47,12 +51,20 @@ export async function GET() {
           a.capacity,
           a.level,
           a.description,
+          a.facility_reserved,
           COUNT(p.user_email) AS participant_count,
           CASE WHEN EXISTS (
             SELECT 1 FROM participants mine
             WHERE mine.activity_id = a.id AND mine.user_email = ?
           ) THEN 1 ELSE 0 END AS is_joined,
-          CASE WHEN a.creator_email = ? THEN 1 ELSE 0 END AS is_owner
+          CASE WHEN a.creator_email = ? THEN 1 ELSE 0 END AS is_owner,
+          (SELECT COUNT(*) FROM waitlist w WHERE w.activity_id = a.id AND w.status = 'waiting') AS waitlist_count,
+          CASE WHEN EXISTS (
+            SELECT 1 FROM waitlist mw
+            WHERE mw.activity_id = a.id AND mw.user_email = ? AND mw.status = 'waiting'
+          ) THEN 1 ELSE 0 END AS is_waitlisted,
+          (SELECT position FROM waitlist mw2
+           WHERE mw2.activity_id = a.id AND mw2.user_email = ? AND mw2.status = 'waiting') AS waitlist_position
         FROM activities a
         LEFT JOIN participants p ON p.activity_id = a.id
         WHERE a.status = 'open' AND a.starts_at >= ?
@@ -60,10 +72,10 @@ export async function GET() {
         ORDER BY a.starts_at ASC
         LIMIT 100`,
       )
-      .bind(email, email, now)
+      .bind(email, email, email, email, now)
       .all<ActivityRow>();
 
-    const activities = result.results.map((row) => ({
+    const activities = result.results.map((row: ActivityRow) => ({
       id: row.id,
       sport: row.sport,
       title: row.title,
@@ -77,6 +89,10 @@ export async function GET() {
       participantCount: Number(row.participant_count),
       isJoined: Boolean(row.is_joined),
       isOwner: Boolean(row.is_owner),
+      waitlistCount: Number(row.waitlist_count),
+      isWaitlisted: Boolean(row.is_waitlisted),
+      waitlistPosition: row.waitlist_position ?? null,
+      facilityReserved: Boolean(row.facility_reserved),
     }));
 
     return Response.json({ activities });
@@ -87,7 +103,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await getChatGPTUser();
+  const user = await getSessionUser();
   if (!user) {
     return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
@@ -103,6 +119,7 @@ export async function POST(request: Request) {
     const startsAt = cleanString(payload.startsAt, 40);
     const durationMinutes = Number(payload.durationMinutes);
     const capacity = Number(payload.capacity);
+    const facilityReserved = Boolean(payload.facilityReserved);
     const startDate = new Date(startsAt);
 
     if (!SPORTS.includes(sport as never) || sport === "전체") {
@@ -141,8 +158,8 @@ export async function POST(request: Request) {
         .prepare(
           `INSERT INTO activities (
             id, creator_email, creator_name, sport, title, venue, starts_at,
-            duration_minutes, capacity, level, description, status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')`,
+            duration_minutes, capacity, level, description, status, facility_reserved
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)`,
         )
         .bind(
           id,
@@ -156,6 +173,7 @@ export async function POST(request: Request) {
           capacity,
           level,
           description,
+          facilityReserved ? 1 : 0,
         ),
       db
         .prepare(

@@ -1,4 +1,4 @@
-import { getChatGPTUser } from "../../../../chatgpt-auth";
+import { getSessionUser } from "../../../../auth";
 import { ensureSchema, getD1 } from "../../../../../db";
 
 function displayName(user: { fullName: string | null; email: string }) {
@@ -9,7 +9,7 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await getChatGPTUser();
+  const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
 
   await ensureSchema();
@@ -67,7 +67,7 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await getChatGPTUser();
+  const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
 
   await ensureSchema();
@@ -86,10 +86,41 @@ export async function DELETE(
     );
   }
 
+  // 참가 취소
   await db
     .prepare(`DELETE FROM participants WHERE activity_id = ? AND user_email = ?`)
     .bind(id, user.email)
     .run();
+
+  // 대기열 첫 번째 사람 자동 승격
+  const nextInLine = await db
+    .prepare(
+      `SELECT user_email, display_name FROM waitlist
+       WHERE activity_id = ? AND status = 'waiting'
+       ORDER BY position ASC LIMIT 1`,
+    )
+    .bind(id)
+    .first<{ user_email: string; display_name: string }>();
+
+  if (nextInLine) {
+    // participants에 추가
+    await db
+      .prepare(
+        `INSERT OR IGNORE INTO participants (activity_id, user_email, display_name)
+         VALUES (?, ?, ?)`,
+      )
+      .bind(id, nextInLine.user_email, nextInLine.display_name)
+      .run();
+
+    // waitlist에서 상태 변경
+    await db
+      .prepare(
+        `UPDATE waitlist SET status = 'promoted'
+         WHERE activity_id = ? AND user_email = ? AND status = 'waiting'`,
+      )
+      .bind(id, nextInLine.user_email)
+      .run();
+  }
 
   return Response.json({ joined: false });
 }

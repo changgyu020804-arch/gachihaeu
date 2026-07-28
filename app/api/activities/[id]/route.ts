@@ -1,11 +1,11 @@
-import { getChatGPTUser } from "../../../chatgpt-auth";
+import { getSessionUser } from "../../../auth";
 import { ensureSchema, getD1 } from "../../../../db";
 
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const user = await getChatGPTUser();
+  const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
 
   await ensureSchema();

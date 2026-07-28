@@ -32,6 +32,7 @@ export async function ensureSchema() {
             level TEXT NOT NULL,
             description TEXT DEFAULT '' NOT NULL,
             status TEXT DEFAULT 'open' NOT NULL,
+            facility_reserved INTEGER DEFAULT 0 NOT NULL,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
           )`,
         ),
@@ -70,7 +71,83 @@ export async function ensureSchema() {
         db.prepare(
           "CREATE UNIQUE INDEX IF NOT EXISTS reports_activity_reporter_idx ON reports(activity_id, reporter_email)",
         ),
+        db.prepare(
+          `CREATE TABLE IF NOT EXISTS user_profiles (
+            email TEXT PRIMARY KEY NOT NULL,
+            nickname TEXT DEFAULT '' NOT NULL,
+            department TEXT DEFAULT '' NOT NULL,
+            bio TEXT DEFAULT '' NOT NULL,
+            preferred_sports TEXT DEFAULT '' NOT NULL,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+          )`,
+        ),
+        db.prepare(
+          `CREATE TABLE IF NOT EXISTS ratings (
+            id TEXT PRIMARY KEY NOT NULL,
+            activity_id TEXT NOT NULL,
+            rater_email TEXT NOT NULL,
+            rated_email TEXT NOT NULL,
+            trust_score INTEGER NOT NULL,
+            skill_score INTEGER NOT NULL,
+            manner_score INTEGER NOT NULL,
+            comment TEXT DEFAULT '' NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
+          )`,
+        ),
+        db.prepare(
+          "CREATE UNIQUE INDEX IF NOT EXISTS ratings_unique_idx ON ratings(activity_id, rater_email, rated_email)",
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS ratings_rated_idx ON ratings(rated_email)",
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS ratings_activity_idx ON ratings(activity_id)",
+        ),
+        db.prepare(
+          `CREATE TABLE IF NOT EXISTS auth_codes (
+            email TEXT NOT NULL,
+            code TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+          )`,
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS auth_codes_email_idx ON auth_codes(email)",
+        ),
+        db.prepare(
+          `CREATE TABLE IF NOT EXISTS waitlist (
+            activity_id TEXT NOT NULL,
+            user_email TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            position INTEGER NOT NULL,
+            status TEXT DEFAULT 'waiting' NOT NULL,
+            queued_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY (activity_id, user_email),
+            FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
+          )`,
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS waitlist_activity_position_idx ON waitlist(activity_id, position)",
+        ),
       ]);
+
+      // CREATE TABLE IF NOT EXISTS는 기존 테이블에 새 컬럼을 추가하지 않으므로,
+      // 이전 버전의 로컬/배포 D1 데이터베이스를 안전하게 보강한다.
+      const activityColumns = await db
+        .prepare("PRAGMA table_info(activities)")
+        .all<{ name: string }>();
+      const hasFacilityReserved = activityColumns.results.some(
+        (column: { name: string }) => column.name === "facility_reserved",
+      );
+
+      if (!hasFacilityReserved) {
+        await db
+          .prepare(
+            "ALTER TABLE activities ADD COLUMN facility_reserved INTEGER DEFAULT 0 NOT NULL",
+          )
+          .run();
+      }
     })().catch((error) => {
       schemaReady = null;
       throw error;

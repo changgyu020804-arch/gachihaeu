@@ -915,7 +915,7 @@ textarea:focus-visible {
   left: 0;
   z-index: 15;
   display: grid;
-  grid-template-columns: 1fr 1fr 72px 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   align-items: end;
   min-height: 78px;
   padding: 8px 12px max(9px, env(safe-area-inset-bottom));
@@ -1323,6 +1323,10 @@ textarea:focus-visible {
   color: #8b929c;
   font-size: 10px;
   font-weight: 800;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 
 .toast {
@@ -1430,4 +1434,727 @@ textarea:focus-visible {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* === Profile & Rating System === */
+
+.profile-loading {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.profile-department {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 4px 0;
+}
+
+.profile-bio {
+  font-size: 14px;
+  color: var(--ink);
+  margin: 8px 0;
+  padding: 10px 14px;
+  background: var(--soft);
+  border-radius: 10px;
+  line-height: 1.5;
+}
+
+.profile-sports {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.sport-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.profile-email {
+  display: block;
+  color: var(--muted);
+  margin: 8px 0 16px;
+}
+
+.edit-profile-button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin: 12px 0 8px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.edit-profile-button:hover {
+  background: var(--line);
+}
+
+.profile-form {
+  padding: 0 4px;
+}
+
+.profile-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.profile-form input,
+.profile-form select {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.profile-form fieldset {
+  border: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.profile-form fieldset legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.form-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+/* Rating Summary on Profile */
+
+.rating-summary {
+  width: 100%;
+  margin: 16px 0;
+  padding: 16px;
+  background: var(--soft);
+  border-radius: 14px;
+}
+
+.rating-summary h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: var(--ink);
+}
+
+.rating-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rating-score-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rating-label {
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 42px;
+}
+
+.rating-stars {
+  font-size: 15px;
+  color: #f5a623;
+  letter-spacing: 1px;
+}
+
+.rating-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-left: auto;
+}
+
+.rating-summary > small {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+}
+
+/* Rating Modal */
+
+.rate-sheet {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.rate-participant {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.rate-participant:last-child {
+  border-bottom: none;
+}
+
+.rate-participant-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.rate-participant-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.rate-participant-info {
+  flex: 1;
+}
+
+.rate-participant-info strong {
+  display: block;
+  font-size: 14px;
+}
+
+.rate-participant-info small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.rate-category {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.rate-category-label {
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 42px;
+}
+
+.star-input {
+  display: flex;
+  gap: 4px;
+}
+
+.star-input button {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 2px;
+  color: #ddd;
+  transition: color 0.1s;
+}
+
+.star-input button.filled {
+  color: #f5a623;
+}
+
+.star-input button:hover {
+  transform: scale(1.15);
+}
+
+.rate-comment {
+  margin-top: 8px;
+}
+
+.rate-comment input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.rate-submit-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.rate-submit-row button {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+
+.rate-submit-row .rate-submit-btn {
+  background: var(--blue);
+  color: #fff;
+}
+
+.rate-submit-row .rate-submit-btn:disabled {
+  opacity: 0.5;
+}
+
+.rated-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #e8f7f0;
+  color: #138a5b;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+/* Participant List in Detail */
+
+.participant-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.participant-section h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.participant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.participant-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--soft);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.participant-row:hover {
+  background: var(--line);
+}
+
+.participant-avatar-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.participant-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.participant-details strong {
+  display: block;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participant-details small {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.participant-score {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.participant-score span {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.participant-score .star-sm {
+  color: #f5a623;
+  font-size: 11px;
+}
+
+/* User Profile View Modal */
+
+.user-profile-sheet {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.user-profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 16px;
+}
+
+.user-profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.user-profile-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.user-profile-header .dept {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.recent-ratings {
+  margin-top: 16px;
+}
+
+.recent-ratings h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
+.recent-rating-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.recent-rating-item:last-child {
+  border-bottom: none;
+}
+
+.recent-rating-scores {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.recent-rating-scores span {
+  color: var(--muted);
+}
+
+.recent-rating-scores b {
+  color: #f5a623;
+}
+
+.recent-rating-comment {
+  font-size: 13px;
+  color: var(--ink);
+  margin-top: 4px;
+}
+
+.recent-rating-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* === Login Sheet === */
+
+.login-sheet {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.login-sheet form {
+  padding: 0 4px;
+}
+
+.login-description {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.login-description strong {
+  color: var(--ink);
+}
+
+.login-sheet label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.login-sheet input {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 16px;
+  color: var(--ink);
+  transition: border-color 0.15s;
+}
+
+.login-sheet input:focus {
+  border-color: var(--blue);
+}
+
+.login-sheet .code-input {
+  font-size: 24px;
+  letter-spacing: 8px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.login-sheet .text-button {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.login-sheet .text-button:hover {
+  color: var(--blue);
+}
+
+.login-button {
+  padding: 7px 14px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.login-button:hover {
+  background: var(--blue-dark);
+}
+
+/* === Waitlist === */
+
+.join-button.waitlisted {
+  background: #fff3e0;
+  color: #e46c17;
+  border-color: #e46c17;
+}
+
+/* === Venue List (replaces campus map) === */
+
+.venue-list-section {
+  padding: 24px 20px;
+}
+
+.venue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.venue-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.venue-list-item:hover {
+  background: #fff;
+  border-color: var(--blue);
+  box-shadow: 0 2px 8px rgba(23, 107, 255, 0.08);
+}
+
+.venue-list-item.has-activities {
+  background: #fff;
+  border-color: rgba(23, 107, 255, 0.2);
+}
+
+.venue-list-icon {
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.venue-list-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.venue-list-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 4px 10px;
+  background: var(--line);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.venue-list-count.active {
+  color: var(--blue);
+  background: rgba(23, 107, 255, 0.1);
+}
+
+/* === WISE Facility Reservation === */
+
+.wise-notice {
+  margin: -4px 0 14px;
+  padding: 14px;
+  background: #fff8e6;
+  border: 1px solid #f5d87a;
+  border-radius: 12px;
+}
+
+.wise-notice-text {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.wise-notice-text span {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.wise-notice-text strong {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.wise-notice-text a {
+  font-size: 12px;
+  color: var(--blue);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.wise-notice-text a:hover {
+  text-decoration: underline;
+}
+
+.wise-checkbox {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+  cursor: pointer;
+}
+
+.wise-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+
+.reserved-label {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #e8f7f0;
+  color: #138a5b;
+}
+
+.detail-reserved-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  background: #e8f7f0;
+  color: #138a5b;
+}
+
+.detail-no-reserve-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  background: #fff3e0;
+  color: #e46c17;
 }

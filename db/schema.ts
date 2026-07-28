@@ -16,6 +16,7 @@ export const activities = sqliteTable(
     level: text("level").notNull(),
     description: text("description").notNull().default(""),
     status: text("status").notNull().default("open"),
+    facilityReserved: integer("facility_reserved").notNull().default(0),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [
@@ -38,6 +39,71 @@ export const participants = sqliteTable(
   (table) => [
     primaryKey({ columns: [table.activityId, table.userEmail] }),
     index("participants_user_idx").on(table.userEmail),
+  ],
+);
+
+export const userProfiles = sqliteTable(
+  "user_profiles",
+  {
+    email: text("email").primaryKey(),
+    nickname: text("nickname").notNull().default(""),
+    department: text("department").notNull().default(""),
+    bio: text("bio").notNull().default(""),
+    preferredSports: text("preferred_sports").notNull().default(""),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+);
+
+export const ratings = sqliteTable(
+  "ratings",
+  {
+    id: text("id").primaryKey(),
+    activityId: text("activity_id")
+      .notNull()
+      .references(() => activities.id, { onDelete: "cascade" }),
+    raterEmail: text("rater_email").notNull(),
+    ratedEmail: text("rated_email").notNull(),
+    trustScore: integer("trust_score").notNull(),
+    skillScore: integer("skill_score").notNull(),
+    mannerScore: integer("manner_score").notNull(),
+    comment: text("comment").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("ratings_unique_idx").on(table.activityId, table.raterEmail, table.ratedEmail),
+    index("ratings_rated_idx").on(table.ratedEmail),
+    index("ratings_activity_idx").on(table.activityId),
+  ],
+);
+
+export const authCodes = sqliteTable(
+  "auth_codes",
+  {
+    email: text("email").notNull(),
+    code: text("code").notNull(),
+    expiresAt: text("expires_at").notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("auth_codes_email_idx").on(table.email),
+  ],
+);
+
+export const waitlist = sqliteTable(
+  "waitlist",
+  {
+    activityId: text("activity_id")
+      .notNull()
+      .references(() => activities.id, { onDelete: "cascade" }),
+    userEmail: text("user_email").notNull(),
+    displayName: text("display_name").notNull(),
+    position: integer("position").notNull(),
+    status: text("status").notNull().default("waiting"),
+    queuedAt: text("queued_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    primaryKey({ columns: [table.activityId, table.userEmail] }),
+    index("waitlist_activity_position_idx").on(table.activityId, table.position),
   ],
 );
 
