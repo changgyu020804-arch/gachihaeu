@@ -1,10 +1,11 @@
 import { getSessionUser } from "../../../../auth";
 import { ensureSchema, getD1 } from "../../../../../db";
 import { createNotifications } from "../../../../notification-store";
-
-function displayName(user: { fullName: string | null; email: string }) {
-  return user.fullName?.trim() || user.email.split("@")[0];
-}
+import {
+  cancellationDeadlineLabel,
+  getUserDisplayName,
+  hasBlockedRelationship,
+} from "../../../../activity-policy";
 
 export async function POST(
   _request: Request,
@@ -37,19 +38,7 @@ export async function POST(
   if (new Date(activity.starts_at).getTime() <= Date.now()) {
     return Response.json({ error: "이미 시작된 모임이에요." }, { status: 409 });
   }
-  const blocked = await db
-    .prepare(
-      `SELECT 1
-       FROM user_blocks
-       WHERE
-         (blocker_email = ? AND blocked_email = ?)
-         OR
-         (blocker_email = ? AND blocked_email = ?)
-       LIMIT 1`,
-    )
-    .bind(user.email, activity.creator_email, activity.creator_email, user.email)
-    .first();
-  if (blocked) {
+  if (await hasBlockedRelationship(db, user.email, activity.creator_email)) {
     return Response.json(
       { error: "차단 관계인 사용자와 같은 모임에 참여할 수 없어요." },
       { status: 403 },
@@ -66,7 +55,7 @@ export async function POST(
          SELECT capacity FROM activities WHERE id = ? AND status = 'open'
        )`,
     )
-    .bind(id, user.email, displayName(user), id, id)
+    .bind(id, user.email, getUserDisplayName(user), id, id)
     .run();
 
   if ((result.meta.changes ?? 0) === 0) {
@@ -96,7 +85,7 @@ export async function POST(
             activityId: id,
             type: "participant_joined" as const,
             title: "새 구성원이 참가했어요",
-            message: `${displayName(user)}님이 ${activity.title} 모임에 참가했어요.`,
+            message: `${getUserDisplayName(user)}님이 ${activity.title} 모임에 참가했어요.`,
             dedupeKey: `participant-joined:${id}:${user.email}`,
           },
         ]
@@ -145,12 +134,9 @@ export async function DELETE(
     new Date(activity.starts_at).getTime() -
     activity.cancellation_deadline_minutes * 60_000;
   if (Date.now() >= cancellationClosesAt) {
-    const label =
-      activity.cancellation_deadline_minutes === 0
-        ? "모임 시작"
-        : activity.cancellation_deadline_minutes === 1440
-          ? "모임 하루 전"
-          : `모임 ${activity.cancellation_deadline_minutes / 60}시간 전`;
+    const label = cancellationDeadlineLabel(
+      activity.cancellation_deadline_minutes,
+    );
     return Response.json(
       { error: `참가 취소 마감(${label})이 지났어요. 모임장에게 알려주세요.` },
       { status: 409 },
@@ -199,7 +185,7 @@ export async function DELETE(
       activityId: id,
       type: "participant_left",
       title: "구성원이 참가를 취소했어요",
-      message: `${displayName(user)}님이 ${activity.title} 모임 참가를 취소했어요.`,
+      message: `${getUserDisplayName(user)}님이 ${activity.title} 모임 참가를 취소했어요.`,
       dedupeKey: `participant-left:${id}:${user.email}:${crypto.randomUUID()}`,
     },
     ...(nextInLine

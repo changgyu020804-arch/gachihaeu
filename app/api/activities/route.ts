@@ -1,5 +1,6 @@
 import { getSessionUser } from "../../auth";
 import { LEVELS, SPORTS, VENUES } from "../../activity-data";
+import { getUserDisplayName } from "../../activity-policy";
 import { ensureSchema, getD1 } from "../../../db";
 
 type ActivityRow = {
@@ -28,10 +29,6 @@ type ActivityRow = {
 
 function cleanString(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
-
-function userDisplayName(user: { fullName: string | null; email: string }) {
-  return user.fullName?.trim() || user.email.split("@")[0];
 }
 
 export async function GET() {
@@ -199,7 +196,7 @@ export async function POST(request: Request) {
     }
 
     const id = crypto.randomUUID();
-    const displayName = userDisplayName(user);
+    const displayName = getUserDisplayName(user);
     const db = getD1();
     await db.batch([
       db

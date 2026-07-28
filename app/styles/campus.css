@@ -1,0 +1,249 @@
+
+
+.text-button {
+  padding: 5px 0;
+  color: #7b8491;
+  font-size: 11px;
+  font-weight: 800;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.campus-map-section {
+  padding-top: 8px;
+}
+
+.campus-map {
+  position: relative;
+  height: 265px;
+  overflow: hidden;
+  background: #edf1e9;
+  border: 1px solid #e2e7de;
+  border-radius: 24px;
+}
+
+.map-road {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #e6e9ec;
+}
+
+.road-horizontal {
+  top: 58%;
+  left: -10%;
+  width: 120%;
+  height: 35px;
+  transform: rotate(-7deg);
+}
+
+.road-vertical {
+  top: -5%;
+  right: 18%;
+  width: 30px;
+  height: 120%;
+  transform: rotate(10deg);
+}
+
+.map-building {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  color: #9ba3ad;
+  font-size: 8px;
+  font-weight: 750;
+  line-height: 1.3;
+  text-align: center;
+  background: #dce2e8;
+  border: 1px solid #d4dae0;
+  border-radius: 5px;
+}
+
+.building-one {
+  right: 3%;
+  bottom: 5%;
+  width: 26%;
+  height: 20%;
+  transform: rotate(4deg);
+}
+
+.building-two {
+  top: 6%;
+  left: 3%;
+  width: 20%;
+  height: 16%;
+  transform: rotate(-5deg);
+}
+
+.map-field {
+  position: absolute;
+  overflow: hidden;
+  background: #bcd99e;
+  border: 2px solid rgba(85, 130, 64, 0.2);
+}
+
+.main-field {
+  top: 20%;
+  left: 27%;
+  display: grid;
+  width: 38%;
+  height: 38%;
+  place-items: center;
+  color: rgba(58, 92, 41, 0.48);
+  font-size: 9px;
+  font-weight: 850;
+  border: 6px double rgba(119, 141, 111, 0.28);
+  border-radius: 13px;
+}
+
+.main-field::after {
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(58, 92, 41, 0.3);
+  border-radius: 50%;
+  content: "";
+}
+
+.basketball-courts {
+  top: 7%;
+  left: 34%;
+  width: 28%;
+  height: 10%;
+  border-radius: 4px;
+}
+
+.small-field {
+  top: 31%;
+  left: 8%;
+  width: 12%;
+  height: 22%;
+  border-radius: 4px;
+}
+
+.tennis-courts {
+  right: 8%;
+  bottom: 9%;
+  width: 18%;
+  height: 29%;
+  background:
+    linear-gradient(90deg, transparent 49%, rgba(73, 109, 63, 0.3) 50%, transparent 51%),
+    #bcd99e;
+  border-radius: 4px;
+}
+
+.venue-pin {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px 5px 5px;
+  color: #273244;
+  font-size: 8px;
+  font-weight: 850;
+  background: white;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 5px 12px rgba(31, 48, 76, 0.2);
+  cursor: pointer;
+}
+
+.venue-pin strong {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  color: white;
+  font-size: 9px;
+  background: var(--blue);
+  border-radius: 50%;
+}
+
+.venue-basketball {
+  top: 9%;
+  left: 41%;
+}
+
+.venue-main {
+  top: 37%;
+  left: 38%;
+}
+
+.venue-football {
+  top: 37%;
+  left: 5%;
+}
+
+.venue-tennis {
+  right: 4%;
+  bottom: 22%;
+}
+
+.venue-wellness {
+  right: 22%;
+  bottom: 5%;
+}
+
+.map-create-button {
+  position: absolute;
+  bottom: 13px;
+  left: 13px;
+  z-index: 5;
+  height: 34px;
+  padding: 0 12px;
+  color: white;
+  font-size: 9px;
+  font-weight: 850;
+  background: var(--ink);
+  border: 0;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(17, 24, 39, 0.18);
+  cursor: pointer;
+}
+
+.matches-section {
+  padding-bottom: 125px;
+  background: #f6f8fa;
+  border-radius: 30px 30px 0 0;
+}
+
+.match-heading {
+  margin-bottom: 12px;
+}
+
+.match-count {
+  color: #8b929c;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.filter-row {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  margin: 0 -22px;
+  padding: 1px 22px 10px;
+  scrollbar-width: none;
+}
+
+.filter-row::-webkit-scrollbar,
+.sport-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-pill,
+.date-pill {
+  flex: 0 0 auto;
+  min-width: 52px;
+  height: 48px;
+  color: #76808d;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.filter-pill {
+  font-size: 11px;
+  font-weight: 800;
+}

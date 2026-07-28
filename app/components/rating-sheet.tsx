@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AttendanceStatus, ParticipantInfo } from "../activity-data";
 import { getErrorMessage } from "./utils";
+import { RatingParticipantCard } from "./rating-participant-card";
+import { RatingContext, Scores } from "./rating-types";
 
 type RatingSheetProps = {
   activityId: string;
@@ -10,32 +12,6 @@ type RatingSheetProps = {
   onToast: (msg: string) => void;
   onViewProfile: (email: string) => void;
 };
-
-type RatingContext = {
-  isOwner: boolean;
-  hasEnded: boolean;
-  activityStatus: string;
-  creatorEmail: string;
-  currentUserAttendance: AttendanceStatus;
-};
-
-type Scores = {
-  one: number;
-  two: number;
-  three: number;
-  comment: string;
-};
-
-const EMPTY_SCORES: Scores = { one: 0, two: 0, three: 0, comment: "" };
-
-const ATTENDANCE_OPTIONS: Array<{
-  value: AttendanceStatus;
-  label: string;
-}> = [
-  { value: "attended", label: "참석" },
-  { value: "absent", label: "불참" },
-  { value: "no_show", label: "노쇼" },
-];
 
 export function RatingSheet({
   activityId,
@@ -206,175 +182,29 @@ export function RatingSheet({
 
         {loading ? (
           <div className="profile-loading">참여자 불러오는 중...</div>
+        ) : !context ? (
+          <div className="profile-loading">모임 정보를 불러오지 못했어요.</div>
         ) : visibleParticipants.length === 0 ? (
           <div className="profile-loading">
-            {context?.isOwner ? "확인할 구성원이 없어요." : "모임장 정보를 찾지 못했어요."}
+            {context.isOwner ? "확인할 구성원이 없어요." : "모임장 정보를 찾지 못했어요."}
           </div>
         ) : (
-          visibleParticipants.map((participant) => {
-            const current = scores[participant.email] ?? EMPTY_SCORES;
-            const memberCanRateHost =
-              !context?.isOwner &&
-              context?.currentUserAttendance === "attended";
-            const canRate =
-              Boolean(context?.hasEnded) &&
-              (context?.isOwner
-                ? participant.attendanceStatus === "attended"
-                : memberCanRateHost);
-
-            return (
-              <div className="rate-participant" key={participant.email}>
-                <div className="rate-participant-header">
-                  <button
-                    className="rate-participant-avatar"
-                    onClick={() => onViewProfile(participant.email)}
-                    aria-label={`${participant.nickname} 프로필 보기`}
-                  >
-                    {participant.nickname.slice(0, 1).toUpperCase()}
-                  </button>
-                  <button
-                    className="rate-participant-info"
-                    onClick={() => onViewProfile(participant.email)}
-                  >
-                    <strong>
-                      {participant.nickname}
-                      {participant.isHost && <em>모임장</em>}
-                    </strong>
-                    <small>{participant.department || "학과 미설정"}</small>
-                  </button>
-                  {participant.hasRated ? (
-                    <span className="rated-badge">평가 완료</span>
-                  ) : participant.ratingCount >= 3 ? (
-                    <div className="participant-score">
-                      <span>
-                        <span className="star-sm">★</span>
-                        {participant.reputationScore?.toFixed(1)}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="new-mate-badge">새 메이트</span>
-                  )}
-                </div>
-
-                {!context?.hasEnded && (
-                  <p className="rating-status-message">
-                    모임이 끝난 뒤 역할에 맞게 평가할 수 있어요.
-                  </p>
-                )}
-
-                {context?.hasEnded && context.isOwner && (
-                  <div className="attendance-control">
-                    <span>출석 확인</span>
-                    <div>
-                      {ATTENDANCE_OPTIONS.map((option) => (
-                        <button
-                          key={option.value}
-                          className={
-                            participant.attendanceStatus === option.value
-                              ? `active ${option.value}`
-                              : ""
-                          }
-                          disabled={submitting || participant.hasRated}
-                          onClick={() =>
-                            void setAttendance(participant.email, option.value)
-                          }
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {context?.hasEnded &&
-                  context.isOwner &&
-                  participant.attendanceStatus === "pending" && (
-                    <p className="rating-status-message">
-                      참석 여부를 선택하면 평가할 수 있어요.
-                    </p>
-                  )}
-                {context?.hasEnded &&
-                  context.isOwner &&
-                  participant.attendanceStatus !== "pending" &&
-                  participant.attendanceStatus !== "attended" && (
-                    <p className="rating-status-message">
-                      참석하지 않은 구성원은 평가 대상에서 제외돼요.
-                    </p>
-                  )}
-                {context?.hasEnded &&
-                  !context.isOwner &&
-                  !memberCanRateHost && (
-                    <p className="rating-status-message">
-                      모임장이 내 참석을 확인하면 평가할 수 있어요.
-                    </p>
-                  )}
-
-                {canRate && !participant.hasRated && (
-                  <>
-                    {(["one", "two", "three"] as const).map((category, index) => (
-                      <div className="rate-category" key={category}>
-                        <span className="rate-category-label">
-                          {categoryLabels[index]}
-                        </span>
-                        <div className="star-input">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              type="button"
-                              key={star}
-                              className={star <= current[category] ? "filled" : ""}
-                              onClick={() =>
-                                setScores((previous) => ({
-                                  ...previous,
-                                  [participant.email]: {
-                                    ...current,
-                                    [category]: star,
-                                  },
-                                }))
-                              }
-                              aria-label={`${categoryLabels[index]} ${star}점`}
-                            >
-                              {star <= current[category] ? "★" : "☆"}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                    <div className="rate-comment">
-                      <input
-                        placeholder="익명 한줄 코멘트 (선택, 최대 100자)"
-                        maxLength={100}
-                        value={current.comment}
-                        onChange={(event) =>
-                          setScores((previous) => ({
-                            ...previous,
-                            [participant.email]: {
-                              ...current,
-                              comment: event.target.value,
-                            },
-                          }))
-                        }
-                      />
-                      <small>연락처와 외부 계정은 작성할 수 없어요.</small>
-                    </div>
-                    <div className="rate-submit-row">
-                      <button
-                        className="rate-submit-btn"
-                        disabled={
-                          submitting ||
-                          current.one === 0 ||
-                          current.two === 0 ||
-                          current.three === 0
-                        }
-                        onClick={() => void submitRating(participant.email)}
-                      >
-                        평가 저장
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })
+          visibleParticipants.map((participant) => (
+            <RatingParticipantCard
+              key={participant.email}
+              participant={participant}
+              context={context}
+              scores={scores[participant.email]}
+              submitting={submitting}
+              categoryLabels={categoryLabels}
+              onViewProfile={onViewProfile}
+              onSetAttendance={(email, status) => void setAttendance(email, status)}
+              onScoresChange={(email, nextScores) =>
+                setScores((previous) => ({ ...previous, [email]: nextScores }))
+              }
+              onSubmitRating={(email) => void submitRating(email)}
+            />
+          ))
         )}
       </section>
     </div>

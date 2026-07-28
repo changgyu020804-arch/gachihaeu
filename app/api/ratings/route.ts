@@ -2,6 +2,7 @@ import { getSessionUser } from "../../auth";
 import { AttendanceStatus, RatingType } from "../../activity-data";
 import { ensureSchema, getD1 } from "../../../db";
 import { createNotifications } from "../../notification-store";
+import { hasBlockedRelationship } from "../../activity-policy";
 
 const BLOCKED_TERMS = ["씨발", "시발", "병신", "개새끼", "꺼져"];
 
@@ -96,19 +97,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "평가는 모임 종료 후 30일 안에 작성할 수 있어요." }, { status: 400 });
   }
 
-  const blockedRelationship = await db
-    .prepare(
-      `SELECT 1
-       FROM user_blocks
-       WHERE
-         (blocker_email = ? AND blocked_email = ?)
-         OR
-         (blocker_email = ? AND blocked_email = ?)
-       LIMIT 1`,
-    )
-    .bind(user.email, ratedEmail, ratedEmail, user.email)
-    .first();
-  if (blockedRelationship) {
+  if (await hasBlockedRelationship(db, user.email, ratedEmail)) {
     return Response.json(
       { error: "차단 관계인 사용자와는 평가를 주고받을 수 없어요." },
       { status: 403 },

@@ -5,19 +5,43 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 
 test("uses the finished 같이해U product shell", async () => {
-  const [page, layout, home] = await Promise.all([
+  const [page, layout, home, venues] = await Promise.all([
     readFile(new URL("app/page.tsx", root), "utf8"),
     readFile(new URL("app/layout.tsx", root), "utf8"),
     readFile(new URL("app/home-client.tsx", root), "utf8"),
+    readFile(new URL("app/components/venue-section.tsx", root), "utf8"),
   ]);
 
   assert.match(page, /<HomeClient/);
   assert.match(layout, /같이해U \| 서울시립대 운동 메이트/);
-  assert.match(home, /장소별 모임/);
+  assert.match(home, /<VenueSection/);
+  assert.match(venues, /장소별 모임/);
   assert.doesNotMatch(page, /SkeletonPreview|codex-preview/);
   await assert.rejects(
     access(new URL("app/_sites-preview/SkeletonPreview.tsx", root)),
   );
+});
+
+test("keeps large UI and style concerns in focused modules", async () => {
+  const [home, ratingSheet, ratingCard, layout, baseStyles, ratingStyles] =
+    await Promise.all([
+      readFile(new URL("app/home-client.tsx", root), "utf8"),
+      readFile(new URL("app/components/rating-sheet.tsx", root), "utf8"),
+      readFile(new URL("app/components/rating-participant-card.tsx", root), "utf8"),
+      readFile(new URL("app/layout.tsx", root), "utf8"),
+      readFile(new URL("app/styles/base.css", root), "utf8"),
+      readFile(new URL("app/styles/ratings.css", root), "utf8"),
+    ]);
+
+  assert.ok(home.split("\n").length < 400);
+  assert.ok(ratingSheet.split("\n").length < 250);
+  assert.match(ratingSheet, /RatingParticipantCard/);
+  assert.match(ratingCard, /ATTENDANCE_OPTIONS/);
+  assert.match(layout, /styles\/base\.css/);
+  assert.match(layout, /styles\/notifications\.css/);
+  assert.match(baseStyles, /@import "tailwindcss"/);
+  assert.match(ratingStyles, /rate-participant/);
+  await assert.rejects(access(new URL("app/globals.css", root)));
 });
 
 test("enforces attendance and role-based rating rules", async () => {

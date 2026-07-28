@@ -1,0 +1,320 @@
+
+
+/* User Profile View Modal */
+
+.user-profile-sheet {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.user-profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 16px;
+}
+
+.user-profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.user-profile-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.user-profile-header .dept {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.reputation-card {
+  width: 100%;
+  margin: 16px 0;
+  overflow: hidden;
+  background: #f7f9fc;
+  border: 1px solid #e6eaf0;
+  border-radius: 16px;
+}
+
+.reputation-overview {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 16px;
+  color: white;
+  background: linear-gradient(135deg, #176bff, #4d7cff);
+}
+
+.reputation-overview div {
+  display: flex;
+  flex-direction: column;
+}
+
+.reputation-overview small {
+  font-size: 10px;
+  font-weight: 800;
+  opacity: 0.82;
+}
+
+.reputation-overview strong {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.reputation-overview > span {
+  color: #ffd256;
+  font-size: 25px;
+}
+
+.reputation-overview p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: right;
+  opacity: 0.88;
+}
+
+.reputation-newcomer {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 15px;
+}
+
+.reputation-newcomer > span {
+  font-size: 24px;
+}
+
+.reputation-newcomer strong {
+  display: block;
+  font-size: 13px;
+}
+
+.reputation-newcomer p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.reputation-newcomer > small {
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.reputation-groups {
+  display: grid;
+  gap: 1px;
+  background: #e6eaf0;
+}
+
+.reputation-group {
+  padding: 13px 15px;
+  background: white;
+}
+
+.reputation-group-title {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.reputation-group-title strong {
+  font-size: 12px;
+}
+
+.reputation-group-title span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.recent-ratings {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.recent-ratings h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
+.comments-privacy {
+  margin: -5px 0 8px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.recent-rating-item {
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #f7f9fc;
+  border: 1px solid #e8ebf0;
+  border-radius: 12px;
+}
+
+.recent-rating-item:last-child {
+  margin-bottom: 0;
+}
+
+.recent-rating-topline,
+.recent-rating-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.recent-rating-topline span {
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.recent-rating-topline time {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.recent-rating-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  margin-top: 7px;
+  font-size: 10px;
+}
+
+.recent-rating-scores span {
+  color: var(--muted);
+}
+
+.recent-rating-scores b {
+  color: #d89400;
+}
+
+.recent-rating-comment {
+  margin: 8px 0 0;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.recent-rating-footer {
+  margin-top: 8px;
+}
+
+.recent-rating-footer p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.recent-rating-footer button {
+  padding: 0;
+  color: #8b95a5;
+  font-size: 9px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+/* === Login Sheet === */
+
+.login-sheet {
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.login-sheet form {
+  padding: 0 4px;
+}
+
+.login-description {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.login-description strong {
+  color: var(--ink);
+}
+
+.login-sheet label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.login-sheet input {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 16px;
+  color: var(--ink);
+  transition: border-color 0.15s;
+}
+
+.login-sheet input:focus {
+  border-color: var(--blue);
+}
+
+.login-sheet .code-input {
+  font-size: 24px;
+  letter-spacing: 8px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.login-sheet .text-button {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.login-sheet .text-button:hover {
+  color: var(--blue);
+}
+
+.login-button {
+  padding: 7px 14px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.login-button:hover {
+  background: var(--blue-dark);
+}
