@@ -1,5 +1,11 @@
 # vinext-starter
 
+## 같이해U 공개 배포 전 확인
+
+서울시립대 학생들에게 사이트를 공개하기 전에는
+[`SECURITY_CHECKLIST.md`](./SECURITY_CHECKLIST.md)의 필수 항목을 모두 완료해야 합니다.
+현재 배포는 소유자 전용 테스트 상태로 유지합니다.
+
 A clean full-stack starter running on
 [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
 Drizzle support.
