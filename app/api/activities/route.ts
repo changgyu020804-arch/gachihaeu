@@ -36,7 +36,9 @@ export async function GET() {
     await ensureSchema();
     const user = await getSessionUser();
     const email = user?.email ?? "";
-    const now = new Date(Date.now() - 30 * 60_000).toISOString();
+    const now = new Date().toISOString();
+    const upcomingCutoff = new Date(Date.now() - 30 * 60_000).toISOString();
+    const historyCutoff = new Date(Date.now() - 30 * 24 * 60 * 60_000).toISOString();
     const result = await getD1()
       .prepare(
         `SELECT
@@ -67,12 +69,36 @@ export async function GET() {
            WHERE mw2.activity_id = a.id AND mw2.user_email = ? AND mw2.status = 'waiting') AS waitlist_position
         FROM activities a
         LEFT JOIN participants p ON p.activity_id = a.id
-        WHERE a.status = 'open' AND a.starts_at >= ?
+        WHERE a.status = 'open'
+          AND (
+            a.starts_at >= ?
+            OR (
+              a.starts_at >= ?
+              AND EXISTS (
+                SELECT 1 FROM participants history
+                WHERE history.activity_id = a.id AND history.user_email = ?
+              )
+            )
+          )
         GROUP BY a.id
-        ORDER BY a.starts_at ASC
+        ORDER BY
+          CASE WHEN a.starts_at >= ? THEN 0 ELSE 1 END,
+          CASE WHEN a.starts_at >= ? THEN a.starts_at END ASC,
+          CASE WHEN a.starts_at < ? THEN a.starts_at END DESC
         LIMIT 100`,
       )
-      .bind(email, email, email, email, now)
+      .bind(
+        email,
+        email,
+        email,
+        email,
+        upcomingCutoff,
+        historyCutoff,
+        email,
+        now,
+        now,
+        now,
+      )
       .all<ActivityRow>();
 
     const activities = result.results.map((row: ActivityRow) => ({

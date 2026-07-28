@@ -1,5 +1,6 @@
 import { getSessionUser } from "../../auth";
 import { DEPARTMENTS, SPORTS } from "../../activity-data";
+import { getRecentRatings, getReputation } from "../../reputation";
 import { ensureSchema, getD1 } from "../../../db";
 
 function cleanString(value: unknown, maxLength: number) {
@@ -24,23 +25,10 @@ export async function GET() {
       preferred_sports: string;
     }>();
 
-  // 평균 점수 조회
-  const stats = await db
-    .prepare(
-      `SELECT
-        AVG(trust_score) AS avg_trust,
-        AVG(skill_score) AS avg_skill,
-        AVG(manner_score) AS avg_manner,
-        COUNT(*) AS rating_count
-      FROM ratings WHERE rated_email = ?`,
-    )
-    .bind(user.email)
-    .first<{
-      avg_trust: number | null;
-      avg_skill: number | null;
-      avg_manner: number | null;
-      rating_count: number;
-    }>();
+  const [reputation, recentRatings] = await Promise.all([
+    getReputation(db, user.email),
+    getRecentRatings(db, user.email),
+  ]);
 
   const preferredSports = profile?.preferred_sports
     ? profile.preferred_sports.split(",").filter(Boolean)
@@ -53,11 +41,9 @@ export async function GET() {
       department: profile?.department || "",
       bio: profile?.bio || "",
       preferredSports,
-      avgTrust: stats?.avg_trust ? Math.round(stats.avg_trust * 10) / 10 : null,
-      avgSkill: stats?.avg_skill ? Math.round(stats.avg_skill * 10) / 10 : null,
-      avgManner: stats?.avg_manner ? Math.round(stats.avg_manner * 10) / 10 : null,
-      ratingCount: stats?.rating_count || 0,
+      ...reputation,
     },
+    recentRatings,
   });
 }
 

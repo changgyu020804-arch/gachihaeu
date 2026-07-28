@@ -41,6 +41,7 @@ export async function ensureSchema() {
             activity_id TEXT NOT NULL,
             user_email TEXT NOT NULL,
             display_name TEXT NOT NULL,
+            attendance_status TEXT DEFAULT 'pending' NOT NULL,
             joined_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
             PRIMARY KEY (activity_id, user_email),
             FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
@@ -90,7 +91,10 @@ export async function ensureSchema() {
             trust_score INTEGER NOT NULL,
             skill_score INTEGER NOT NULL,
             manner_score INTEGER NOT NULL,
+            rating_type TEXT DEFAULT 'legacy' NOT NULL,
             comment TEXT DEFAULT '' NOT NULL,
+            comment_hidden INTEGER DEFAULT 0 NOT NULL,
+            reported_at TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
             FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
           )`,
@@ -148,6 +152,49 @@ export async function ensureSchema() {
           )
           .run();
       }
+
+      const participantColumns = await db
+        .prepare("PRAGMA table_info(participants)")
+        .all<{ name: string }>();
+      if (!participantColumns.results.some((column) => column.name === "attendance_status")) {
+        await db
+          .prepare(
+            "ALTER TABLE participants ADD COLUMN attendance_status TEXT DEFAULT 'pending' NOT NULL",
+          )
+          .run();
+      }
+
+      const ratingColumns = await db
+        .prepare("PRAGMA table_info(ratings)")
+        .all<{ name: string }>();
+      if (!ratingColumns.results.some((column) => column.name === "rating_type")) {
+        await db
+          .prepare(
+            "ALTER TABLE ratings ADD COLUMN rating_type TEXT DEFAULT 'legacy' NOT NULL",
+          )
+          .run();
+      }
+      if (!ratingColumns.results.some((column) => column.name === "comment_hidden")) {
+        await db
+          .prepare(
+            "ALTER TABLE ratings ADD COLUMN comment_hidden INTEGER DEFAULT 0 NOT NULL",
+          )
+          .run();
+      }
+      if (!ratingColumns.results.some((column) => column.name === "reported_at")) {
+        await db
+          .prepare("ALTER TABLE ratings ADD COLUMN reported_at TEXT")
+          .run();
+      }
+
+      await db.batch([
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS participants_attendance_idx ON participants(activity_id, attendance_status)",
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS ratings_type_idx ON ratings(rated_email, rating_type)",
+        ),
+      ]);
 
       // 이전 이름으로 저장된 모임도 새 장소명으로 통일한다.
       await db

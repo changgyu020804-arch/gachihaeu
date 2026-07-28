@@ -89,6 +89,9 @@ export type Viewer = {
 
 // --- 프로필 & 평가 시스템 타입 ---
 
+export type AttendanceStatus = "pending" | "attended" | "absent" | "no_show";
+export type RatingType = "host_to_member" | "member_to_host" | "legacy";
+
 export const DEPARTMENTS = [
   "선택 안함",
   "행정학과",
@@ -133,10 +136,16 @@ export type UserProfile = {
   department: string;
   bio: string;
   preferredSports: Sport[];
-  avgTrust: number | null;
-  avgSkill: number | null;
-  avgManner: number | null;
+  reputationScore: number | null;
   ratingCount: number;
+  memberRatingCount: number;
+  hostRatingCount: number;
+  avgPunctuality: number | null;
+  avgTeamwork: number | null;
+  avgMemberManner: number | null;
+  avgAccuracy: number | null;
+  avgFacilitation: number | null;
+  avgSafety: number | null;
 };
 
 export type Rating = {
@@ -147,8 +156,21 @@ export type Rating = {
   trustScore: number;
   skillScore: number;
   mannerScore: number;
+  ratingType: RatingType;
   comment: string;
   createdAt: string;
+};
+
+export type RecentRating = {
+  id: string;
+  ratingType: RatingType;
+  scoreOne: number;
+  scoreTwo: number;
+  scoreThree: number;
+  comment: string;
+  createdAt: string;
+  sport: string;
+  title: string;
 };
 
 export type ParticipantInfo = {
@@ -156,9 +178,9 @@ export type ParticipantInfo = {
   displayName: string;
   nickname: string;
   department: string;
-  avgTrust: number | null;
-  avgSkill: number | null;
-  avgManner: number | null;
+  reputationScore: number | null;
   ratingCount: number;
   hasRated: boolean;
+  attendanceStatus: AttendanceStatus;
+  isHost: boolean;
 };

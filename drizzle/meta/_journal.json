@@ -15,6 +15,13 @@
       "when": 1785214266067,
       "tag": "0001_concerned_scarecrow",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1785216439570,
+      "tag": "0002_lively_sabra",
+      "breakpoints": true
     }
   ]
 }

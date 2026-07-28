@@ -14,17 +14,25 @@ type MatchCardProps = {
 export function MatchCard({ activity, submitting, onSelect, onPerformAction, onOpenRating }: MatchCardProps) {
   const meta = SPORT_META[activity.sport];
   const left = activity.capacity - activity.participantCount;
+  const hasEnded =
+    new Date(activity.startsAt).getTime() +
+      activity.durationMinutes * 60_000 <
+    Date.now();
 
   const handleButtonClick = (event: React.MouseEvent) => {
     event.stopPropagation();
+
+    if (activity.isOwner && hasEnded) {
+      onOpenRating(activity.id);
+      return;
+    }
 
     if (activity.isOwner) {
       onSelect(activity);
       return;
     }
 
-    const endTime = new Date(activity.startsAt).getTime() + activity.durationMinutes * 60_000;
-    if (activity.isJoined && endTime < Date.now()) {
+    if (activity.isJoined && hasEnded) {
       onOpenRating(activity.id);
       return;
     }
@@ -47,8 +55,8 @@ export function MatchCard({ activity, submitting, onSelect, onPerformAction, onO
   };
 
   const getButtonLabel = () => {
-    const endTime = new Date(activity.startsAt).getTime() + activity.durationMinutes * 60_000;
-    if (activity.isJoined && endTime < Date.now()) return "평가하기 ★";
+    if (activity.isOwner && hasEnded) return "출석·평가";
+    if (activity.isJoined && hasEnded) return "모임장 평가";
     if (activity.isOwner) return "관리하기";
     if (activity.isJoined) return "참가 완료";
     if (activity.isWaitlisted) return `대기 ${activity.waitlistPosition}번째`;
@@ -63,6 +71,7 @@ export function MatchCard({ activity, submitting, onSelect, onPerformAction, onO
           {meta.icon} {activity.sport}
         </span>
         {activity.facilityReserved && <span className="reserved-label">시설예약 ✓</span>}
+        {hasEnded && <span className="completed-label">종료</span>}
         {activity.isOwner && <span className="owner-label">내가 만든 모임</span>}
       </div>
       <div className="match-main">

@@ -34,11 +34,13 @@ export const participants = sqliteTable(
       .references(() => activities.id, { onDelete: "cascade" }),
     userEmail: text("user_email").notNull(),
     displayName: text("display_name").notNull(),
+    attendanceStatus: text("attendance_status").notNull().default("pending"),
     joinedAt: text("joined_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [
     primaryKey({ columns: [table.activityId, table.userEmail] }),
     index("participants_user_idx").on(table.userEmail),
+    index("participants_attendance_idx").on(table.activityId, table.attendanceStatus),
   ],
 );
 
@@ -66,13 +68,17 @@ export const ratings = sqliteTable(
     trustScore: integer("trust_score").notNull(),
     skillScore: integer("skill_score").notNull(),
     mannerScore: integer("manner_score").notNull(),
+    ratingType: text("rating_type").notNull().default("legacy"),
     comment: text("comment").notNull().default(""),
+    commentHidden: integer("comment_hidden").notNull().default(0),
+    reportedAt: text("reported_at"),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [
     uniqueIndex("ratings_unique_idx").on(table.activityId, table.raterEmail, table.ratedEmail),
     index("ratings_rated_idx").on(table.ratedEmail),
     index("ratings_activity_idx").on(table.activityId),
+    index("ratings_type_idx").on(table.ratedEmail, table.ratingType),
   ],
 );
 

@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
   Activity,
   DEPARTMENTS,
+  RecentRating,
   SPORT_META,
   SPORTS,
   Sport,
@@ -11,6 +12,7 @@ import {
   Viewer,
 } from "../activity-data";
 import { getErrorMessage } from "./utils";
+import { ReputationPanel } from "./reputation-panel";
 
 type ProfileSheetProps = {
   user: Viewer;
@@ -29,6 +31,7 @@ type ProfileForm = {
 
 export function ProfileSheet({ user, activities, onClose, onLogout, onToast }: ProfileSheetProps) {
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
+  const [recentRatings, setRecentRatings] = useState<RecentRating[]>([]);
   const [profileForm, setProfileForm] = useState<ProfileForm>({
     nickname: "",
     department: "",
@@ -44,9 +47,13 @@ export function ProfileSheet({ user, activities, onClose, onLogout, onToast }: P
     setLoading(true);
     try {
       const response = await fetch("/api/profile", { cache: "no-store" });
-      const payload = (await response.json()) as { profile?: UserProfile };
+      const payload = (await response.json()) as {
+        profile?: UserProfile;
+        recentRatings?: RecentRating[];
+      };
       if (response.ok && payload.profile) {
         setProfileData(payload.profile);
+        setRecentRatings(payload.recentRatings ?? []);
         setProfileForm({
           nickname: payload.profile.nickname,
           department: payload.profile.department,
@@ -64,6 +71,23 @@ export function ProfileSheet({ user, activities, onClose, onLogout, onToast }: P
   useEffect(() => {
     void loadProfile();
   }, [loadProfile]);
+
+  const hideComment = async (ratingId: string) => {
+    if (!window.confirm("이 코멘트를 프로필에서 숨기고 신고할까요?")) return;
+    try {
+      const response = await fetch("/api/ratings/comment-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ratingId }),
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(payload.error || "코멘트를 숨기지 못했어요.");
+      setRecentRatings((current) => current.filter((rating) => rating.id !== ratingId));
+      onToast("코멘트를 숨기고 신고했어요.");
+    } catch (hideError) {
+      onToast(getErrorMessage(hideError));
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -186,27 +210,12 @@ export function ProfileSheet({ user, activities, onClose, onLogout, onToast }: P
             )}
             <small className="profile-email">{user.email}</small>
 
-            {profileData && profileData.ratingCount > 0 && (
-              <div className="rating-summary">
-                <h3>받은 평가</h3>
-                <div className="rating-scores">
-                  {(["avgTrust", "avgSkill", "avgManner"] as const).map((key) => {
-                    const label = key === "avgTrust" ? "신뢰도" : key === "avgSkill" ? "실력" : "인성";
-                    const val = profileData[key];
-                    return (
-                      <div className="rating-score-item" key={key}>
-                        <span className="rating-label">{label}</span>
-                        <div className="rating-stars">
-                          {"★".repeat(Math.round(val ?? 0))}
-                          {"☆".repeat(5 - Math.round(val ?? 0))}
-                        </div>
-                        <span className="rating-value">{val?.toFixed(1)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <small>{profileData.ratingCount}개의 평가</small>
-              </div>
+            {profileData && (
+              <ReputationPanel
+                profile={profileData}
+                recentRatings={recentRatings}
+                onHideComment={(ratingId) => void hideComment(ratingId)}
+              />
             )}
 
             <div className="profile-stats">

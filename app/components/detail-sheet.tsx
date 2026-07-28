@@ -72,7 +72,9 @@ export function DetailSheet({
               onClick={() => onOpenRating(activity.id)}
             >
               {new Date(activity.startsAt).getTime() + activity.durationMinutes * 60_000 < Date.now()
-                ? "메이트 평가하기 ★"
+                ? activity.isOwner
+                  ? "출석 확인 및 구성원 평가 ★"
+                  : "모임장 평가하기 ★"
                 : "참여자 보기"}
             </button>
           </div>

@@ -399,7 +399,6 @@ export function HomeClient({ initialUser }: HomeClientProps) {
         {ratingActivityId && currentUser && (
           <RatingSheet
             activityId={ratingActivityId}
-            currentUserEmail={currentUser.email}
             onClose={() => setRatingActivityId(null)}
             onToast={setToast}
             onViewProfile={setViewingUserEmail}
