@@ -128,3 +128,23 @@ export const reports = sqliteTable(
     uniqueIndex("reports_activity_reporter_idx").on(table.activityId, table.reporterEmail),
   ],
 );
+
+export const notifications = sqliteTable(
+  "notifications",
+  {
+    id: text("id").primaryKey(),
+    userEmail: text("user_email").notNull(),
+    activityId: text("activity_id"),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    dedupeKey: text("dedupe_key").notNull(),
+    readAt: text("read_at"),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("notifications_user_dedupe_idx").on(table.userEmail, table.dedupeKey),
+    index("notifications_user_created_idx").on(table.userEmail, table.createdAt),
+    index("notifications_user_read_idx").on(table.userEmail, table.readAt),
+  ],
+);

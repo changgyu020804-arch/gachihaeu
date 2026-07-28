@@ -134,6 +134,28 @@ export async function ensureSchema() {
         db.prepare(
           "CREATE INDEX IF NOT EXISTS waitlist_activity_position_idx ON waitlist(activity_id, position)",
         ),
+        db.prepare(
+          `CREATE TABLE IF NOT EXISTS notifications (
+            id TEXT PRIMARY KEY NOT NULL,
+            user_email TEXT NOT NULL,
+            activity_id TEXT,
+            type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            dedupe_key TEXT NOT NULL,
+            read_at TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+          )`,
+        ),
+        db.prepare(
+          "CREATE UNIQUE INDEX IF NOT EXISTS notifications_user_dedupe_idx ON notifications(user_email, dedupe_key)",
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS notifications_user_created_idx ON notifications(user_email, created_at)",
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS notifications_user_read_idx ON notifications(user_email, read_at)",
+        ),
       ]);
 
       // CREATE TABLE IF NOT EXISTS는 기존 테이블에 새 컬럼을 추가하지 않으므로,

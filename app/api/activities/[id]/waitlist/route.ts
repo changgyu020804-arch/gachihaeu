@@ -1,5 +1,6 @@
 import { getSessionUser } from "../../../../auth";
 import { ensureSchema, getD1 } from "../../../../../db";
+import { createNotifications } from "../../../../notification-store";
 
 function displayName(user: { fullName: string | null; email: string }) {
   return user.fullName?.trim() || user.email.split("@")[0];
@@ -50,9 +51,16 @@ export async function POST(
 
   // 모임 존재 확인
   const activity = await db
-    .prepare(`SELECT id, capacity, starts_at, status FROM activities WHERE id = ?`)
+    .prepare(`SELECT id, creator_email, title, capacity, starts_at, status FROM activities WHERE id = ?`)
     .bind(id)
-    .first<{ id: string; capacity: number; starts_at: string; status: string }>();
+    .first<{
+      id: string;
+      creator_email: string;
+      title: string;
+      capacity: number;
+      starts_at: string;
+      status: string;
+    }>();
 
   if (!activity || activity.status !== "open") {
     return Response.json({ error: "모임을 찾을 수 없어요." }, { status: 404 });
@@ -108,6 +116,29 @@ export async function POST(
     )
     .bind(id, user.email, displayName(user), newPosition)
     .run();
+
+  await createNotifications([
+    {
+      userEmail: user.email,
+      activityId: id,
+      type: "waitlisted",
+      title: "대기 신청이 완료됐어요",
+      message: `${activity.title} 모임 대기 ${newPosition}번이에요. 자리가 생기면 알려드릴게요.`,
+      dedupeKey: `waitlisted:${id}:${user.email}`,
+    },
+    ...(activity.creator_email !== user.email
+      ? [
+          {
+            userEmail: activity.creator_email,
+            activityId: id,
+            type: "participant_joined" as const,
+            title: "새 대기자가 생겼어요",
+            message: `${displayName(user)}님이 ${activity.title} 모임 대기를 신청했어요.`,
+            dedupeKey: `waitlisted-host:${id}:${user.email}`,
+          },
+        ]
+      : []),
+  ]);
 
   return Response.json({ position: newPosition, waitlisted: true }, { status: 201 });
 }

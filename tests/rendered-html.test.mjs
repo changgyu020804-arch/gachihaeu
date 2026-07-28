@@ -43,3 +43,22 @@ test("enforces attendance and role-based rating rules", async () => {
   assert.match(migration, /attendance_status/);
   assert.match(migration, /rating_type/);
 });
+
+test("persists and displays user notifications", async () => {
+  const [notificationRoute, notificationSheet, notificationStore, migration] =
+    await Promise.all([
+      readFile(new URL("app/api/notifications/route.ts", root), "utf8"),
+      readFile(new URL("app/components/notification-sheet.tsx", root), "utf8"),
+      readFile(new URL("app/notification-store.ts", root), "utf8"),
+      readFile(new URL("drizzle/0003_oval_puppet_master.sql", root), "utf8"),
+    ]);
+
+  assert.match(notificationRoute, /syncScheduledNotifications/);
+  assert.match(notificationRoute, /unreadCount/);
+  assert.match(notificationSheet, /모두 읽음/);
+  assert.match(notificationSheet, /새 알림이 없어요/);
+  assert.match(notificationStore, /모임이 곧 시작해요/);
+  assert.match(notificationStore, /운동은 즐거우셨나요/);
+  assert.match(migration, /CREATE TABLE `notifications`/);
+  assert.match(migration, /notifications_user_dedupe_idx/);
+});

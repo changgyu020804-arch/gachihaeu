@@ -16,6 +16,10 @@ import { ProfileSheet } from "./components/profile-sheet";
 import { RatingSheet } from "./components/rating-sheet";
 import { UserProfileSheet } from "./components/user-profile-sheet";
 import { MatchCard } from "./components/match-card";
+import {
+  AppNotification,
+  NotificationSheet,
+} from "./components/notification-sheet";
 
 type HomeClientProps = {
   initialUser: Viewer | null;
@@ -30,6 +34,8 @@ export function HomeClient({ initialUser }: HomeClientProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [myOnly, setMyOnly] = useState(false);
   const [activeNav, setActiveNav] = useState<"home" | "matches" | "mine" | "profile">("home");
   const [loading, setLoading] = useState(true);
@@ -66,6 +72,35 @@ export function HomeClient({ initialUser }: HomeClientProps) {
   useEffect(() => {
     void loadActivities();
   }, [loadActivities]);
+
+  const loadNotificationCount = useCallback(async () => {
+    if (!currentUser) {
+      setUnreadNotifications(0);
+      return;
+    }
+    try {
+      const response = await fetch("/api/notifications", { cache: "no-store" });
+      if (!response.ok) return;
+      const payload = (await response.json()) as { unreadCount?: number };
+      setUnreadNotifications(payload.unreadCount ?? 0);
+    } catch {
+      // 알림 실패가 모임 탐색을 방해하지 않도록 조용히 재시도한다.
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    void loadNotificationCount();
+    if (!currentUser) return;
+    const timer = window.setInterval(() => void loadNotificationCount(), 60_000);
+    const refreshOnVisible = () => {
+      if (document.visibilityState === "visible") void loadNotificationCount();
+    };
+    document.addEventListener("visibilitychange", refreshOnVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshOnVisible);
+    };
+  }, [currentUser, loadNotificationCount]);
 
   useEffect(() => {
     if (!toast) return;
@@ -147,7 +182,20 @@ export function HomeClient({ initialUser }: HomeClientProps) {
     await fetch("/api/auth/logout", { method: "POST" });
     setCurrentUser(null);
     setShowProfile(false);
+    setShowNotifications(false);
+    setUnreadNotifications(0);
     setToast("로그아웃 되었어요.");
+  };
+
+  const handleOpenNotification = (notification: AppNotification) => {
+    setShowNotifications(false);
+    if (!notification.activityId) return;
+    if (notification.type === "rating") {
+      setRatingActivityId(notification.activityId);
+      return;
+    }
+    const activity = activities.find((item) => item.id === notification.activityId);
+    if (activity) setSelectedActivity(activity);
   };
 
   // --- 렌더링 ---
@@ -161,9 +209,21 @@ export function HomeClient({ initialUser }: HomeClientProps) {
           <div className="top-actions">
             <span className="campus-badge"><i />서울시립대 베타</span>
             {currentUser ? (
-              <button className="avatar-button" onClick={() => setShowProfile(true)}>
-                {(currentUser.fullName || currentUser.email).slice(0, 1).toUpperCase()}
-              </button>
+              <>
+                <button
+                  className="notification-button"
+                  onClick={() => setShowNotifications(true)}
+                  aria-label={`알림 ${unreadNotifications}개`}
+                >
+                  <span aria-hidden="true">🔔</span>
+                  {unreadNotifications > 0 && (
+                    <b>{unreadNotifications > 99 ? "99+" : unreadNotifications}</b>
+                  )}
+                </button>
+                <button className="avatar-button" onClick={() => setShowProfile(true)}>
+                  {(currentUser.fullName || currentUser.email).slice(0, 1).toUpperCase()}
+                </button>
+              </>
             ) : (
               <button className="login-button" onClick={() => setShowLogin(true)}>로그인</button>
             )}
@@ -393,6 +453,14 @@ export function HomeClient({ initialUser }: HomeClientProps) {
             onClose={() => setShowProfile(false)}
             onLogout={() => void handleLogout()}
             onToast={setToast}
+          />
+        )}
+
+        {showNotifications && currentUser && (
+          <NotificationSheet
+            onClose={() => setShowNotifications(false)}
+            onUnreadChange={setUnreadNotifications}
+            onOpenNotification={handleOpenNotification}
           />
         )}
 

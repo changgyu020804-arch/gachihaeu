@@ -22,6 +22,13 @@
       "when": 1785216439570,
       "tag": "0002_lively_sabra",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1785218274854,
+      "tag": "0003_oval_puppet_master",
+      "breakpoints": true
     }
   ]
 }

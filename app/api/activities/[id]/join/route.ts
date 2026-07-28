@@ -1,5 +1,6 @@
 import { getSessionUser } from "../../../../auth";
 import { ensureSchema, getD1 } from "../../../../../db";
+import { createNotifications } from "../../../../notification-store";
 
 function displayName(user: { fullName: string | null; email: string }) {
   return user.fullName?.trim() || user.email.split("@")[0];
@@ -17,13 +18,14 @@ export async function POST(
   const db = getD1();
   const activity = await db
     .prepare(
-      `SELECT id, creator_email, capacity, starts_at, status
+      `SELECT id, creator_email, title, capacity, starts_at, status
        FROM activities WHERE id = ?`,
     )
     .bind(id)
     .first<{
       id: string;
       creator_email: string;
+      title: string;
       capacity: number;
       starts_at: string;
       status: string;
@@ -60,6 +62,29 @@ export async function POST(
     return Response.json({ error: "모집 인원이 모두 찼어요." }, { status: 409 });
   }
 
+  await createNotifications([
+    {
+      userEmail: user.email,
+      activityId: id,
+      type: "joined",
+      title: "참가가 확정됐어요",
+      message: `${activity.title} 모임에 참가했어요. 시작 전에 장소와 시간을 확인해 주세요.`,
+      dedupeKey: `joined:${id}`,
+    },
+    ...(activity.creator_email !== user.email
+      ? [
+          {
+            userEmail: activity.creator_email,
+            activityId: id,
+            type: "participant_joined" as const,
+            title: "새 구성원이 참가했어요",
+            message: `${displayName(user)}님이 ${activity.title} 모임에 참가했어요.`,
+            dedupeKey: `participant-joined:${id}:${user.email}`,
+          },
+        ]
+      : []),
+  ]);
+
   return Response.json({ joined: true }, { status: 201 });
 }
 
@@ -74,9 +99,9 @@ export async function DELETE(
   const { id } = await params;
   const db = getD1();
   const activity = await db
-    .prepare(`SELECT creator_email FROM activities WHERE id = ?`)
+    .prepare(`SELECT creator_email, title FROM activities WHERE id = ?`)
     .bind(id)
-    .first<{ creator_email: string }>();
+    .first<{ creator_email: string; title: string }>();
 
   if (!activity) return Response.json({ error: "모임을 찾을 수 없어요." }, { status: 404 });
   if (activity.creator_email === user.email) {
@@ -121,6 +146,29 @@ export async function DELETE(
       .bind(id, nextInLine.user_email)
       .run();
   }
+
+  await createNotifications([
+    {
+      userEmail: activity.creator_email,
+      activityId: id,
+      type: "participant_left",
+      title: "구성원이 참가를 취소했어요",
+      message: `${displayName(user)}님이 ${activity.title} 모임 참가를 취소했어요.`,
+      dedupeKey: `participant-left:${id}:${user.email}:${crypto.randomUUID()}`,
+    },
+    ...(nextInLine
+      ? [
+          {
+            userEmail: nextInLine.user_email,
+            activityId: id,
+            type: "promoted" as const,
+            title: "참가가 확정됐어요",
+            message: `${activity.title} 모임에 자리가 생겨 대기에서 참가로 전환됐어요.`,
+            dedupeKey: `promoted:${id}:${nextInLine.user_email}`,
+          },
+        ]
+      : []),
+  ]);
 
   return Response.json({ joined: false });
 }

@@ -1,6 +1,7 @@
 import { getSessionUser } from "../../auth";
 import { AttendanceStatus, RatingType } from "../../activity-data";
 import { ensureSchema, getD1 } from "../../../db";
+import { createNotifications } from "../../notification-store";
 
 const BLOCKED_TERMS = ["씨발", "시발", "병신", "개새끼", "꺼져"];
 
@@ -65,13 +66,14 @@ export async function POST(request: Request) {
   const db = getD1();
   const activity = await db
     .prepare(
-      `SELECT creator_email, starts_at, duration_minutes, status
+      `SELECT creator_email, title, starts_at, duration_minutes, status
        FROM activities
        WHERE id = ?`,
     )
     .bind(activityId)
     .first<{
       creator_email: string;
+      title: string;
       starts_at: string;
       duration_minutes: number;
       status: string;
@@ -202,6 +204,17 @@ export async function POST(request: Request) {
       comment,
     )
     .run();
+
+  await createNotifications([
+    {
+      userEmail: ratedEmail,
+      activityId,
+      type: "rated",
+      title: "새 평가를 받았어요",
+      message: `${activity.title} 모임에서 익명의 한줄 코멘트와 평가가 도착했어요.`,
+      dedupeKey: `rated:${activityId}:${user.email}`,
+    },
+  ]);
 
   return Response.json({ id, ratingType }, { status: 201 });
 }

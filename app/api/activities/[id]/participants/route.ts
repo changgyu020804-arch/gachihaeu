@@ -1,6 +1,7 @@
 import { getSessionUser } from "../../../../auth";
 import { AttendanceStatus } from "../../../../activity-data";
 import { ensureSchema, getD1 } from "../../../../../db";
+import { createNotifications } from "../../../../notification-store";
 
 const ATTENDANCE_STATUSES: AttendanceStatus[] = [
   "pending",
@@ -15,6 +16,7 @@ function cleanString(value: unknown, maxLength: number) {
 
 type ActivityRow = {
   creator_email: string;
+  title: string;
   starts_at: string;
   duration_minutes: number;
   status: string;
@@ -23,7 +25,7 @@ type ActivityRow = {
 async function getActivity(db: D1Database, id: string) {
   return db
     .prepare(
-      `SELECT creator_email, starts_at, duration_minutes, status
+      `SELECT creator_email, title, starts_at, duration_minutes, status
        FROM activities
        WHERE id = ?`,
     )
@@ -202,6 +204,26 @@ export async function PATCH(
     )
     .bind(attendanceStatus, id, participantEmail)
     .run();
+
+  const statusLabel: Record<AttendanceStatus, string> = {
+    pending: "확인 대기",
+    attended: "참석",
+    absent: "불참",
+    no_show: "노쇼",
+  };
+  await createNotifications([
+    {
+      userEmail: participantEmail,
+      activityId: id,
+      type: "attendance",
+      title: "출석 상태가 확인됐어요",
+      message:
+        attendanceStatus === "attended"
+          ? `${activity.title} 모임이 참석으로 확인됐어요. 이제 모임장을 평가할 수 있어요.`
+          : `${activity.title} 모임의 출석 상태가 ${statusLabel[attendanceStatus]}으로 변경됐어요.`,
+      dedupeKey: `attendance:${id}:${attendanceStatus}`,
+    },
+  ]);
 
   return Response.json({ success: true, attendanceStatus });
 }
