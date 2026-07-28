@@ -400,10 +400,21 @@ export function HomeClient({ initialUser, signInPath, signOutPath }: HomeClientP
               <span>테니스장</span>
             </button>
             <button
-              className="map-create-button"
-              onClick={() => openCreate()}
+              className="venue-pin venue-wellness"
+              onClick={() => {
+                setSelectedSport("헬스");
+                document.getElementById("matches")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              aria-label="웰니스센터 헬스 모임 보기"
             >
-              + 이 장소에서 모집하기
+              <strong>{activities.filter((item) => item.sport === "헬스").length}</strong>
+              <span>웰니스</span>
+            </button>
+            <button
+              className="map-create-button"
+              onClick={() => openCreate("헬스", "웰니스센터 피트니스룸")}
+            >
+              + 웰니스 메이트 모집
             </button>
           </div>
         </section>

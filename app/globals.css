@@ -283,7 +283,7 @@ textarea:focus-visible {
 
 .sport-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
 }
 
@@ -293,7 +293,8 @@ textarea:focus-visible {
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  padding: 11px 3px 9px;
+  min-height: 88px;
+  padding: 11px 5px 9px;
   color: #3f4855;
   background: white;
   border: 1px solid var(--line);
@@ -508,6 +509,11 @@ textarea:focus-visible {
 .venue-tennis {
   right: 4%;
   bottom: 22%;
+}
+
+.venue-wellness {
+  right: 22%;
+  bottom: 5%;
 }
 
 .map-create-button {
@@ -1397,7 +1403,7 @@ textarea:focus-visible {
   }
 
   .sport-grid {
-    gap: 4px;
+    gap: 6px;
   }
 
   .sport-card {

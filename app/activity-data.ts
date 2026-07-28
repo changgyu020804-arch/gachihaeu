@@ -1,4 +1,12 @@
-export const SPORTS = ["전체", "축구", "농구", "러닝", "테니스", "배드민턴"] as const;
+export const SPORTS = [
+  "전체",
+  "축구",
+  "농구",
+  "러닝",
+  "테니스",
+  "배드민턴",
+  "헬스",
+] as const;
 export type SportFilter = (typeof SPORTS)[number];
 export type Sport = Exclude<SportFilter, "전체">;
 
@@ -11,6 +19,7 @@ export const SPORT_META: Record<
   러닝: { icon: "🏃", color: "#176bff", softColor: "#eaf2ff" },
   테니스: { icon: "🎾", color: "#7653e8", softColor: "#f0ecff" },
   배드민턴: { icon: "🏸", color: "#d8437a", softColor: "#fdebf2" },
+  헬스: { icon: "🏋️", color: "#5c6572", softColor: "#edf0f3" },
 };
 
 export const VENUES = [
@@ -19,6 +28,7 @@ export const VENUES = [
   "대운동장 북측 농구장",
   "대운동장 서측 축구장",
   "실외테니스장",
+  "웰니스센터 피트니스룸",
   "100주년기념관 체육관",
   "기타 교내 장소",
 ] as const;
