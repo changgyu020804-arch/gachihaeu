@@ -26,7 +26,6 @@ export function useHorizontalDragScroll<T extends HTMLElement>() {
       startScrollLeft: event.currentTarget.scrollLeft,
       moved: false,
     };
-    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const onPointerMove = (event: ReactPointerEvent<T>) => {
@@ -35,6 +34,9 @@ export function useHorizontalDragScroll<T extends HTMLElement>() {
     const distance = event.clientX - drag.current.startX;
     if (Math.abs(distance) >= DRAG_THRESHOLD_PX) {
       drag.current.moved = true;
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
     }
     if (!drag.current.moved) return;
 
