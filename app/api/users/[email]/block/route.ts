@@ -1,4 +1,5 @@
 import { getSessionUser } from "../../../../auth";
+import { enforceRateLimit, getClientIp } from "../../../../security";
 import { ensureSchema, getD1 } from "../../../../../db";
 
 function parseEmail(value: string) {
@@ -6,7 +7,7 @@ function parseEmail(value: string) {
 }
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ email: string }> },
 ) {
   const user = await getSessionUser();
@@ -19,7 +20,16 @@ export async function POST(
   }
 
   await ensureSchema();
-  await getD1()
+  const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "user-block",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 30,
+    windowSeconds: 60 * 60,
+  });
+  if (rateError) return rateError;
+
+  await db
     .prepare(
       `INSERT OR IGNORE INTO user_blocks (blocker_email, blocked_email)
        VALUES (?, ?)`,
@@ -31,7 +41,7 @@ export async function POST(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ email: string }> },
 ) {
   const user = await getSessionUser();
@@ -40,7 +50,16 @@ export async function DELETE(
   const { email } = await params;
   const blockedEmail = parseEmail(email);
   await ensureSchema();
-  await getD1()
+  const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "user-unblock",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 30,
+    windowSeconds: 60 * 60,
+  });
+  if (rateError) return rateError;
+
+  await db
     .prepare(
       `DELETE FROM user_blocks
        WHERE blocker_email = ? AND blocked_email = ?`,

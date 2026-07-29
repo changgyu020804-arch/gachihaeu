@@ -1,4 +1,5 @@
 import { getSessionUser } from "../../../auth";
+import { enforceRateLimit, getClientIp } from "../../../security";
 import { ensureSchema, getD1 } from "../../../../db";
 import { createNotifications } from "../../../notification-store";
 
@@ -37,6 +38,14 @@ export async function PATCH(
   await ensureSchema();
   const { id } = await params;
   const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "activity-notice",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 30,
+    windowSeconds: 60 * 60,
+  });
+  if (rateError) return rateError;
+
   const activity = await db
     .prepare(`SELECT title, creator_email, status FROM activities WHERE id = ?`)
     .bind(id)
@@ -88,6 +97,14 @@ export async function DELETE(
     return Response.json({ error: "참가자에게 전달할 취소 사유를 입력해 주세요." }, { status: 400 });
   }
   const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "activity-cancel",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 20,
+    windowSeconds: 60 * 60,
+  });
+  if (rateError) return rateError;
+
   const activity = await db
     .prepare(
       `SELECT title, creator_email

@@ -1,5 +1,6 @@
 import { getSessionUser } from "../../../../auth";
 import { AttendanceStatus } from "../../../../activity-data";
+import { enforceRateLimit, getClientIp } from "../../../../security";
 import { ensureSchema, getD1 } from "../../../../../db";
 import { createNotifications } from "../../../../notification-store";
 
@@ -51,6 +52,7 @@ export async function GET(
   await ensureSchema();
   const { id } = await params;
   const db = getD1();
+
   const activity = await getActivity(db, id);
   if (!activity) {
     return Response.json({ error: "모임을 찾을 수 없어요." }, { status: 404 });
@@ -107,7 +109,17 @@ export async function GET(
       has_rated: number;
     }>();
 
-  const participants = rows.results.map((row) => ({
+  const participants = rows.results.map((row: {
+    user_email: string;
+    display_name: string;
+    attendance_status: AttendanceStatus;
+    nickname: string;
+    department: string;
+    reputation_score: number | null;
+    rating_count: number;
+    is_host: number;
+    has_rated: number;
+  }) => ({
     email: row.user_email,
     displayName: row.display_name,
     nickname: row.nickname || row.display_name,
@@ -153,6 +165,14 @@ export async function PATCH(
   }
 
   const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "attendance-update",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 100,
+    windowSeconds: 60 * 60,
+  });
+  if (rateError) return rateError;
+
   const activity = await getActivity(db, id);
   if (!activity) {
     return Response.json({ error: "모임을 찾을 수 없어요." }, { status: 404 });

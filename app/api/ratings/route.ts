@@ -1,5 +1,6 @@
 import { getSessionUser } from "../../auth";
 import { AttendanceStatus, RatingType } from "../../activity-data";
+import { enforceRateLimit, getClientIp } from "../../security";
 import { ensureSchema, getD1 } from "../../../db";
 import { createNotifications } from "../../notification-store";
 import { hasBlockedRelationship } from "../../activity-policy";
@@ -36,6 +37,15 @@ export async function POST(request: Request) {
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
 
   await ensureSchema();
+  const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "rating-create",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 30,
+    windowSeconds: 60 * 60,
+  });
+  if (rateError) return rateError;
+
   const payload = (await request.json()) as Record<string, unknown>;
   const activityId = cleanString(payload.activityId, 50);
   const ratedEmail = cleanString(payload.ratedEmail, 100);
@@ -64,7 +74,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const db = getD1();
   const activity = await db
     .prepare(
       `SELECT creator_email, title, starts_at, duration_minutes, status

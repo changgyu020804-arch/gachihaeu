@@ -86,16 +86,44 @@ export const ratings = sqliteTable(
   ],
 );
 
-export const authCodes = sqliteTable(
-  "auth_codes",
+export const authCodes = sqliteTable("auth_codes", {
+  email: text("email").primaryKey(),
+  codeHash: text("code_hash").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const securityRateLimits = sqliteTable(
+  "security_rate_limits",
   {
-    email: text("email").notNull(),
-    code: text("code").notNull(),
-    expiresAt: text("expires_at").notNull(),
+    action: text("action").notNull(),
+    keyHash: text("key_hash").notNull(),
+    windowBucket: integer("window_bucket").notNull(),
+    requestCount: integer("request_count").notNull().default(1),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.action, table.keyHash, table.windowBucket],
+    }),
+    index("security_rate_limits_updated_idx").on(table.updatedAt),
+  ],
+);
+
+export const securityAuditLogs = sqliteTable(
+  "security_audit_logs",
+  {
+    id: text("id").primaryKey(),
+    eventType: text("event_type").notNull(),
+    subjectHash: text("subject_hash").notNull(),
+    ipHash: text("ip_hash").notNull(),
+    detail: text("detail").notNull().default(""),
     createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => [
-    index("auth_codes_email_idx").on(table.email),
+    index("security_audit_logs_created_idx").on(table.createdAt),
+    index("security_audit_logs_event_idx").on(table.eventType, table.createdAt),
   ],
 );
 

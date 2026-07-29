@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Activity, SPORT_META } from "../activity-data";
 import { formatTime, formatShortDate } from "./utils";
 
@@ -12,14 +13,15 @@ type MatchCardProps = {
 };
 
 export function MatchCard({ activity, submitting, onSelect, onPerformAction, onOpenRating }: MatchCardProps) {
+  const [renderedAt] = useState(() => Date.now());
   const meta = SPORT_META[activity.sport];
   const left = activity.capacity - activity.participantCount;
   const hasEnded =
     new Date(activity.startsAt).getTime() +
       activity.durationMinutes * 60_000 <
-    Date.now();
+    renderedAt;
   const cancellationClosed =
-    Date.now() >=
+    renderedAt >=
     new Date(activity.startsAt).getTime() -
       activity.cancellationDeadlineMinutes * 60_000;
 

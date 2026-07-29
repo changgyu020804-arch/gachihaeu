@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
-
-// --- Types ---
+import { getJwtSecret } from "./runtime-env";
 
 export type SessionUser = {
   email: string;
@@ -8,28 +7,33 @@ export type SessionUser = {
   fullName: string | null;
 };
 
-// --- Constants ---
-
-const SESSION_COOKIE = "gachihaeu_session";
-const JWT_SECRET_KEY = "REMOVED_HISTORICAL_SECRET"; // 프로덕션에서는 env로 관리
-const JWT_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7일
-
-// --- JWT 유틸 (Web Crypto API 기반) ---
+const SESSION_COOKIE = "__Host-gachihaeu_session";
+const LEGACY_SESSION_COOKIE = "gachihaeu_session";
+const JWT_EXPIRY_SECONDS = 24 * 60 * 60;
+const JWT_ISSUER = "gachihaeu";
+const JWT_AUDIENCE = "gachihaeu-web";
 
 function base64UrlEncode(data: Uint8Array): string {
   let binary = "";
-  for (let i = 0; i < data.length; i++) {
-    binary += String.fromCharCode(data[i]);
+  for (let index = 0; index < data.length; index += 1) {
+    binary += String.fromCharCode(data[index]);
   }
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
-function base64UrlDecode(str: string): Uint8Array {
-  const padded = str.replace(/-/g, "+").replace(/_/g, "/");
+function base64UrlDecode(value: string): Uint8Array {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(
+    normalized.length + ((4 - (normalized.length % 4)) % 4),
+    "=",
+  );
   const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
   }
   return bytes;
 }
@@ -41,33 +45,48 @@ function textToUint8Array(text: string): Uint8Array {
 async function getSigningKey(): Promise<CryptoKey> {
   return crypto.subtle.importKey(
     "raw",
-    textToUint8Array(JWT_SECRET_KEY) as unknown as ArrayBuffer,
+    textToUint8Array(getJwtSecret()) as unknown as ArrayBuffer,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign", "verify"],
   );
 }
 
-export async function createJWT(payload: Record<string, unknown>): Promise<string> {
+export async function createJWT(
+  payload: Record<string, unknown>,
+): Promise<string> {
   const header = { alg: "HS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
   const fullPayload = {
     ...payload,
+    iss: JWT_ISSUER,
+    aud: JWT_AUDIENCE,
     iat: now,
     exp: now + JWT_EXPIRY_SECONDS,
+    jti: crypto.randomUUID(),
   };
 
-  const headerEncoded = base64UrlEncode(textToUint8Array(JSON.stringify(header)));
-  const payloadEncoded = base64UrlEncode(textToUint8Array(JSON.stringify(fullPayload)));
+  const headerEncoded = base64UrlEncode(
+    textToUint8Array(JSON.stringify(header)),
+  );
+  const payloadEncoded = base64UrlEncode(
+    textToUint8Array(JSON.stringify(fullPayload)),
+  );
   const signingInput = `${headerEncoded}.${payloadEncoded}`;
 
   const key = await getSigningKey();
-  const signature = await crypto.subtle.sign("HMAC", key, textToUint8Array(signingInput) as unknown as ArrayBuffer);
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    textToUint8Array(signingInput) as unknown as ArrayBuffer,
+  );
 
   return `${signingInput}.${base64UrlEncode(new Uint8Array(signature))}`;
 }
 
-export async function verifyJWT(token: string): Promise<Record<string, unknown> | null> {
+export async function verifyJWT(
+  token: string,
+): Promise<Record<string, unknown> | null> {
   const parts = token.split(".");
   if (parts.length !== 3) return null;
 
@@ -75,15 +94,37 @@ export async function verifyJWT(token: string): Promise<Record<string, unknown> 
   const signingInput = `${headerEncoded}.${payloadEncoded}`;
 
   try {
+    const header = JSON.parse(
+      new TextDecoder().decode(base64UrlDecode(headerEncoded)),
+    ) as Record<string, unknown>;
+    if (header.alg !== "HS256" || header.typ !== "JWT") return null;
+
     const key = await getSigningKey();
     const signature = base64UrlDecode(signatureEncoded);
-    const valid = await crypto.subtle.verify("HMAC", key, signature as unknown as ArrayBuffer, textToUint8Array(signingInput) as unknown as ArrayBuffer);
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      signature as unknown as ArrayBuffer,
+      textToUint8Array(signingInput) as unknown as ArrayBuffer,
+    );
     if (!valid) return null;
 
-    const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(payloadEncoded)));
+    const payload = JSON.parse(
+      new TextDecoder().decode(base64UrlDecode(payloadEncoded)),
+    ) as Record<string, unknown>;
+    const now = Math.floor(Date.now() / 1000);
 
-    // 만료 확인
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+    if (
+      payload.iss !== JWT_ISSUER ||
+      payload.aud !== JWT_AUDIENCE ||
+      typeof payload.iat !== "number" ||
+      typeof payload.exp !== "number" ||
+      payload.iat > now + 60 ||
+      payload.exp <= now ||
+      payload.exp - payload.iat > JWT_EXPIRY_SECONDS ||
+      typeof payload.email !== "string" ||
+      !isValidUosEmail(payload.email)
+    ) {
       return null;
     }
 
@@ -93,43 +134,69 @@ export async function verifyJWT(token: string): Promise<Record<string, unknown> 
   }
 }
 
-// --- 세션 관리 ---
-
 export async function getSessionUser(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(SESSION_COOKIE);
   if (!sessionCookie?.value) return null;
 
   const payload = await verifyJWT(sessionCookie.value);
-  if (!payload || !payload.email) return null;
+  if (!payload || typeof payload.email !== "string") return null;
 
   return {
-    email: payload.email as string,
-    displayName: (payload.displayName as string) || (payload.email as string).split("@")[0],
-    fullName: (payload.fullName as string) || null,
+    email: payload.email,
+    displayName:
+      typeof payload.displayName === "string" && payload.displayName
+        ? payload.displayName
+        : payload.email.split("@")[0],
+    fullName:
+      typeof payload.fullName === "string" && payload.fullName
+        ? payload.fullName
+        : null,
   };
 }
 
 export function createSessionCookie(token: string): string {
-  const maxAge = JWT_EXPIRY_SECONDS;
-  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${maxAge}`;
+  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Secure; Max-Age=${JWT_EXPIRY_SECONDS}`;
 }
 
-export function deleteSessionCookie(): string {
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0`;
+export function deleteSessionCookies(): string[] {
+  return [
+    `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Secure; Max-Age=0`,
+    `${LEGACY_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0`,
+  ];
 }
-
-// --- 인증 코드 생성 ---
 
 export function generateAuthCode(): string {
   const array = new Uint32Array(1);
   crypto.getRandomValues(array);
-  return String(array[0] % 1000000).padStart(6, "0");
+  return String(array[0] % 1_000_000).padStart(6, "0");
 }
 
-// --- 이메일 도메인 검증 ---
+export async function hashAuthCode(email: string, code: string) {
+  const key = await getSigningKey();
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    textToUint8Array(
+      `auth-code:${email.toLowerCase()}:${code}`,
+    ) as unknown as ArrayBuffer,
+  );
+  return base64UrlEncode(new Uint8Array(signature));
+}
+
+export function constantTimeEqual(left: string, right: string) {
+  const leftBytes = textToUint8Array(left);
+  const rightBytes = textToUint8Array(right);
+  if (leftBytes.length !== rightBytes.length) return false;
+
+  let difference = 0;
+  for (let index = 0; index < leftBytes.length; index += 1) {
+    difference |= leftBytes[index] ^ rightBytes[index];
+  }
+  return difference === 0;
+}
 
 export function isValidUosEmail(email: string): boolean {
-  const trimmed = email.trim().toLowerCase();
-  return /^[a-z0-9._%+-]+@uos\.ac\.kr$/.test(trimmed);
+  const normalized = email.trim().toLowerCase();
+  return /^[a-z0-9._%+-]+@uos\.ac\.kr$/.test(normalized);
 }

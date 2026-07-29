@@ -1,107 +1,178 @@
-import { createJWT, createSessionCookie } from "../../../auth";
+import {
+  constantTimeEqual,
+  createJWT,
+  createSessionCookie,
+  deleteSessionCookies,
+  hashAuthCode,
+  isValidUosEmail,
+} from "../../../auth";
+import {
+  enforceRateLimit,
+  getClientIp,
+  readJsonObject,
+  recordSecurityEvent,
+  rejectCrossOriginMutation,
+  requestErrorResponse,
+} from "../../../security";
 import { ensureSchema, getD1 } from "../../../../db";
 
-const MAX_ATTEMPTS = 5; // 5회 이상 틀리면 코드 삭제
+const MAX_CODE_ATTEMPTS = 5;
 
 export async function POST(request: Request) {
-  const payload = (await request.json()) as Record<string, unknown>;
-  const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
-  const code = typeof payload.code === "string" ? payload.code.trim() : "";
+  const originError = rejectCrossOriginMutation(request);
+  if (originError) return originError;
 
-  if (!email || !code) {
-    return Response.json({ error: "이메일과 인증코드를 입력해 주세요." }, { status: 400 });
-  }
+  try {
+    const payload = await readJsonObject(request, 2_048);
+    const email =
+      typeof payload.email === "string"
+        ? payload.email.trim().toLowerCase()
+        : "";
+    const code =
+      typeof payload.code === "string" ? payload.code.trim() : "";
 
-  if (!/^\d{6}$/.test(code)) {
-    return Response.json({ error: "인증코드는 6자리 숫자예요." }, { status: 400 });
-  }
-
-  await ensureSchema();
-  const db = getD1();
-
-  // 해당 이메일의 유효한 코드 조회
-  const record = await db
-    .prepare(
-      `SELECT code, expires_at FROM auth_codes
-       WHERE email = ? AND expires_at > datetime('now')
-       ORDER BY created_at DESC LIMIT 1`,
-    )
-    .bind(email)
-    .first<{ code: string; expires_at: string }>();
-
-  if (!record) {
-    return Response.json(
-      { error: "인증코드가 만료되었거나 존재하지 않아요. 다시 요청해 주세요." },
-      { status: 400 },
-    );
-  }
-
-  // 코드 일치 확인
-  if (record.code !== code) {
-    // 시도 횟수 기반 삭제 (간단 구현: 코드 전체 삭제로 처리)
-    // 실패 횟수 트래킹은 별도 컬럼 없이 5번째에 삭제
-    const attempts = await db
-      .prepare(`SELECT COUNT(*) as cnt FROM auth_codes WHERE email = ?`)
-      .bind(email)
-      .first<{ cnt: number }>();
-
-    if (attempts && attempts.cnt >= MAX_ATTEMPTS) {
-      await db.prepare(`DELETE FROM auth_codes WHERE email = ?`).bind(email).run();
+    if (!isValidUosEmail(email) || !/^\d{6}$/.test(code)) {
       return Response.json(
-        { error: "인증코드를 너무 많이 틀렸어요. 새 코드를 요청해 주세요." },
+        { error: "이메일 또는 인증번호 형식을 확인해 주세요." },
         { status: 400 },
       );
     }
 
-    return Response.json({ error: "인증코드가 올바르지 않아요." }, { status: 400 });
-  }
+    await ensureSchema();
+    const db = getD1();
+    const clientIp = getClientIp(request);
 
-  // 코드 일치 → 사용한 코드 삭제
-  await db.prepare(`DELETE FROM auth_codes WHERE email = ?`).bind(email).run();
+    const emailRateError = await enforceRateLimit(db, {
+      action: "auth-code-verify-email",
+      identifiers: [`email:${email}`],
+      maximum: 10,
+      windowSeconds: 15 * 60,
+    });
+    if (emailRateError) return emailRateError;
 
-  // user_profiles에 유저가 없으면 자동 생성
-  const existingProfile = await db
-    .prepare(`SELECT email FROM user_profiles WHERE email = ?`)
-    .bind(email)
-    .first();
+    const ipRateError = await enforceRateLimit(db, {
+      action: "auth-code-verify-ip",
+      identifiers: [`ip:${clientIp}`],
+      maximum: 30,
+      windowSeconds: 15 * 60,
+    });
+    if (ipRateError) return ipRateError;
 
-  if (!existingProfile) {
-    const nickname = email.split("@")[0];
+    const record = await db
+      .prepare(
+        `SELECT code_hash, attempts
+         FROM auth_codes
+         WHERE email = ? AND datetime(expires_at) > datetime('now')
+         LIMIT 1`,
+      )
+      .bind(email)
+      .first<{ code_hash: string; attempts: number }>();
+
+    if (!record) {
+      await recordSecurityEvent(
+        db,
+        "auth_verify_missing_code",
+        email,
+        request,
+      );
+      return Response.json(
+        { error: "인증번호가 만료되었어요. 새로 요청해 주세요." },
+        { status: 400 },
+      );
+    }
+
+    const candidateHash = await hashAuthCode(email, code);
+    if (!constantTimeEqual(record.code_hash, candidateHash)) {
+      const updated = await db
+        .prepare(
+          `UPDATE auth_codes
+           SET attempts = attempts + 1
+           WHERE email = ?
+           RETURNING attempts`,
+        )
+        .bind(email)
+        .first<{ attempts: number }>();
+      const attempts = updated?.attempts ?? record.attempts + 1;
+
+      await recordSecurityEvent(
+        db,
+        "auth_verify_failed",
+        email,
+        request,
+        `attempt:${Math.min(attempts, MAX_CODE_ATTEMPTS)}`,
+      );
+
+      if (attempts >= MAX_CODE_ATTEMPTS) {
+        await db
+          .prepare(`DELETE FROM auth_codes WHERE email = ?`)
+          .bind(email)
+          .run();
+        return Response.json(
+          { error: "인증번호를 너무 많이 틀렸어요. 새로 요청해 주세요." },
+          { status: 429 },
+        );
+      }
+
+      return Response.json(
+        {
+          error: `인증번호가 올바르지 않아요. ${
+            MAX_CODE_ATTEMPTS - attempts
+          }번 더 시도할 수 있어요.`,
+        },
+        { status: 400 },
+      );
+    }
+
+    const consumed = await db
+      .prepare(
+        `DELETE FROM auth_codes
+         WHERE email = ? AND code_hash = ?`,
+      )
+      .bind(email, candidateHash)
+      .run();
+    if ((consumed.meta.changes ?? 0) !== 1) {
+      return Response.json(
+        { error: "이미 사용한 인증번호예요. 새로 요청해 주세요." },
+        { status: 409 },
+      );
+    }
+
     await db
       .prepare(
-        `INSERT INTO user_profiles (email, nickname, department, bio, preferred_sports, updated_at)
-         VALUES (?, ?, '', '', '', datetime('now'))`,
+        `INSERT INTO user_profiles (
+           email, nickname, department, bio, preferred_sports, updated_at
+         ) VALUES (?, ?, '', '', '', CURRENT_TIMESTAMP)
+         ON CONFLICT(email) DO NOTHING`,
       )
-      .bind(email, nickname)
+      .bind(email, email.split("@")[0])
       .run();
+
+    const profile = await db
+      .prepare(`SELECT nickname FROM user_profiles WHERE email = ?`)
+      .bind(email)
+      .first<{ nickname: string }>();
+    const displayName = profile?.nickname || email.split("@")[0];
+
+    const token = await createJWT({
+      email,
+      displayName,
+      fullName: displayName,
+    });
+    await recordSecurityEvent(db, "auth_login_succeeded", email, request);
+
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    });
+    headers.append("Set-Cookie", createSessionCookie(token));
+    headers.append("Set-Cookie", deleteSessionCookies()[1]);
+
+    return new Response(
+      JSON.stringify({ success: true, email, displayName }),
+      { status: 200, headers },
+    );
+  } catch (error) {
+    console.error("Authentication verification failed");
+    return requestErrorResponse(error);
   }
-
-  // 프로필에서 닉네임 가져오기
-  const profile = await db
-    .prepare(`SELECT nickname FROM user_profiles WHERE email = ?`)
-    .bind(email)
-    .first<{ nickname: string }>();
-
-  const displayName = profile?.nickname || email.split("@")[0];
-
-  // JWT 생성
-  const token = await createJWT({
-    email,
-    displayName,
-    fullName: displayName,
-  });
-
-  // 쿠키 설정하여 응답
-  const cookieHeader = createSessionCookie(token);
-
-  return new Response(
-    JSON.stringify({ success: true, email, displayName }),
-    {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Set-Cookie": cookieHeader,
-      },
-    },
-  );
 }

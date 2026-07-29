@@ -1,4 +1,5 @@
 import { getSessionUser } from "../../../../auth";
+import { enforceRateLimit, getClientIp } from "../../../../security";
 import { ensureSchema, getD1 } from "../../../../../db";
 
 function cleanString(value: unknown, maxLength: number) {
@@ -26,6 +27,14 @@ export async function POST(
 
   await ensureSchema();
   const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "user-report",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 10,
+    windowSeconds: 60 * 60,
+  });
+  if (rateError) return rateError;
+
   const sharedActivity = await db
     .prepare(
       `SELECT 1

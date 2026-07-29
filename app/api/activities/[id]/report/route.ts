@@ -1,4 +1,5 @@
 import { getSessionUser } from "../../../../auth";
+import { enforceRateLimit, getClientIp } from "../../../../security";
 import { ensureSchema, getD1 } from "../../../../../db";
 
 export async function POST(
@@ -10,9 +11,18 @@ export async function POST(
 
   await ensureSchema();
   const { id } = await params;
+  const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "activity-report",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 10,
+    windowSeconds: 60 * 60,
+  });
+  if (rateError) return rateError;
+
   const payload = (await request.json()) as { reason?: string };
   const reason = payload.reason?.trim().slice(0, 200) || "부적절한 모임 정보";
-  const activity = await getD1()
+  const activity = await db
     .prepare(`SELECT creator_email FROM activities WHERE id = ? AND status = 'open'`)
     .bind(id)
     .first<{ creator_email: string }>();
@@ -22,7 +32,7 @@ export async function POST(
     return Response.json({ error: "자신의 모임은 신고할 수 없어요." }, { status: 400 });
   }
 
-  await getD1()
+  await db
     .prepare(
       `INSERT OR IGNORE INTO reports (id, activity_id, reporter_email, reason)
        VALUES (?, ?, ?, ?)`,

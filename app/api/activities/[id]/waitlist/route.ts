@@ -1,4 +1,5 @@
 import { getSessionUser } from "../../../../auth";
+import { enforceRateLimit, getClientIp } from "../../../../security";
 import { ensureSchema, getD1 } from "../../../../../db";
 import { createNotifications } from "../../../../notification-store";
 import {
@@ -39,7 +40,7 @@ export async function GET(
 
 // POST: 대기 신청
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getSessionUser();
@@ -48,6 +49,13 @@ export async function POST(
   await ensureSchema();
   const { id } = await params;
   const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "waitlist-join",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 60,
+    windowSeconds: 15 * 60,
+  });
+  if (rateError) return rateError;
 
   // 모임 존재 확인
   const activity = await db
@@ -151,7 +159,7 @@ export async function POST(
 
 // DELETE: 대기 취소
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getSessionUser();
@@ -160,6 +168,13 @@ export async function DELETE(
   await ensureSchema();
   const { id } = await params;
   const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "waitlist-leave",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 60,
+    windowSeconds: 15 * 60,
+  });
+  if (rateError) return rateError;
 
   await db
     .prepare(`UPDATE waitlist SET status = 'cancelled' WHERE activity_id = ? AND user_email = ? AND status = 'waiting'`)

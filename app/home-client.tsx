@@ -51,7 +51,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
   // 모임 만들기 기본값
   const [createDefaults, setCreateDefaults] = useState<{ sport?: Sport; venue?: string }>({});
 
-  const dateFilters = useMemo(createDateFilters, []);
+  const dateFilters = useMemo(() => createDateFilters(), []);
 
   // --- 데이터 로딩 ---
 
@@ -71,7 +71,10 @@ export function HomeClient({ initialUser }: HomeClientProps) {
   }, []);
 
   useEffect(() => {
-    void loadActivities();
+    const initialLoadTimer = window.setTimeout(() => {
+      void loadActivities();
+    }, 0);
+    return () => window.clearTimeout(initialLoadTimer);
   }, [loadActivities]);
 
   const loadNotificationCount = useCallback(async () => {
@@ -90,14 +93,19 @@ export function HomeClient({ initialUser }: HomeClientProps) {
   }, [currentUser]);
 
   useEffect(() => {
-    void loadNotificationCount();
-    if (!currentUser) return;
+    const initialLoadTimer = window.setTimeout(() => {
+      void loadNotificationCount();
+    }, 0);
+    if (!currentUser) {
+      return () => window.clearTimeout(initialLoadTimer);
+    }
     const timer = window.setInterval(() => void loadNotificationCount(), 60_000);
     const refreshOnVisible = () => {
       if (document.visibilityState === "visible") void loadNotificationCount();
     };
     document.addEventListener("visibilitychange", refreshOnVisible);
     return () => {
+      window.clearTimeout(initialLoadTimer);
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", refreshOnVisible);
     };
@@ -270,7 +278,11 @@ export function HomeClient({ initialUser }: HomeClientProps) {
           }
           onProfile={() => {
             setActiveNav("profile");
-            currentUser ? setShowProfile(true) : setShowLogin(true);
+            if (currentUser) {
+              setShowProfile(true);
+            } else {
+              setShowLogin(true);
+            }
           }}
         />
 

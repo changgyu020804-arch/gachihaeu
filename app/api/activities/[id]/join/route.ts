@@ -1,4 +1,5 @@
 import { getSessionUser } from "../../../../auth";
+import { enforceRateLimit, getClientIp } from "../../../../security";
 import { ensureSchema, getD1 } from "../../../../../db";
 import { createNotifications } from "../../../../notification-store";
 import {
@@ -8,7 +9,7 @@ import {
 } from "../../../../activity-policy";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getSessionUser();
@@ -17,6 +18,14 @@ export async function POST(
   await ensureSchema();
   const { id } = await params;
   const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "activity-join",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 60,
+    windowSeconds: 15 * 60,
+  });
+  if (rateError) return rateError;
+
   const activity = await db
     .prepare(
       `SELECT id, creator_email, title, capacity, starts_at, status
@@ -96,7 +105,7 @@ export async function POST(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const user = await getSessionUser();
@@ -105,6 +114,14 @@ export async function DELETE(
   await ensureSchema();
   const { id } = await params;
   const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "activity-leave",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 60,
+    windowSeconds: 15 * 60,
+  });
+  if (rateError) return rateError;
+
   const activity = await db
     .prepare(
       `SELECT creator_email, title, starts_at, cancellation_deadline_minutes, status

@@ -3,14 +3,15 @@ import { drizzle } from "drizzle-orm/d1";
 import * as schema from "./schema";
 
 let schemaReady: Promise<void> | null = null;
+const runtimeEnv = env as unknown as { DB?: D1Database };
 
 export function getD1() {
-  if (!env.DB) {
+  if (!runtimeEnv.DB) {
     throw new Error(
       "Cloudflare D1 binding `DB` is unavailable. Set the `d1` field in .openai/hosting.json to `DB`.",
     );
   }
-  return env.DB;
+  return runtimeEnv.DB;
 }
 
 export async function ensureSchema() {
@@ -114,14 +115,41 @@ export async function ensureSchema() {
         ),
         db.prepare(
           `CREATE TABLE IF NOT EXISTS auth_codes (
-            email TEXT NOT NULL,
-            code TEXT NOT NULL,
+            email TEXT PRIMARY KEY NOT NULL,
+            code_hash TEXT NOT NULL,
+            attempts INTEGER DEFAULT 0 NOT NULL,
             expires_at TEXT NOT NULL,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
           )`,
         ),
         db.prepare(
-          "CREATE INDEX IF NOT EXISTS auth_codes_email_idx ON auth_codes(email)",
+          `CREATE TABLE IF NOT EXISTS security_rate_limits (
+            action TEXT NOT NULL,
+            key_hash TEXT NOT NULL,
+            window_bucket INTEGER NOT NULL,
+            request_count INTEGER DEFAULT 1 NOT NULL,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY (action, key_hash, window_bucket)
+          )`,
+        ),
+        db.prepare(
+          `CREATE TABLE IF NOT EXISTS security_audit_logs (
+            id TEXT PRIMARY KEY NOT NULL,
+            event_type TEXT NOT NULL,
+            subject_hash TEXT NOT NULL,
+            ip_hash TEXT NOT NULL,
+            detail TEXT DEFAULT '' NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+          )`,
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS security_rate_limits_updated_idx ON security_rate_limits(updated_at)",
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS security_audit_logs_created_idx ON security_audit_logs(created_at)",
+        ),
+        db.prepare(
+          "CREATE INDEX IF NOT EXISTS security_audit_logs_event_idx ON security_audit_logs(event_type, created_at)",
         ),
         db.prepare(
           `CREATE TABLE IF NOT EXISTS waitlist (
@@ -204,19 +232,19 @@ export async function ensureSchema() {
           )
           .run();
       }
-      if (!activityColumns.results.some((column) => column.name === "notice")) {
+      if (!activityColumns.results.some((column: { name: string }) => column.name === "notice")) {
         await db
           .prepare("ALTER TABLE activities ADD COLUMN notice TEXT DEFAULT '' NOT NULL")
           .run();
       }
-      if (!activityColumns.results.some((column) => column.name === "notice_updated_at")) {
+      if (!activityColumns.results.some((column: { name: string }) => column.name === "notice_updated_at")) {
         await db
           .prepare("ALTER TABLE activities ADD COLUMN notice_updated_at TEXT")
           .run();
       }
       if (
         !activityColumns.results.some(
-          (column) => column.name === "cancellation_deadline_minutes",
+          (column: { name: string }) => column.name === "cancellation_deadline_minutes",
         )
       ) {
         await db
@@ -225,7 +253,7 @@ export async function ensureSchema() {
           )
           .run();
       }
-      if (!activityColumns.results.some((column) => column.name === "cancellation_reason")) {
+      if (!activityColumns.results.some((column: { name: string }) => column.name === "cancellation_reason")) {
         await db
           .prepare(
             "ALTER TABLE activities ADD COLUMN cancellation_reason TEXT DEFAULT '' NOT NULL",
@@ -236,7 +264,7 @@ export async function ensureSchema() {
       const participantColumns = await db
         .prepare("PRAGMA table_info(participants)")
         .all<{ name: string }>();
-      if (!participantColumns.results.some((column) => column.name === "attendance_status")) {
+      if (!participantColumns.results.some((column: { name: string }) => column.name === "attendance_status")) {
         await db
           .prepare(
             "ALTER TABLE participants ADD COLUMN attendance_status TEXT DEFAULT 'pending' NOT NULL",
@@ -247,23 +275,48 @@ export async function ensureSchema() {
       const ratingColumns = await db
         .prepare("PRAGMA table_info(ratings)")
         .all<{ name: string }>();
-      if (!ratingColumns.results.some((column) => column.name === "rating_type")) {
+      if (!ratingColumns.results.some((column: { name: string }) => column.name === "rating_type")) {
         await db
           .prepare(
             "ALTER TABLE ratings ADD COLUMN rating_type TEXT DEFAULT 'legacy' NOT NULL",
           )
           .run();
       }
-      if (!ratingColumns.results.some((column) => column.name === "comment_hidden")) {
+      if (!ratingColumns.results.some((column: { name: string }) => column.name === "comment_hidden")) {
         await db
           .prepare(
             "ALTER TABLE ratings ADD COLUMN comment_hidden INTEGER DEFAULT 0 NOT NULL",
           )
           .run();
       }
-      if (!ratingColumns.results.some((column) => column.name === "reported_at")) {
+      if (!ratingColumns.results.some((column: { name: string }) => column.name === "reported_at")) {
         await db
           .prepare("ALTER TABLE ratings ADD COLUMN reported_at TEXT")
+          .run();
+      }
+
+      // 인증번호는 짧게 유지되는 임시 데이터이므로 구버전 평문 코드
+      // 테이블이 발견되면 데이터를 이전하지 않고 안전하게 폐기한다.
+      const authCodeColumns = await db
+        .prepare("PRAGMA table_info(auth_codes)")
+        .all<{ name: string }>();
+      const hasSecureAuthCodeShape =
+        authCodeColumns.results.some((column: { name: string }) => column.name === "code_hash") &&
+        authCodeColumns.results.some((column: { name: string }) => column.name === "attempts") &&
+        !authCodeColumns.results.some((column: { name: string }) => column.name === "code");
+
+      if (!hasSecureAuthCodeShape) {
+        await db.prepare("DROP TABLE auth_codes").run();
+        await db
+          .prepare(
+            `CREATE TABLE auth_codes (
+              email TEXT PRIMARY KEY NOT NULL,
+              code_hash TEXT NOT NULL,
+              attempts INTEGER DEFAULT 0 NOT NULL,
+              expires_at TEXT NOT NULL,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+            )`,
+          )
           .run();
       }
 
@@ -273,6 +326,15 @@ export async function ensureSchema() {
         ),
         db.prepare(
           "CREATE INDEX IF NOT EXISTS ratings_type_idx ON ratings(rated_email, rating_type)",
+        ),
+        db.prepare(
+          "DELETE FROM auth_codes WHERE datetime(expires_at) <= datetime('now')",
+        ),
+        db.prepare(
+          "DELETE FROM security_rate_limits WHERE updated_at < datetime('now', '-2 days')",
+        ),
+        db.prepare(
+          "DELETE FROM security_audit_logs WHERE created_at < datetime('now', '-90 days')",
         ),
       ]);
 

@@ -48,7 +48,10 @@ export function UserProfileSheet({
   }, [email]);
 
   useEffect(() => {
-    void load();
+    const initialLoadTimer = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(initialLoadTimer);
   }, [load]);
 
   const toggleBlock = async () => {

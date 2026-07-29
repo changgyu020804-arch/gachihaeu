@@ -1,6 +1,7 @@
 import { getSessionUser } from "../../auth";
 import { LEVELS, SPORTS, VENUES } from "../../activity-data";
 import { getUserDisplayName } from "../../activity-policy";
+import { enforceRateLimit, getClientIp } from "../../security";
 import { ensureSchema, getD1 } from "../../../db";
 
 type ActivityRow = {
@@ -137,9 +138,12 @@ export async function GET() {
     }));
 
     return Response.json({ activities });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "모임을 불러오지 못했어요.";
-    return Response.json({ error: message }, { status: 500 });
+  } catch {
+    console.error("Activity list request failed");
+    return Response.json(
+      { error: "모임을 불러오지 못했어요. 잠시 후 다시 시도해 주세요." },
+      { status: 500 },
+    );
   }
 }
 
@@ -198,6 +202,14 @@ export async function POST(request: Request) {
     const id = crypto.randomUUID();
     const displayName = getUserDisplayName(user);
     const db = getD1();
+    const rateError = await enforceRateLimit(db, {
+      action: "activity-create",
+      identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+      maximum: 20,
+      windowSeconds: 60 * 60,
+    });
+    if (rateError) return rateError;
+
     await db.batch([
       db
         .prepare(
@@ -231,8 +243,11 @@ export async function POST(request: Request) {
     ]);
 
     return Response.json({ id }, { status: 201 });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "모임을 만들지 못했어요.";
-    return Response.json({ error: message }, { status: 500 });
+  } catch {
+    console.error("Activity creation failed");
+    return Response.json(
+      { error: "모임을 만들지 못했어요. 잠시 후 다시 시도해 주세요." },
+      { status: 500 },
+    );
   }
 }

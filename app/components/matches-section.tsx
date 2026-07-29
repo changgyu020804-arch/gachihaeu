@@ -4,7 +4,7 @@ import { MatchCard } from "./match-card";
 type DateFilter = {
   key: string;
   label: string;
-  day: string;
+  day: number;
 };
 
 type MatchesSectionProps = {

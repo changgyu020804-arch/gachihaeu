@@ -1,4 +1,5 @@
 import { getSessionUser } from "../../auth";
+import { enforceRateLimit, getClientIp } from "../../security";
 import { ensureSchema, getD1 } from "../../../db";
 import { syncScheduledNotifications } from "../../notification-store";
 
@@ -40,7 +41,15 @@ export async function GET() {
   ]);
 
   return Response.json({
-    notifications: rows.results.map((row) => ({
+    notifications: rows.results.map((row: {
+      id: string;
+      activity_id: string | null;
+      type: string;
+      title: string;
+      message: string;
+      read_at: string | null;
+      created_at: string;
+    }) => ({
       id: row.id,
       activityId: row.activity_id,
       type: row.type,
@@ -60,6 +69,13 @@ export async function PATCH(request: Request) {
   const payload = (await request.json()) as { id?: unknown; all?: unknown };
   await ensureSchema();
   const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "notifications-read",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 120,
+    windowSeconds: 60 * 60,
+  });
+  if (rateError) return rateError;
 
   if (payload.all === true) {
     await db

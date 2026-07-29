@@ -114,7 +114,7 @@ export function LoginSheet({ onClose, onLogin }: LoginSheetProps) {
                 inputMode="numeric"
                 pattern="\d{6}"
                 maxLength={6}
-                placeholder="000000"
+                placeholder="인증번호 6자리"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 autoFocus

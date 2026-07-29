@@ -27,8 +27,12 @@ export function DetailSheet({
   onReport,
 }: DetailSheetProps) {
   const isFull = activity.participantCount >= activity.capacity;
+  const [renderedAt] = useState(() => Date.now());
   const [editingNotice, setEditingNotice] = useState(false);
   const [noticeDraft, setNoticeDraft] = useState(activity.notice);
+  const startsAt = new Date(activity.startsAt).getTime();
+  const hasEnded =
+    startsAt + activity.durationMinutes * 60_000 < renderedAt;
   const cancellationLabel =
     activity.cancellationDeadlineMinutes === 0
       ? "모임 시작 직전까지"
@@ -36,8 +40,8 @@ export function DetailSheet({
         ? "시작 하루 전까지"
         : `시작 ${activity.cancellationDeadlineMinutes / 60}시간 전까지`;
   const cancellationClosed =
-    Date.now() >=
-    new Date(activity.startsAt).getTime() -
+    renderedAt >=
+    startsAt -
       activity.cancellationDeadlineMinutes * 60_000;
 
   return (
@@ -135,7 +139,7 @@ export function DetailSheet({
               style={{ marginTop: 0, marginBottom: 12 }}
               onClick={() => onOpenRating(activity.id)}
             >
-              {new Date(activity.startsAt).getTime() + activity.durationMinutes * 60_000 < Date.now()
+              {hasEnded
                 ? activity.isOwner
                   ? "출석 확인 및 구성원 평가 ★"
                   : "모임장 평가하기 ★"

@@ -52,7 +52,10 @@ export function RatingSheet({
   }, [activityId, onToast]);
 
   useEffect(() => {
-    void loadParticipants();
+    const initialLoadTimer = window.setTimeout(() => {
+      void loadParticipants();
+    }, 0);
+    return () => window.clearTimeout(initialLoadTimer);
   }, [loadParticipants]);
 
   const visibleParticipants = useMemo(() => {

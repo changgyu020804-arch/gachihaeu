@@ -67,7 +67,10 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
   }, []);
 
   useEffect(() => {
-    void loadProfile();
+    const initialLoadTimer = window.setTimeout(() => {
+      void loadProfile();
+    }, 0);
+    return () => window.clearTimeout(initialLoadTimer);
   }, [loadProfile]);
 
   const hideComment = async (ratingId: string) => {

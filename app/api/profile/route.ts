@@ -1,5 +1,6 @@
 import { getSessionUser } from "../../auth";
 import { DEPARTMENTS, SPORTS } from "../../activity-data";
+import { enforceRateLimit, getClientIp } from "../../security";
 import { getActivityStats, getRecentRatings, getReputation } from "../../reputation";
 import { ensureSchema, getD1 } from "../../../db";
 
@@ -74,6 +75,14 @@ export async function PUT(request: Request) {
   const preferredSports = validSports.slice(0, 6).join(",");
 
   const db = getD1();
+  const rateError = await enforceRateLimit(db, {
+    action: "profile-update",
+    identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
+    maximum: 20,
+    windowSeconds: 60 * 60,
+  });
+  if (rateError) return rateError;
+
   await db
     .prepare(
       `INSERT INTO user_profiles (email, nickname, department, bio, preferred_sports, updated_at)
