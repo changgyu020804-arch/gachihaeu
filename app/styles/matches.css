@@ -38,7 +38,21 @@
   display: flex;
   gap: 6px;
   overflow-x: auto;
+  margin: 0 -22px;
+  padding: 2px 22px 5px;
   scrollbar-width: none;
+}
+
+.horizontal-drag-scroll {
+  overscroll-behavior-inline: contain;
+  touch-action: pan-x;
+  cursor: grab;
+  user-select: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.horizontal-drag-scroll:active {
+  cursor: grabbing;
 }
 
 .sport-pills button {

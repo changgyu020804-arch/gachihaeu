@@ -1,5 +1,6 @@
 import { Activity, SPORTS, SportFilter } from "../activity-data";
 import { MatchCard } from "./match-card";
+import { useHorizontalDragScroll } from "./use-horizontal-drag-scroll";
 
 type DateFilter = {
   key: string;
@@ -48,6 +49,9 @@ export function MatchesSection({
   onBrowse,
   onCreate,
 }: MatchesSectionProps) {
+  const dateScroller = useHorizontalDragScroll<HTMLDivElement>();
+  const sportScroller = useHorizontalDragScroll<HTMLDivElement>();
+
   return (
     <section className="matches-section" id="matches">
       <div className="section-title-row match-heading">
@@ -58,7 +62,7 @@ export function MatchesSection({
         <span className="match-count">{activities.length}개</span>
       </div>
 
-      <div className="filter-row">
+      <div className="filter-row horizontal-drag-scroll" {...dateScroller}>
         <button
           className={`filter-pill ${selectedDate === "전체" ? "active" : ""}`}
           onClick={() => onSelectDate("전체")}
@@ -78,7 +82,10 @@ export function MatchesSection({
       </div>
 
       <div className="active-filter-row">
-        <div className="sport-pills">
+        <div
+          className="sport-pills horizontal-drag-scroll"
+          {...sportScroller}
+        >
           {SPORTS.map((sport) => (
             <button
               key={sport}
