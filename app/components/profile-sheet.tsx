@@ -2,33 +2,20 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
-  CAMPUS_ROLES,
-  DEPARTMENTS,
-  GENDERS,
   RecentRating,
   SPORT_META,
-  SPORTS,
-  Sport,
   UserProfile,
   Viewer,
 } from "../activity-data";
 import { getErrorMessage } from "./utils";
 import { ReputationPanel } from "./reputation-panel";
+import { ProfileEditForm, ProfileForm } from "./profile-edit-form";
 
 type ProfileSheetProps = {
   user: Viewer;
   onClose: () => void;
   onLogout: () => void;
   onToast: (msg: string) => void;
-};
-
-type ProfileForm = {
-  nickname: string;
-  gender: string;
-  campusRole: string;
-  department: string;
-  bio: string;
-  preferredSports: Sport[];
 };
 
 export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetProps) {
@@ -133,103 +120,14 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
         {loading ? (
           <div className="profile-loading">프로필 불러오는 중...</div>
         ) : editing ? (
-          <>
-            <div className="sheet-header">
-              <div>
-                <p className="section-kicker">EDIT PROFILE</p>
-                <h2 id="profile-title">프로필 수정</h2>
-              </div>
-              <button className="close-button" onClick={() => setEditing(false)}>×</button>
-            </div>
-            <form onSubmit={handleSubmit} className="profile-form">
-              <label>
-                닉네임
-                <input
-                  required
-                  maxLength={20}
-                  value={profileForm.nickname}
-                  placeholder="캠퍼스에서 불릴 이름"
-                  onChange={(e) => setProfileForm((c) => ({ ...c, nickname: e.target.value }))}
-                />
-              </label>
-              <label>
-                성별
-                <select
-                  required
-                  value={profileForm.gender}
-                  onChange={(e) => setProfileForm((c) => ({ ...c, gender: e.target.value }))}
-                >
-                  <option value="" disabled>성별 선택</option>
-                  {GENDERS.map((item) => (
-                    <option key={item} value={item}>{item}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                직위
-                <select
-                  required
-                  value={profileForm.campusRole}
-                  onChange={(e) =>
-                    setProfileForm((c) => ({ ...c, campusRole: e.target.value }))
-                  }
-                >
-                  <option value="" disabled>직위 선택</option>
-                  {CAMPUS_ROLES.map((item) => (
-                    <option key={item} value={item}>{item}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                학과
-                <select
-                  required
-                  value={profileForm.department}
-                  onChange={(e) => setProfileForm((c) => ({ ...c, department: e.target.value }))}
-                >
-                  <option value="" disabled>학과 선택</option>
-                  {DEPARTMENTS.filter((dept) => dept !== "선택 안함").map((dept) => (
-                    <option key={dept} value={dept}>{dept}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                한줄 소개
-                <input
-                  maxLength={100}
-                  value={profileForm.bio}
-                  placeholder="나를 한 줄로 소개해 보세요"
-                  onChange={(e) => setProfileForm((c) => ({ ...c, bio: e.target.value }))}
-                />
-              </label>
-              <fieldset>
-                <legend>선호 종목 (복수 선택 가능)</legend>
-                <div className="choice-grid">
-                  {SPORTS.filter((s): s is Sport => s !== "전체").map((sport) => (
-                    <button
-                      type="button"
-                      key={sport}
-                      className={profileForm.preferredSports.includes(sport) ? "active" : ""}
-                      onClick={() =>
-                        setProfileForm((c) => ({
-                          ...c,
-                          preferredSports: c.preferredSports.includes(sport)
-                            ? c.preferredSports.filter((s) => s !== sport)
-                            : [...c.preferredSports, sport],
-                        }))
-                      }
-                    >
-                      {SPORT_META[sport].icon} {sport}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-              {error && <div className="form-error">{error}</div>}
-              <button className="primary-button" disabled={submitting}>
-                {submitting ? "저장 중..." : "프로필 저장"}
-              </button>
-            </form>
-          </>
+          <ProfileEditForm
+            value={profileForm}
+            error={error}
+            submitting={submitting}
+            onCancel={() => setEditing(false)}
+            onChange={setProfileForm}
+            onSubmit={handleSubmit}
+          />
         ) : (
           <>
             <div className="profile-avatar">

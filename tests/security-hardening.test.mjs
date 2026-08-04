@@ -111,6 +111,7 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     auth,
     schema,
     loginSheet,
+    loginStepForms,
     profileSheet,
     profileStyles,
     profileRoute,
@@ -120,6 +121,7 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     read("app/auth.ts"),
     read("db/schema.ts"),
     read("app/components/login-sheet.tsx"),
+    read("app/components/login-step-forms.tsx"),
     read("app/components/profile-sheet.tsx"),
     read("app/styles/profiles.css"),
     read("app/api/profile/route.ts"),
@@ -138,9 +140,9 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     /onboardingCompleted: integer\("onboarding_completed"\)/,
   );
   assert.match(loginSheet, /type LoginStep = "email" \| "code" \| "profile"/);
-  assert.match(loginSheet, /GENDERS/);
-  assert.match(loginSheet, /CAMPUS_ROLES/);
-  assert.match(loginSheet, /DEPARTMENTS/);
+  assert.match(loginStepForms, /GENDERS/);
+  assert.match(loginStepForms, /CAMPUS_ROLES/);
+  assert.match(loginStepForms, /DEPARTMENTS/);
   assert.match(profileSheet, /profile-position-badge/);
   assert.match(profileStyles, /\.profile-position-badge/);
   assert.match(publicProfileRoute, /campusRole/);

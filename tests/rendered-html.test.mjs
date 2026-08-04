@@ -23,9 +23,26 @@ test("uses the finished 같이해U product shell", async () => {
 });
 
 test("keeps large UI and style concerns in focused modules", async () => {
-  const [home, ratingSheet, ratingCard, layout, baseStyles, ratingStyles] =
+  const [
+    home,
+    homeActivities,
+    loginSheet,
+    loginStepForms,
+    profileSheet,
+    profileEditForm,
+    ratingSheet,
+    ratingCard,
+    layout,
+    baseStyles,
+    ratingStyles,
+  ] =
     await Promise.all([
       readFile(new URL("app/home-client.tsx", root), "utf8"),
+      readFile(new URL("app/hooks/use-home-activities.ts", root), "utf8"),
+      readFile(new URL("app/components/login-sheet.tsx", root), "utf8"),
+      readFile(new URL("app/components/login-step-forms.tsx", root), "utf8"),
+      readFile(new URL("app/components/profile-sheet.tsx", root), "utf8"),
+      readFile(new URL("app/components/profile-edit-form.tsx", root), "utf8"),
       readFile(new URL("app/components/rating-sheet.tsx", root), "utf8"),
       readFile(new URL("app/components/rating-participant-card.tsx", root), "utf8"),
       readFile(new URL("app/layout.tsx", root), "utf8"),
@@ -33,7 +50,15 @@ test("keeps large UI and style concerns in focused modules", async () => {
       readFile(new URL("app/styles/ratings.css", root), "utf8"),
     ]);
 
-  assert.ok(home.split("\n").length < 400);
+  assert.ok(home.split("\n").length < 330);
+  assert.match(home, /useHomeActivities/);
+  assert.match(homeActivities, /visibleActivities/);
+  assert.ok(loginSheet.split("\n").length < 250);
+  assert.match(loginSheet, /ProfileSetupForm/);
+  assert.match(loginStepForms, /CAMPUS_ROLES/);
+  assert.ok(profileSheet.split("\n").length < 230);
+  assert.match(profileSheet, /ProfileEditForm/);
+  assert.match(profileEditForm, /preferredSports/);
   assert.ok(ratingSheet.split("\n").length < 250);
   assert.match(ratingSheet, /RatingParticipantCard/);
   assert.match(ratingCard, /ATTENDANCE_OPTIONS/);

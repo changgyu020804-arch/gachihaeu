@@ -1,12 +1,12 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Viewer } from "../activity-data";
 import {
-  CAMPUS_ROLES,
-  DEPARTMENTS,
-  GENDERS,
-  Viewer,
-} from "../activity-data";
+  EmailLoginForm,
+  ProfileSetupForm,
+  VerificationCodeForm,
+} from "./login-step-forms";
 import { getErrorMessage } from "./utils";
 
 type LoginSheetProps = {
@@ -176,139 +176,45 @@ export function LoginSheet({
         </div>
 
         {step === "email" && (
-          <form onSubmit={handleSendCode}>
-            <p className="login-description">
-              처음 한 번만 학교 이메일을 인증하면<br />
-              다음부터는 로그인 상태가 유지돼요.
-            </p>
-            <label>
-              학교 이메일
-              <input
-                required
-                type="email"
-                placeholder="example@uos.ac.kr"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoFocus
-              />
-            </label>
-            {error && <div className="form-error">{error}</div>}
-            <button className="primary-button" disabled={loading}>
-              {loading ? "전송 중..." : "인증코드 받기"}
-            </button>
-          </form>
+          <EmailLoginForm
+            email={email}
+            error={error}
+            loading={loading}
+            onEmailChange={setEmail}
+            onSubmit={handleSendCode}
+          />
         )}
 
         {step === "code" && (
-          <form onSubmit={handleVerifyCode}>
-            <p className="login-description">
-              <strong>{email}</strong>으로<br />
-              6자리 인증코드를 보냈어요.
-            </p>
-            <label>
-              인증코드
-              <input
-                required
-                type="text"
-                inputMode="numeric"
-                pattern="\d{6}"
-                maxLength={6}
-                placeholder="인증번호 6자리"
-                value={code}
-                onChange={(event) =>
-                  setCode(event.target.value.replace(/\D/g, ""))
-                }
-                autoFocus
-                className="code-input"
-              />
-            </label>
-            {error && <div className="form-error">{error}</div>}
-            <button
-              className="primary-button"
-              disabled={loading || code.length !== 6}
-            >
-              {loading ? "확인 중..." : "이메일 인증"}
-            </button>
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => {
-                setStep("email");
-                setCode("");
-                setError("");
-              }}
-            >
-              다른 이메일로 시도
-            </button>
-          </form>
+          <VerificationCodeForm
+            email={email}
+            code={code}
+            error={error}
+            loading={loading}
+            onCodeChange={setCode}
+            onSubmit={handleVerifyCode}
+            onBack={() => {
+              setStep("email");
+              setCode("");
+              setError("");
+            }}
+          />
         )}
 
         {step === "profile" && (
-          <form className="onboarding-form" onSubmit={handleCreateProfile}>
-            <p className="login-description">
-              학교 인증이 완료됐어요. 같이 운동할 친구들에게 보여줄
-              기본 정보를 정해 주세요.
-            </p>
-            <label>
-              닉네임
-              <input
-                required
-                maxLength={20}
-                value={nickname}
-                placeholder="캠퍼스에서 불릴 이름"
-                onChange={(event) => setNickname(event.target.value)}
-                autoFocus
-              />
-            </label>
-            <label>
-              성별
-              <select
-                required
-                value={gender}
-                onChange={(event) => setGender(event.target.value)}
-              >
-                <option value="" disabled>성별 선택</option>
-                {GENDERS.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              직위
-              <select
-                required
-                value={campusRole}
-                onChange={(event) => setCampusRole(event.target.value)}
-              >
-                <option value="" disabled>직위 선택</option>
-                {CAMPUS_ROLES.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              학과
-              <select
-                required
-                value={department}
-                onChange={(event) => setDepartment(event.target.value)}
-              >
-                <option value="" disabled>학과 선택</option>
-                {DEPARTMENTS.filter((item) => item !== "선택 안함").map(
-                  (item) => (
-                    <option key={item} value={item}>{item}</option>
-                  ),
-                )}
-              </select>
-            </label>
-            <p className="profile-privacy-note">
-              성별 정보는 현재 내 프로필에서만 확인할 수 있어요.
-            </p>
-            {error && <div className="form-error">{error}</div>}
-            <button className="primary-button" disabled={loading}>
-              {loading ? "저장 중..." : "프로필 만들고 시작하기"}
-            </button>
-          </form>
+          <ProfileSetupForm
+            nickname={nickname}
+            gender={gender}
+            campusRole={campusRole}
+            department={department}
+            error={error}
+            loading={loading}
+            onNicknameChange={setNickname}
+            onGenderChange={setGender}
+            onCampusRoleChange={setCampusRole}
+            onDepartmentChange={setDepartment}
+            onSubmit={handleCreateProfile}
+          />
         )}
       </section>
     </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, Sport, SportFilter, Viewer } from "./activity-data";
-import { createDateFilters, getErrorMessage, localDateKey } from "./components/utils";
+import { useEffect, useState } from "react";
+import { Activity, Sport, Viewer } from "./activity-data";
+import { getErrorMessage } from "./components/utils";
 import { LoginSheet } from "./components/login-sheet";
 import { CreateSheet } from "./components/create-sheet";
 import { DetailSheet } from "./components/detail-sheet";
@@ -21,29 +21,49 @@ import {
   ActiveNav,
   BottomNavigation,
 } from "./components/bottom-navigation";
+import { useHomeActivities } from "./hooks/use-home-activities";
+import { useNotificationCount } from "./hooks/use-notification-count";
+import { useSessionUser } from "./hooks/use-session-user";
 
 type HomeClientProps = {
   initialUser: Viewer | null;
 };
 
 export function HomeClient({ initialUser }: HomeClientProps) {
-  const [currentUser, setCurrentUser] = useState<Viewer | null>(initialUser);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [selectedSport, setSelectedSport] = useState<SportFilter>("전체");
-  const [selectedDate, setSelectedDate] = useState<string>("전체");
+  const {
+    currentUser,
+    setCurrentUser,
+    showLogin,
+    setShowLogin,
+    requireLogin,
+  } = useSessionUser(initialUser);
+  const {
+    activities,
+    visibleActivities,
+    stats,
+    dateFilters,
+    selectedSport,
+    setSelectedSport,
+    selectedDate,
+    setSelectedDate,
+    myOnly,
+    setMyOnly,
+    loading,
+    error,
+    setError,
+    loadActivities,
+  } = useHomeActivities();
+  const {
+    unreadCount: unreadNotifications,
+    setUnreadCount: setUnreadNotifications,
+  } = useNotificationCount(currentUser);
+
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [showLogin, setShowLogin] = useState(
-    Boolean(initialUser && !initialUser.onboardingComplete),
-  );
   const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [myOnly, setMyOnly] = useState(false);
   const [activeNav, setActiveNav] = useState<ActiveNav>("home");
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
   const [toast, setToast] = useState("");
 
   // 평가 시스템
@@ -53,123 +73,13 @@ export function HomeClient({ initialUser }: HomeClientProps) {
   // 모임 만들기 기본값
   const [createDefaults, setCreateDefaults] = useState<{ sport?: Sport; venue?: string }>({});
 
-  const dateFilters = useMemo(() => createDateFilters(), []);
-
-  // --- 데이터 로딩 ---
-
-  const loadActivities = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await fetch("/api/activities", { cache: "no-store" });
-      const payload = (await response.json()) as { activities?: Activity[]; error?: string };
-      if (!response.ok) throw new Error(payload.error || "모임을 불러오지 못했어요.");
-      setActivities(payload.activities ?? []);
-    } catch (loadError) {
-      setError(getErrorMessage(loadError));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const initialLoadTimer = window.setTimeout(() => {
-      void loadActivities();
-    }, 0);
-    return () => window.clearTimeout(initialLoadTimer);
-  }, [loadActivities]);
-
-  useEffect(() => {
-    if (!initialUser) return;
-    const refreshTimer = window.setTimeout(async () => {
-      try {
-        const response = await fetch("/api/auth/me", { cache: "no-store" });
-        if (!response.ok) return;
-        const payload = (await response.json()) as { user?: Viewer | null };
-        if (!payload.user) {
-          setCurrentUser(null);
-          return;
-        }
-        setCurrentUser(payload.user);
-        if (!payload.user.onboardingComplete) setShowLogin(true);
-      } catch {
-        // 세션 갱신 실패는 다음 방문 때 다시 시도한다.
-      }
-    }, 0);
-    return () => window.clearTimeout(refreshTimer);
-  }, [initialUser]);
-
-  const loadNotificationCount = useCallback(async () => {
-    if (!currentUser) {
-      setUnreadNotifications(0);
-      return;
-    }
-    try {
-      const response = await fetch("/api/notifications", { cache: "no-store" });
-      if (!response.ok) return;
-      const payload = (await response.json()) as { unreadCount?: number };
-      setUnreadNotifications(payload.unreadCount ?? 0);
-    } catch {
-      // 알림 실패가 모임 탐색을 방해하지 않도록 조용히 재시도한다.
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    const initialLoadTimer = window.setTimeout(() => {
-      void loadNotificationCount();
-    }, 0);
-    if (!currentUser) {
-      return () => window.clearTimeout(initialLoadTimer);
-    }
-    const timer = window.setInterval(() => void loadNotificationCount(), 60_000);
-    const refreshOnVisible = () => {
-      if (document.visibilityState === "visible") void loadNotificationCount();
-    };
-    document.addEventListener("visibilitychange", refreshOnVisible);
-    return () => {
-      window.clearTimeout(initialLoadTimer);
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", refreshOnVisible);
-    };
-  }, [currentUser, loadNotificationCount]);
-
   useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(""), 2800);
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  // --- 필터링 ---
-
-  const visibleActivities = useMemo(
-    () =>
-      activities.filter((activity) => {
-        const sportMatches = selectedSport === "전체" || activity.sport === selectedSport;
-        const dateMatches = selectedDate === "전체" || localDateKey(new Date(activity.startsAt)) === selectedDate;
-        const ownerMatches = !myOnly || activity.isOwner || activity.isJoined || activity.isWaitlisted;
-        return sportMatches && dateMatches && ownerMatches;
-      }),
-    [activities, myOnly, selectedDate, selectedSport],
-  );
-
-  const stats = useMemo(
-    () => ({
-      open: activities.length,
-      people: activities.reduce((sum, a) => sum + a.participantCount, 0),
-      remaining: activities.reduce((sum, a) => sum + Math.max(0, a.capacity - a.participantCount), 0),
-    }),
-    [activities],
-  );
-
   // --- 액션 핸들러 ---
-
-  const requireLogin = (callback: () => void) => {
-    if (!currentUser || !currentUser.onboardingComplete) {
-      setShowLogin(true);
-      return;
-    }
-    callback();
-  };
 
   const openCreate = (sport?: Sport, venue?: string) => {
     requireLogin(() => {
