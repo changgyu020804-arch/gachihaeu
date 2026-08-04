@@ -10,15 +10,23 @@ import {
 import { getErrorMessage } from "./utils";
 import { ReputationPanel } from "./reputation-panel";
 import { ProfileEditForm, ProfileForm } from "./profile-edit-form";
+import { AccountDeletionPanel } from "./account-deletion-panel";
 
 type ProfileSheetProps = {
   user: Viewer;
   onClose: () => void;
   onLogout: () => void;
+  onAccountDeleted: () => void;
   onToast: (msg: string) => void;
 };
 
-export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetProps) {
+export function ProfileSheet({
+  user,
+  onClose,
+  onLogout,
+  onAccountDeleted,
+  onToast,
+}: ProfileSheetProps) {
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [recentRatings, setRecentRatings] = useState<RecentRating[]>([]);
   const [profileForm, setProfileForm] = useState<ProfileForm>({
@@ -30,6 +38,7 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
     preferredSports: [],
   });
   const [editing, setEditing] = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -108,7 +117,7 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
   };
 
   return (
-    <div className="sheet-backdrop" onClick={() => { onClose(); setEditing(false); }}>
+    <div className="sheet-backdrop" onClick={() => { onClose(); setEditing(false); setShowDeleteAccount(false); }}>
       <section
         className="sheet profile-sheet"
         role="dialog"
@@ -119,6 +128,12 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
         <div className="sheet-handle" />
         {loading ? (
           <div className="profile-loading">프로필 불러오는 중...</div>
+        ) : showDeleteAccount ? (
+          <AccountDeletionPanel
+            email={user.email}
+            onCancel={() => setShowDeleteAccount(false)}
+            onDeleted={onAccountDeleted}
+          />
         ) : editing ? (
           <ProfileEditForm
             value={profileForm}
@@ -189,6 +204,12 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
               프로필 수정
             </button>
             <button className="signout-link" onClick={onLogout}>로그아웃</button>
+            <button
+              className="delete-account-link"
+              onClick={() => setShowDeleteAccount(true)}
+            >
+              회원 탈퇴
+            </button>
           </>
         )}
       </section>

@@ -136,6 +136,16 @@ export function HomeClient({ initialUser }: HomeClientProps) {
     setToast("로그아웃 되었어요.");
   };
 
+  const handleAccountDeleted = () => {
+    setCurrentUser(null);
+    setShowProfile(false);
+    setShowNotifications(false);
+    setUnreadNotifications(0);
+    setActiveNav("home");
+    setMyOnly(false);
+    setToast("회원 탈퇴가 완료됐어요.");
+  };
+
   const handleOpenNotification = (notification: AppNotification) => {
     setShowNotifications(false);
     if (!notification.activityId) return;
@@ -264,6 +274,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
             user={currentUser}
             onClose={() => setShowProfile(false)}
             onLogout={() => void handleLogout()}
+            onAccountDeleted={handleAccountDeleted}
             onToast={setToast}
           />
         )}

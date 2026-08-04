@@ -128,6 +128,14 @@ async function hashRateIdentifier(value: string) {
   return bytesToHex(new Uint8Array(signature));
 }
 
+export function getRateLimitKeyHash(action: string, identifier: string) {
+  return hashRateIdentifier(`${action}:${identifier.toLowerCase()}`);
+}
+
+export function getSecuritySubjectHash(subject: string) {
+  return hashRateIdentifier(`subject:${subject.toLowerCase()}`);
+}
+
 type RateLimitOptions = {
   action: string;
   identifiers: string[];

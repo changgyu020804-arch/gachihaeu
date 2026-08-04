@@ -148,3 +148,39 @@ test("keeps login while requiring one-time profile onboarding", async () => {
   assert.match(publicProfileRoute, /campusRole/);
   assert.match(profileRoute, /onboarding_completed = 1/);
 });
+
+test("deletes the account and all directly associated user data", async () => {
+  const [route, deletion, profileSheet, deletionPanel] = await Promise.all([
+    read("app/api/account/route.ts"),
+    read("app/account-deletion.ts"),
+    read("app/components/profile-sheet.tsx"),
+    read("app/components/account-deletion-panel.tsx"),
+  ]);
+
+  assert.match(route, /export async function DELETE/);
+  assert.match(route, /rejectCrossOriginMutation/);
+  assert.match(route, /getSessionUser/);
+  assert.match(route, /deleteSessionCookies/);
+  assert.match(route, /payload\.confirmation !== DELETE_CONFIRMATION/);
+
+  for (const table of [
+    "notifications",
+    "reports",
+    "ratings",
+    "participants",
+    "waitlist",
+    "user_reports",
+    "user_blocks",
+    "auth_codes",
+    "user_profiles",
+    "activities",
+    "security_audit_logs",
+    "security_rate_limits",
+  ]) {
+    assert.match(deletion, new RegExp(`DELETE FROM ${table}`));
+  }
+
+  assert.match(profileSheet, /AccountDeletionPanel/);
+  assert.match(deletionPanel, /계정 영구 삭제/);
+  assert.match(deletionPanel, /confirmation !== "탈퇴"/);
+});

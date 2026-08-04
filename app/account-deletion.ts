@@ -1,0 +1,125 @@
+const USER_RATE_LIMIT_ACTIONS = [
+  "activity-cancel",
+  "activity-create",
+  "activity-join",
+  "activity-leave",
+  "activity-notice",
+  "activity-report",
+  "attendance-update",
+  "notifications-read",
+  "profile-update",
+  "rating-comment-report",
+  "rating-create",
+  "user-block",
+  "user-report",
+  "user-unblock",
+  "waitlist-join",
+  "waitlist-leave",
+] as const;
+
+const EMAIL_RATE_LIMIT_ACTIONS = [
+  "auth-code-send-email",
+  "auth-code-verify-email",
+] as const;
+
+export function getAccountRateLimitIdentifiers(email: string) {
+  return [
+    ...USER_RATE_LIMIT_ACTIONS.map((action) => ({
+      action,
+      identifier: `user:${email}`,
+    })),
+    ...EMAIL_RATE_LIMIT_ACTIONS.map((action) => ({
+      action,
+      identifier: `email:${email}`,
+    })),
+  ];
+}
+
+export async function deleteAccountData(
+  db: D1Database,
+  email: string,
+  securitySubjectHash: string,
+  rateLimitKeyHashes: string[],
+) {
+  const statements = [
+    db
+      .prepare(
+        `DELETE FROM notifications
+         WHERE user_email = ?
+            OR instr(dedupe_key, ?) > 0
+            OR activity_id IN (
+              SELECT id FROM activities WHERE creator_email = ?
+            )`,
+      )
+      .bind(email, email, email),
+    db
+      .prepare(
+        `DELETE FROM reports
+         WHERE reporter_email = ?
+            OR activity_id IN (
+              SELECT id FROM activities WHERE creator_email = ?
+            )`,
+      )
+      .bind(email, email),
+    db
+      .prepare(
+        `DELETE FROM ratings
+         WHERE rater_email = ?
+            OR rated_email = ?
+            OR activity_id IN (
+              SELECT id FROM activities WHERE creator_email = ?
+            )`,
+      )
+      .bind(email, email, email),
+    db
+      .prepare(
+        `DELETE FROM participants
+         WHERE user_email = ?
+            OR activity_id IN (
+              SELECT id FROM activities WHERE creator_email = ?
+            )`,
+      )
+      .bind(email, email),
+    db
+      .prepare(
+        `DELETE FROM waitlist
+         WHERE user_email = ?
+            OR activity_id IN (
+              SELECT id FROM activities WHERE creator_email = ?
+            )`,
+      )
+      .bind(email, email),
+    db
+      .prepare(
+        `DELETE FROM user_reports
+         WHERE reporter_email = ? OR reported_email = ?`,
+      )
+      .bind(email, email),
+    db
+      .prepare(
+        `DELETE FROM user_blocks
+         WHERE blocker_email = ? OR blocked_email = ?`,
+      )
+      .bind(email, email),
+    db.prepare(`DELETE FROM auth_codes WHERE email = ?`).bind(email),
+    db.prepare(`DELETE FROM user_profiles WHERE email = ?`).bind(email),
+    db.prepare(`DELETE FROM activities WHERE creator_email = ?`).bind(email),
+    db
+      .prepare(`DELETE FROM security_audit_logs WHERE subject_hash = ?`)
+      .bind(securitySubjectHash),
+  ];
+
+  if (rateLimitKeyHashes.length > 0) {
+    const placeholders = rateLimitKeyHashes.map(() => "?").join(", ");
+    statements.push(
+      db
+        .prepare(
+          `DELETE FROM security_rate_limits
+           WHERE key_hash IN (${placeholders})`,
+        )
+        .bind(...rateLimitKeyHashes),
+    );
+  }
+
+  await db.batch(statements);
+}
