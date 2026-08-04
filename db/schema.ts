@@ -53,9 +53,11 @@ export const userProfiles = sqliteTable(
   {
     email: text("email").primaryKey(),
     nickname: text("nickname").notNull().default(""),
+    gender: text("gender").notNull().default(""),
     department: text("department").notNull().default(""),
     bio: text("bio").notNull().default(""),
     preferredSports: text("preferred_sports").notNull().default(""),
+    onboardingCompleted: integer("onboarding_completed").notNull().default(0),
     updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
 );

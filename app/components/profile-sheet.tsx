@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
   DEPARTMENTS,
+  GENDERS,
   RecentRating,
   SPORT_META,
   SPORTS,
@@ -22,6 +23,7 @@ type ProfileSheetProps = {
 
 type ProfileForm = {
   nickname: string;
+  gender: string;
   department: string;
   bio: string;
   preferredSports: Sport[];
@@ -32,6 +34,7 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
   const [recentRatings, setRecentRatings] = useState<RecentRating[]>([]);
   const [profileForm, setProfileForm] = useState<ProfileForm>({
     nickname: "",
+    gender: "",
     department: "",
     bio: "",
     preferredSports: [],
@@ -54,6 +57,7 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
         setRecentRatings(payload.recentRatings ?? []);
         setProfileForm({
           nickname: payload.profile.nickname,
+          gender: payload.profile.gender,
           department: payload.profile.department,
           bio: payload.profile.bio,
           preferredSports: payload.profile.preferredSports,
@@ -145,13 +149,28 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
                 />
               </label>
               <label>
+                성별
+                <select
+                  required
+                  value={profileForm.gender}
+                  onChange={(e) => setProfileForm((c) => ({ ...c, gender: e.target.value }))}
+                >
+                  <option value="" disabled>성별 선택</option>
+                  {GENDERS.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
                 학과
                 <select
+                  required
                   value={profileForm.department}
                   onChange={(e) => setProfileForm((c) => ({ ...c, department: e.target.value }))}
                 >
-                  {DEPARTMENTS.map((dept) => (
-                    <option key={dept} value={dept === "선택 안함" ? "" : dept}>{dept}</option>
+                  <option value="" disabled>학과 선택</option>
+                  {DEPARTMENTS.filter((dept) => dept !== "선택 안함").map((dept) => (
+                    <option key={dept} value={dept}>{dept}</option>
                   ))}
                 </select>
               </label>
@@ -198,7 +217,13 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
               {(profileData?.nickname || user.fullName || user.email).slice(0, 1).toUpperCase()}
             </div>
             <h2 id="profile-title">{profileData?.nickname || user.fullName || user.displayName}</h2>
-            {profileData?.department && <p className="profile-department">{profileData.department}</p>}
+            {(profileData?.department || profileData?.gender) && (
+              <p className="profile-department">
+                {[profileData.department, profileData.gender]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
             {profileData?.bio && <p className="profile-bio">{profileData.bio}</p>}
             {profileData?.preferredSports && profileData.preferredSports.length > 0 && (
               <div className="profile-sports">

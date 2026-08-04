@@ -88,6 +88,7 @@ export type Viewer = {
   displayName: string;
   email: string;
   fullName: string | null;
+  onboardingComplete: boolean;
 };
 
 // --- 프로필 & 평가 시스템 타입 ---
@@ -133,9 +134,13 @@ export const DEPARTMENTS = [
 
 export type Department = (typeof DEPARTMENTS)[number];
 
+export const GENDERS = ["남성", "여성", "기타", "응답하지 않음"] as const;
+export type Gender = (typeof GENDERS)[number];
+
 export type UserProfile = {
   email: string;
   nickname: string;
+  gender: string;
   department: string;
   bio: string;
   preferredSports: Sport[];

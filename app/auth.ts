@@ -5,11 +5,15 @@ export type SessionUser = {
   email: string;
   displayName: string;
   fullName: string | null;
+  authenticatedAt: number;
+  expiresAt: number;
 };
 
 const SESSION_COOKIE = "__Host-gachihaeu_session";
 const LEGACY_SESSION_COOKIE = "gachihaeu_session";
-const JWT_EXPIRY_SECONDS = 24 * 60 * 60;
+const SESSION_IDLE_SECONDS = 30 * 24 * 60 * 60;
+const SESSION_ABSOLUTE_SECONDS = 180 * 24 * 60 * 60;
+const SESSION_REFRESH_THRESHOLD_SECONDS = 23 * 24 * 60 * 60;
 const JWT_ISSUER = "gachihaeu";
 const JWT_AUDIENCE = "gachihaeu-web";
 
@@ -57,12 +61,18 @@ export async function createJWT(
 ): Promise<string> {
   const header = { alg: "HS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
+  const authenticatedAt =
+    typeof payload.auth_time === "number" ? payload.auth_time : now;
   const fullPayload = {
     ...payload,
+    auth_time: authenticatedAt,
     iss: JWT_ISSUER,
     aud: JWT_AUDIENCE,
     iat: now,
-    exp: now + JWT_EXPIRY_SECONDS,
+    exp: Math.min(
+      now + SESSION_IDLE_SECONDS,
+      authenticatedAt + SESSION_ABSOLUTE_SECONDS,
+    ),
     jti: crypto.randomUUID(),
   };
 
@@ -113,15 +123,21 @@ export async function verifyJWT(
       new TextDecoder().decode(base64UrlDecode(payloadEncoded)),
     ) as Record<string, unknown>;
     const now = Math.floor(Date.now() / 1000);
+    const authenticatedAt =
+      typeof payload.auth_time === "number" ? payload.auth_time : payload.iat;
 
     if (
       payload.iss !== JWT_ISSUER ||
       payload.aud !== JWT_AUDIENCE ||
       typeof payload.iat !== "number" ||
       typeof payload.exp !== "number" ||
+      typeof authenticatedAt !== "number" ||
       payload.iat > now + 60 ||
+      authenticatedAt > payload.iat + 60 ||
       payload.exp <= now ||
-      payload.exp - payload.iat > JWT_EXPIRY_SECONDS ||
+      payload.exp - payload.iat > SESSION_IDLE_SECONDS ||
+      payload.exp > authenticatedAt + SESSION_ABSOLUTE_SECONDS ||
+      now - authenticatedAt > SESSION_ABSOLUTE_SECONDS ||
       typeof payload.email !== "string" ||
       !isValidUosEmail(payload.email)
     ) {
@@ -152,11 +168,35 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       typeof payload.fullName === "string" && payload.fullName
         ? payload.fullName
         : null,
+    authenticatedAt:
+      typeof payload.auth_time === "number"
+        ? payload.auth_time
+        : (payload.iat as number),
+    expiresAt: payload.exp as number,
   };
 }
 
-export function createSessionCookie(token: string): string {
-  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Secure; Max-Age=${JWT_EXPIRY_SECONDS}`;
+export function createSessionCookie(
+  token: string,
+  authenticatedAt = Math.floor(Date.now() / 1000),
+): string {
+  const now = Math.floor(Date.now() / 1000);
+  const maximumAge = Math.max(
+    0,
+    Math.min(
+      SESSION_IDLE_SECONDS,
+      authenticatedAt + SESSION_ABSOLUTE_SECONDS - now,
+    ),
+  );
+  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Secure; Max-Age=${maximumAge}`;
+}
+
+export function shouldRefreshSession(user: SessionUser) {
+  const now = Math.floor(Date.now() / 1000);
+  return (
+    user.expiresAt - now <= SESSION_REFRESH_THRESHOLD_SECONDS &&
+    now - user.authenticatedAt < SESSION_ABSOLUTE_SECONDS
+  );
 }
 
 export function deleteSessionCookies(): string[] {

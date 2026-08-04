@@ -148,9 +148,18 @@ export async function POST(request: Request) {
       .run();
 
     const profile = await db
-      .prepare(`SELECT nickname FROM user_profiles WHERE email = ?`)
+      .prepare(
+        `SELECT nickname, gender, department, onboarding_completed
+         FROM user_profiles
+         WHERE email = ?`,
+      )
       .bind(email)
-      .first<{ nickname: string }>();
+      .first<{
+        nickname: string;
+        gender: string;
+        department: string;
+        onboarding_completed: number;
+      }>();
     const displayName = profile?.nickname || email.split("@")[0];
 
     const token = await createJWT({
@@ -168,7 +177,14 @@ export async function POST(request: Request) {
     headers.append("Set-Cookie", deleteSessionCookies()[1]);
 
     return new Response(
-      JSON.stringify({ success: true, email, displayName }),
+      JSON.stringify({
+        success: true,
+        email,
+        displayName,
+        gender: profile?.gender || "",
+        department: profile?.department || "",
+        onboardingComplete: Boolean(profile?.onboarding_completed),
+      }),
       { status: 200, headers },
     );
   } catch (error) {

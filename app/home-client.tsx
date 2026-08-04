@@ -34,7 +34,9 @@ export function HomeClient({ initialUser }: HomeClientProps) {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
+  const [showLogin, setShowLogin] = useState(
+    Boolean(initialUser && !initialUser.onboardingComplete),
+  );
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [myOnly, setMyOnly] = useState(false);
@@ -76,6 +78,26 @@ export function HomeClient({ initialUser }: HomeClientProps) {
     }, 0);
     return () => window.clearTimeout(initialLoadTimer);
   }, [loadActivities]);
+
+  useEffect(() => {
+    if (!initialUser) return;
+    const refreshTimer = window.setTimeout(async () => {
+      try {
+        const response = await fetch("/api/auth/me", { cache: "no-store" });
+        if (!response.ok) return;
+        const payload = (await response.json()) as { user?: Viewer | null };
+        if (!payload.user) {
+          setCurrentUser(null);
+          return;
+        }
+        setCurrentUser(payload.user);
+        if (!payload.user.onboardingComplete) setShowLogin(true);
+      } catch {
+        // 세션 갱신 실패는 다음 방문 때 다시 시도한다.
+      }
+    }, 0);
+    return () => window.clearTimeout(refreshTimer);
+  }, [initialUser]);
 
   const loadNotificationCount = useCallback(async () => {
     if (!currentUser) {
@@ -142,7 +164,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
   // --- 액션 핸들러 ---
 
   const requireLogin = (callback: () => void) => {
-    if (!currentUser) {
+    if (!currentUser || !currentUser.onboardingComplete) {
       setShowLogin(true);
       return;
     }
@@ -162,7 +184,10 @@ export function HomeClient({ initialUser }: HomeClientProps) {
     successMessage: string,
     body?: unknown,
   ) => {
-    if (!currentUser) { setShowLogin(true); return; }
+    if (!currentUser || !currentUser.onboardingComplete) {
+      setShowLogin(true);
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
@@ -221,7 +246,9 @@ export function HomeClient({ initialUser }: HomeClientProps) {
           user={currentUser}
           unreadCount={unreadNotifications}
           onOpenNotifications={() => setShowNotifications(true)}
-          onOpenProfile={() => setShowProfile(true)}
+          onOpenProfile={() =>
+            requireLogin(() => setShowProfile(true))
+          }
           onOpenLogin={() => setShowLogin(true)}
         />
         <HomeHero
@@ -278,7 +305,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
           }
           onProfile={() => {
             setActiveNav("profile");
-            if (currentUser) {
+            if (currentUser?.onboardingComplete) {
               setShowProfile(true);
             } else {
               setShowLogin(true);
@@ -289,10 +316,12 @@ export function HomeClient({ initialUser }: HomeClientProps) {
         {/* 모달들 */}
         {showLogin && (
           <LoginSheet
+            existingUser={currentUser}
             onClose={() => setShowLogin(false)}
             onLogin={(user) => {
               setCurrentUser(user);
               setShowLogin(false);
+              setShowProfile(true);
               setToast("로그인 되었어요! 환영합니다.");
               void loadActivities();
             }}
@@ -320,7 +349,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
           />
         )}
 
-        {showProfile && currentUser && (
+        {showProfile && currentUser?.onboardingComplete && (
           <ProfileSheet
             user={currentUser}
             onClose={() => setShowProfile(false)}

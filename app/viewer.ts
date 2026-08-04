@@ -1,0 +1,37 @@
+import { Viewer } from "./activity-data";
+import { getSessionUser, SessionUser } from "./auth";
+import { ensureSchema, getD1 } from "../db";
+
+type ProfileIdentity = {
+  nickname: string;
+  onboarding_completed: number;
+};
+
+export async function getViewerForSession(
+  session: SessionUser,
+): Promise<Viewer> {
+  await ensureSchema();
+  const profile = await getD1()
+    .prepare(
+      `SELECT nickname, onboarding_completed
+       FROM user_profiles
+       WHERE email = ?`,
+    )
+    .bind(session.email)
+    .first<ProfileIdentity>();
+  const displayName =
+    profile?.nickname || session.displayName || session.email.split("@")[0];
+
+  return {
+    email: session.email,
+    displayName,
+    fullName: displayName,
+    onboardingComplete: Boolean(profile?.onboarding_completed),
+  };
+}
+
+export async function getCurrentViewer(): Promise<Viewer | null> {
+  const session = await getSessionUser();
+  if (!session) return null;
+  return getViewerForSession(session);
+}

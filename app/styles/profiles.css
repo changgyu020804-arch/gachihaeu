@@ -265,7 +265,9 @@
   margin-bottom: 16px;
 }
 
-.login-sheet input {
+.login-sheet input,
+.login-sheet select {
+  width: 100%;
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -274,8 +276,16 @@
   transition: border-color 0.15s;
 }
 
-.login-sheet input:focus {
+.login-sheet input:focus,
+.login-sheet select:focus {
   border-color: var(--blue);
+}
+
+.profile-privacy-note {
+  margin: -5px 0 16px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .login-sheet .code-input {

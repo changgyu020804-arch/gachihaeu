@@ -81,9 +81,11 @@ export async function ensureSchema() {
           `CREATE TABLE IF NOT EXISTS user_profiles (
             email TEXT PRIMARY KEY NOT NULL,
             nickname TEXT DEFAULT '' NOT NULL,
+            gender TEXT DEFAULT '' NOT NULL,
             department TEXT DEFAULT '' NOT NULL,
             bio TEXT DEFAULT '' NOT NULL,
             preferred_sports TEXT DEFAULT '' NOT NULL,
+            onboarding_completed INTEGER DEFAULT 0 NOT NULL,
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
           )`,
         ),
@@ -268,6 +270,26 @@ export async function ensureSchema() {
         await db
           .prepare(
             "ALTER TABLE participants ADD COLUMN attendance_status TEXT DEFAULT 'pending' NOT NULL",
+          )
+          .run();
+      }
+
+      const profileColumns = await db
+        .prepare("PRAGMA table_info(user_profiles)")
+        .all<{ name: string }>();
+      if (!profileColumns.results.some((column: { name: string }) => column.name === "gender")) {
+        await db
+          .prepare("ALTER TABLE user_profiles ADD COLUMN gender TEXT DEFAULT '' NOT NULL")
+          .run();
+      }
+      if (
+        !profileColumns.results.some(
+          (column: { name: string }) => column.name === "onboarding_completed",
+        )
+      ) {
+        await db
+          .prepare(
+            "ALTER TABLE user_profiles ADD COLUMN onboarding_completed INTEGER DEFAULT 0 NOT NULL",
           )
           .run();
       }

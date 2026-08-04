@@ -105,3 +105,27 @@ test("rate limits authentication and abuse-prone mutations", async () => {
     assert.match(source, /enforceRateLimit/);
   }
 });
+
+test("keeps login while requiring one-time profile onboarding", async () => {
+  const [auth, schema, loginSheet, profileRoute, meRoute] = await Promise.all([
+    read("app/auth.ts"),
+    read("db/schema.ts"),
+    read("app/components/login-sheet.tsx"),
+    read("app/api/profile/route.ts"),
+    read("app/api/auth/me/route.ts"),
+  ]);
+
+  assert.match(auth, /SESSION_IDLE_SECONDS = 30 \* 24 \* 60 \* 60/);
+  assert.match(auth, /SESSION_ABSOLUTE_SECONDS = 180 \* 24 \* 60 \* 60/);
+  assert.match(auth, /auth_time/);
+  assert.match(meRoute, /shouldRefreshSession/);
+  assert.match(schema, /gender: text\("gender"\)/);
+  assert.match(
+    schema,
+    /onboardingCompleted: integer\("onboarding_completed"\)/,
+  );
+  assert.match(loginSheet, /type LoginStep = "email" \| "code" \| "profile"/);
+  assert.match(loginSheet, /GENDERS/);
+  assert.match(loginSheet, /DEPARTMENTS/);
+  assert.match(profileRoute, /onboarding_completed = 1/);
+});
