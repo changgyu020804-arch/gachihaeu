@@ -114,6 +114,29 @@ textarea:focus-visible {
   box-sizing: content-box;
 }
 
+.install-app-button {
+  display: flex;
+  height: 34px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 9px;
+  color: var(--blue);
+  background: #eaf2ff;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.install-app-button span {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.install-app-button b {
+  font-size: 10px;
+  font-weight: 850;
+}
+
 .avatar-button,
 .login-button {
   display: grid;

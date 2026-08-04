@@ -6,7 +6,7 @@ import { Viewer } from "../activity-data";
 export function useSessionUser(initialUser: Viewer | null) {
   const [currentUser, setCurrentUser] = useState<Viewer | null>(initialUser);
   const [showLogin, setShowLogin] = useState(
-    Boolean(initialUser && !initialUser.onboardingComplete),
+    !initialUser || !initialUser.onboardingComplete,
   );
 
   useEffect(() => {

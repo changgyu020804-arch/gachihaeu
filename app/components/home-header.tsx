@@ -1,4 +1,5 @@
 import { Viewer } from "../activity-data";
+import { PwaInstallButton } from "./pwa-install-button";
 
 type HomeHeaderProps = {
   user: Viewer | null;
@@ -22,6 +23,7 @@ export function HomeHeader({
       </div>
       <div className="top-actions">
         <span className="campus-badge"><i />서울시립대 베타</span>
+        <PwaInstallButton />
         {user ? (
           <>
             <button

@@ -33,10 +33,14 @@ function cleanString(value: unknown, maxLength: number) {
 }
 
 export async function GET() {
+  const user = await getSessionUser();
+  if (!user) {
+    return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
+  }
+
   try {
     await ensureSchema();
-    const user = await getSessionUser();
-    const email = user?.email ?? "";
+    const email = user.email;
     const now = new Date().toISOString();
     const upcomingCutoff = new Date(Date.now() - 30 * 60_000).toISOString();
     const historyCutoff = new Date(Date.now() - 30 * 24 * 60 * 60_000).toISOString();

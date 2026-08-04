@@ -52,7 +52,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
     error,
     setError,
     loadActivities,
-  } = useHomeActivities();
+  } = useHomeActivities(Boolean(currentUser?.onboardingComplete));
   const {
     unreadCount: unreadNotifications,
     setUnreadCount: setUnreadNotifications,

@@ -8,7 +8,7 @@ import {
   localDateKey,
 } from "../components/utils";
 
-export function useHomeActivities() {
+export function useHomeActivities(canLoad: boolean) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedSport, setSelectedSport] = useState<SportFilter>("전체");
   const [selectedDate, setSelectedDate] = useState("전체");
@@ -17,6 +17,12 @@ export function useHomeActivities() {
   const [error, setError] = useState("");
 
   const loadActivities = useCallback(async (signal?: AbortSignal) => {
+    if (!canLoad) {
+      setActivities([]);
+      setLoading(false);
+      setError("");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -40,7 +46,7 @@ export function useHomeActivities() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canLoad]);
 
   useEffect(() => {
     const controller = new AbortController();

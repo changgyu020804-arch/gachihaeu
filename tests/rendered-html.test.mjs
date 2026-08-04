@@ -146,3 +146,43 @@ test("supports activity operations and trustworthy profiles", async () => {
   assert.match(migration, /CREATE TABLE `user_blocks`/);
   assert.match(migration, /cancellation_deadline_minutes/);
 });
+
+test("protects school data and ships an installable PWA", async () => {
+  const [
+    layout,
+    manifestSource,
+    serviceWorker,
+    pwaButton,
+    activityRoute,
+    homeActivities,
+    worker,
+  ] = await Promise.all([
+    readFile(new URL("app/layout.tsx", root), "utf8"),
+    readFile(new URL("public/manifest.webmanifest", root), "utf8"),
+    readFile(new URL("public/service-worker.js", root), "utf8"),
+    readFile(new URL("app/components/pwa-install-button.tsx", root), "utf8"),
+    readFile(new URL("app/api/activities/route.ts", root), "utf8"),
+    readFile(new URL("app/hooks/use-home-activities.ts", root), "utf8"),
+    readFile(new URL("worker/index.ts", root), "utf8"),
+  ]);
+  const manifest = JSON.parse(manifestSource);
+
+  assert.equal(manifest.display, "standalone");
+  assert.equal(manifest.start_url, "/");
+  assert.ok(manifest.icons.some((icon) => icon.sizes === "192x192"));
+  assert.ok(manifest.icons.some((icon) => icon.sizes === "512x512"));
+  assert.match(layout, /manifest: "\/manifest\.webmanifest"/);
+  assert.match(pwaButton, /serviceWorker\.register/);
+  assert.match(serviceWorker, /url\.pathname\.startsWith\("\/api\/"\)/);
+  assert.match(serviceWorker, /offline\.html/);
+  assert.match(activityRoute, /if \(!user\)/);
+  assert.match(activityRoute, /status: 401/);
+  assert.match(homeActivities, /canLoad/);
+  assert.match(worker, /Service-Worker-Allowed/);
+  await Promise.all([
+    access(new URL("public/icons/icon-192.png", root)),
+    access(new URL("public/icons/icon-512.png", root)),
+    access(new URL("public/icons/apple-touch-icon.png", root)),
+    access(new URL("public/offline.html", root)),
+  ]);
+});

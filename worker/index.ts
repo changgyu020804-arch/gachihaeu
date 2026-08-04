@@ -81,6 +81,10 @@ function addSecurityHeaders(request: Request, response: Response) {
   );
 
   const pathname = new URL(request.url).pathname;
+  if (pathname === "/service-worker.js") {
+    secured.headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    secured.headers.set("Service-Worker-Allowed", "/");
+  }
   if (
     pathname.startsWith("/api/auth/") ||
     secured.headers.has("Set-Cookie")
