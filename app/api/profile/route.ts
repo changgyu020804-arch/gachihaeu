@@ -20,7 +20,14 @@ import {
   getRecentRatings,
   getReputation,
 } from "../../reputation";
+import {
+  cleanNickname,
+  isNicknameConflictError,
+  normalizeNickname,
+} from "../../nickname";
 import { ensureSchema, getD1 } from "../../../db";
+
+const NICKNAME_TAKEN_MESSAGE = "이미 사용 중인 닉네임이에요.";
 
 function cleanString(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
@@ -88,7 +95,8 @@ export async function PUT(request: Request) {
   try {
     await ensureSchema();
     const payload = await readJsonObject(request, 8_192);
-    const nickname = cleanString(payload.nickname, 20);
+    const nickname = cleanNickname(payload.nickname);
+    const nicknameNormalized = normalizeNickname(nickname);
     const gender = cleanString(payload.gender, 20);
     const campusRole = cleanString(payload.campusRole, 20);
     const department = cleanString(payload.department, 30);
@@ -142,32 +150,61 @@ export async function PUT(request: Request) {
     });
     if (rateError) return rateError;
 
-    await db
+    const duplicate = await db
       .prepare(
-        `INSERT INTO user_profiles (
-           email, nickname, gender, campus_role, department, bio,
-           preferred_sports, onboarding_completed, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
-         ON CONFLICT(email) DO UPDATE SET
-           nickname = excluded.nickname,
-           gender = excluded.gender,
-           campus_role = excluded.campus_role,
-           department = excluded.department,
-           bio = excluded.bio,
-           preferred_sports = excluded.preferred_sports,
-           onboarding_completed = 1,
-           updated_at = excluded.updated_at`,
+        `SELECT email
+         FROM user_profiles
+         WHERE nickname_normalized = ? AND email <> ?
+         LIMIT 1`,
       )
-      .bind(
-        user.email,
-        nickname,
-        gender,
-        campusRole,
-        department,
-        bio,
-        preferredSports,
-      )
-      .run();
+      .bind(nicknameNormalized, user.email)
+      .first<{ email: string }>();
+
+    if (duplicate) {
+      return Response.json(
+        { error: NICKNAME_TAKEN_MESSAGE },
+        { status: 409 },
+      );
+    }
+
+    try {
+      await db
+        .prepare(
+          `INSERT INTO user_profiles (
+             email, nickname, nickname_normalized, gender, campus_role,
+             department, bio, preferred_sports, onboarding_completed, updated_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
+           ON CONFLICT(email) DO UPDATE SET
+             nickname = excluded.nickname,
+             nickname_normalized = excluded.nickname_normalized,
+             gender = excluded.gender,
+             campus_role = excluded.campus_role,
+             department = excluded.department,
+             bio = excluded.bio,
+             preferred_sports = excluded.preferred_sports,
+             onboarding_completed = 1,
+             updated_at = excluded.updated_at`,
+        )
+        .bind(
+          user.email,
+          nickname,
+          nicknameNormalized,
+          gender,
+          campusRole,
+          department,
+          bio,
+          preferredSports,
+        )
+        .run();
+    } catch (error) {
+      if (isNicknameConflictError(error)) {
+        return Response.json(
+          { error: NICKNAME_TAKEN_MESSAGE },
+          { status: 409 },
+        );
+      }
+      throw error;
+    }
 
     const token = await createJWT({
       email: user.email,

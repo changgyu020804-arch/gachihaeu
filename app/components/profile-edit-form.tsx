@@ -9,6 +9,7 @@ import {
   SPORTS,
   Sport,
 } from "../activity-data";
+import { NicknameField } from "./nickname-field";
 
 export type ProfileForm = {
   nickname: string;
@@ -46,21 +47,13 @@ export function ProfileEditForm({
         <button className="close-button" onClick={onCancel}>×</button>
       </div>
       <form onSubmit={onSubmit} className="profile-form">
-        <label>
-          닉네임
-          <input
-            required
-            maxLength={20}
-            value={value.nickname}
-            placeholder="캠퍼스에서 불릴 이름"
-            onChange={(event) =>
-              onChange((current) => ({
-                ...current,
-                nickname: event.target.value,
-              }))
-            }
-          />
-        </label>
+        <NicknameField
+          value={value.nickname}
+          disabled={submitting}
+          onChange={(nickname) =>
+            onChange((current) => ({ ...current, nickname }))
+          }
+        />
         <label>
           성별
           <select

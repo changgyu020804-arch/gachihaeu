@@ -109,6 +109,22 @@
   margin-bottom: 10px;
 }
 
+.nickname-status {
+  min-height: 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.nickname-status.available {
+  color: #18864b;
+}
+
+.nickname-status.unavailable,
+.nickname-status.error {
+  color: var(--danger);
+}
+
 /* Rating Summary on Profile */
 
 .rating-summary {

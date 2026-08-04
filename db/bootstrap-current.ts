@@ -62,6 +62,7 @@ export async function createCurrentSchema(db: D1Database) {
       `CREATE TABLE IF NOT EXISTS user_profiles (
         email TEXT PRIMARY KEY NOT NULL,
         nickname TEXT DEFAULT '' NOT NULL,
+        nickname_normalized TEXT,
         gender TEXT DEFAULT '' NOT NULL,
         campus_role TEXT DEFAULT '' NOT NULL,
         department TEXT DEFAULT '' NOT NULL,

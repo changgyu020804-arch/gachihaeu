@@ -53,6 +53,7 @@ export const userProfiles = sqliteTable(
   {
     email: text("email").primaryKey(),
     nickname: text("nickname").notNull().default(""),
+    nicknameNormalized: text("nickname_normalized"),
     gender: text("gender").notNull().default(""),
     campusRole: text("campus_role").notNull().default(""),
     department: text("department").notNull().default(""),
@@ -61,6 +62,11 @@ export const userProfiles = sqliteTable(
     onboardingCompleted: integer("onboarding_completed").notNull().default(0),
     updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
+  (table) => [
+    uniqueIndex("user_profiles_nickname_normalized_idx").on(
+      table.nicknameNormalized,
+    ),
+  ],
 );
 
 export const ratings = sqliteTable(

@@ -2,6 +2,7 @@
 
 import { FormEvent } from "react";
 import { CAMPUS_ROLES, DEPARTMENTS, GENDERS } from "../activity-data";
+import { NicknameField } from "./nickname-field";
 
 type SubmitHandler = (event: FormEvent<HTMLFormElement>) => void;
 
@@ -134,17 +135,12 @@ export function ProfileSetupForm({
         학교 인증이 완료됐어요. 같이 운동할 친구들에게 보여줄 기본 정보를
         정해 주세요.
       </p>
-      <label>
-        닉네임
-        <input
-          required
-          maxLength={20}
-          value={nickname}
-          placeholder="캠퍼스에서 불릴 이름"
-          onChange={(event) => onNicknameChange(event.target.value)}
-          autoFocus
-        />
-      </label>
+      <NicknameField
+        value={nickname}
+        onChange={onNicknameChange}
+        disabled={loading}
+        autoFocus
+      />
       <label>
         성별
         <select

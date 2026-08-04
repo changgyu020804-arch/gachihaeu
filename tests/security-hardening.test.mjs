@@ -149,6 +149,37 @@ test("keeps login while requiring one-time profile onboarding", async () => {
   assert.match(profileRoute, /onboarding_completed = 1/);
 });
 
+test("prevents duplicate nicknames in the UI, API, and database", async () => {
+  const [
+    schema,
+    migration,
+    profileRoute,
+    nicknameRoute,
+    nicknameField,
+    nicknameHelpers,
+  ] = await Promise.all([
+    read("db/schema.ts"),
+    read("drizzle/0010_fine_brother_voodoo.sql"),
+    read("app/api/profile/route.ts"),
+    read("app/api/profile/nickname/route.ts"),
+    read("app/components/nickname-field.tsx"),
+    read("app/nickname.ts"),
+  ]);
+
+  assert.match(schema, /nicknameNormalized: text\("nickname_normalized"\)/);
+  assert.match(schema, /uniqueIndex\("user_profiles_nickname_normalized_idx"\)/);
+  assert.match(migration, /UPDATE `user_profiles`/);
+  assert.match(migration, /CREATE UNIQUE INDEX `user_profiles_nickname_normalized_idx`/);
+  assert.match(profileRoute, /status: 409/);
+  assert.match(profileRoute, /isNicknameConflictError/);
+  assert.match(nicknameRoute, /getSessionUser/);
+  assert.match(nicknameRoute, /email <> \?/);
+  assert.match(nicknameField, /api\/profile\/nickname/);
+  assert.match(nicknameField, /AbortController/);
+  assert.match(nicknameHelpers, /normalize\("NFKC"\)/);
+  assert.match(nicknameHelpers, /toLocaleLowerCase\("ko-KR"\)/);
+});
+
 test("deletes the account and all directly associated user data", async () => {
   const [route, deletion, profileSheet, deletionPanel] = await Promise.all([
     read("app/api/account/route.ts"),
