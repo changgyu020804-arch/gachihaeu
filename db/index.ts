@@ -82,6 +82,7 @@ export async function ensureSchema() {
             email TEXT PRIMARY KEY NOT NULL,
             nickname TEXT DEFAULT '' NOT NULL,
             gender TEXT DEFAULT '' NOT NULL,
+            campus_role TEXT DEFAULT '' NOT NULL,
             department TEXT DEFAULT '' NOT NULL,
             bio TEXT DEFAULT '' NOT NULL,
             preferred_sports TEXT DEFAULT '' NOT NULL,
@@ -280,6 +281,17 @@ export async function ensureSchema() {
       if (!profileColumns.results.some((column: { name: string }) => column.name === "gender")) {
         await db
           .prepare("ALTER TABLE user_profiles ADD COLUMN gender TEXT DEFAULT '' NOT NULL")
+          .run();
+      }
+      if (
+        !profileColumns.results.some(
+          (column: { name: string }) => column.name === "campus_role",
+        )
+      ) {
+        await db
+          .prepare(
+            "ALTER TABLE user_profiles ADD COLUMN campus_role TEXT DEFAULT '' NOT NULL",
+          )
           .run();
       }
       if (

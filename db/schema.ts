@@ -54,6 +54,7 @@ export const userProfiles = sqliteTable(
     email: text("email").primaryKey(),
     nickname: text("nickname").notNull().default(""),
     gender: text("gender").notNull().default(""),
+    campusRole: text("campus_role").notNull().default(""),
     department: text("department").notNull().default(""),
     bio: text("bio").notNull().default(""),
     preferredSports: text("preferred_sports").notNull().default(""),

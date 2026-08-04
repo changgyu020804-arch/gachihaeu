@@ -1,7 +1,12 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { DEPARTMENTS, GENDERS, Viewer } from "../activity-data";
+import {
+  CAMPUS_ROLES,
+  DEPARTMENTS,
+  GENDERS,
+  Viewer,
+} from "../activity-data";
 import { getErrorMessage } from "./utils";
 
 type LoginSheetProps = {
@@ -30,6 +35,7 @@ export function LoginSheet({
     needsProfile ? existingUser?.displayName ?? "" : "",
   );
   const [gender, setGender] = useState("");
+  const [campusRole, setCampusRole] = useState("");
   const [department, setDepartment] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -71,6 +77,7 @@ export function LoginSheet({
         email?: string;
         displayName?: string;
         gender?: string;
+        campusRole?: string;
         department?: string;
         onboardingComplete?: boolean;
       };
@@ -92,6 +99,7 @@ export function LoginSheet({
       setPendingUser(verifiedUser);
       setNickname(verifiedUser.displayName);
       setGender(payload.gender || "");
+      setCampusRole(payload.campusRole || "");
       setDepartment(payload.department || "");
       setStep("profile");
     } catch (verifyError) {
@@ -113,6 +121,7 @@ export function LoginSheet({
         body: JSON.stringify({
           nickname,
           gender,
+          campusRole,
           department,
           bio: "",
           preferredSports: [],
@@ -260,6 +269,19 @@ export function LoginSheet({
               >
                 <option value="" disabled>성별 선택</option>
                 {GENDERS.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              직위
+              <select
+                required
+                value={campusRole}
+                onChange={(event) => setCampusRole(event.target.value)}
+              >
+                <option value="" disabled>직위 선택</option>
+                {CAMPUS_ROLES.map((item) => (
                   <option key={item} value={item}>{item}</option>
                 ))}
               </select>

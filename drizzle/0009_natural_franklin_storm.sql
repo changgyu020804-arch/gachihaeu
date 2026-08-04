@@ -1,0 +1,1 @@
+ALTER TABLE `user_profiles` ADD `campus_role` text DEFAULT '' NOT NULL;

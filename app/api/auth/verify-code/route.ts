@@ -149,7 +149,7 @@ export async function POST(request: Request) {
 
     const profile = await db
       .prepare(
-        `SELECT nickname, gender, department, onboarding_completed
+        `SELECT nickname, gender, campus_role, department, onboarding_completed
          FROM user_profiles
          WHERE email = ?`,
       )
@@ -157,6 +157,7 @@ export async function POST(request: Request) {
       .first<{
         nickname: string;
         gender: string;
+        campus_role: string;
         department: string;
         onboarding_completed: number;
       }>();
@@ -182,6 +183,7 @@ export async function POST(request: Request) {
         email,
         displayName,
         gender: profile?.gender || "",
+        campusRole: profile?.campus_role || "",
         department: profile?.department || "",
         onboardingComplete: Boolean(profile?.onboarding_completed),
       }),

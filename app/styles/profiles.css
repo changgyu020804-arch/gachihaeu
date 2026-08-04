@@ -33,6 +33,30 @@
   font-size: 18px;
 }
 
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.profile-name-row h2 {
+  margin: 0;
+}
+
+.profile-position-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+  background: #eef4ff;
+  border: 1px solid #d8e5ff;
+  border-radius: 999px;
+}
+
 .user-profile-header .dept {
   font-size: 13px;
   color: var(--muted);

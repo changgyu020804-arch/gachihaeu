@@ -128,7 +128,14 @@ export function UserProfileSheet({
               <div className="user-profile-avatar">
                 {profile.nickname.slice(0, 1).toUpperCase()}
               </div>
-              <h2>{profile.nickname}</h2>
+              <div className="profile-name-row">
+                <h2>{profile.nickname}</h2>
+                {profile.campusRole && (
+                  <span className="profile-position-badge">
+                    {profile.campusRole}
+                  </span>
+                )}
+              </div>
               {profile.department && <span className="dept">{profile.department}</span>}
               {profile.bio && <p className="profile-bio">{profile.bio}</p>}
               {profile.preferredSports.length > 0 && (

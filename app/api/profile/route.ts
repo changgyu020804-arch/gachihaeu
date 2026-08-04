@@ -3,7 +3,12 @@ import {
   createSessionCookie,
   getSessionUser,
 } from "../../auth";
-import { DEPARTMENTS, GENDERS, SPORTS } from "../../activity-data";
+import {
+  CAMPUS_ROLES,
+  DEPARTMENTS,
+  GENDERS,
+  SPORTS,
+} from "../../activity-data";
 import {
   enforceRateLimit,
   getClientIp,
@@ -31,7 +36,7 @@ export async function GET() {
   const db = getD1();
   const profile = await db
     .prepare(
-      `SELECT email, nickname, gender, department, bio,
+      `SELECT email, nickname, gender, campus_role, department, bio,
               preferred_sports, onboarding_completed
        FROM user_profiles
        WHERE email = ?`,
@@ -41,6 +46,7 @@ export async function GET() {
       email: string;
       nickname: string;
       gender: string;
+      campus_role: string;
       department: string;
       bio: string;
       preferred_sports: string;
@@ -61,6 +67,7 @@ export async function GET() {
       email: user.email,
       nickname: profile?.nickname || user.fullName || user.email.split("@")[0],
       gender: profile?.gender || "",
+      campusRole: profile?.campus_role || "",
       department: profile?.department || "",
       bio: profile?.bio || "",
       preferredSports,
@@ -83,6 +90,7 @@ export async function PUT(request: Request) {
     const payload = await readJsonObject(request, 8_192);
     const nickname = cleanString(payload.nickname, 20);
     const gender = cleanString(payload.gender, 20);
+    const campusRole = cleanString(payload.campusRole, 20);
     const department = cleanString(payload.department, 30);
     const bio = cleanString(payload.bio, 100);
     const preferredSportsRaw = Array.isArray(payload.preferredSports)
@@ -98,6 +106,12 @@ export async function PUT(request: Request) {
     if (!GENDERS.includes(gender as never)) {
       return Response.json(
         { error: "성별 항목을 선택해 주세요." },
+        { status: 400 },
+      );
+    }
+    if (!CAMPUS_ROLES.includes(campusRole as never)) {
+      return Response.json(
+        { error: "직위를 선택해 주세요." },
         { status: 400 },
       );
     }
@@ -131,12 +145,13 @@ export async function PUT(request: Request) {
     await db
       .prepare(
         `INSERT INTO user_profiles (
-           email, nickname, gender, department, bio,
+           email, nickname, gender, campus_role, department, bio,
            preferred_sports, onboarding_completed, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'))
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
          ON CONFLICT(email) DO UPDATE SET
            nickname = excluded.nickname,
            gender = excluded.gender,
+           campus_role = excluded.campus_role,
            department = excluded.department,
            bio = excluded.bio,
            preferred_sports = excluded.preferred_sports,
@@ -147,6 +162,7 @@ export async function PUT(request: Request) {
         user.email,
         nickname,
         gender,
+        campusRole,
         department,
         bio,
         preferredSports,

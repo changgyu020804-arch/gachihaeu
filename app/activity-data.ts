@@ -137,10 +137,14 @@ export type Department = (typeof DEPARTMENTS)[number];
 export const GENDERS = ["남성", "여성"] as const;
 export type Gender = (typeof GENDERS)[number];
 
+export const CAMPUS_ROLES = ["학생", "교수", "교직원"] as const;
+export type CampusRole = (typeof CAMPUS_ROLES)[number];
+
 export type UserProfile = {
   email: string;
   nickname: string;
   gender: string;
+  campusRole: string;
   department: string;
   bio: string;
   preferredSports: Sport[];

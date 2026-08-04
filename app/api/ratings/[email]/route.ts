@@ -23,13 +23,14 @@ export async function GET(
   const db = getD1();
   const profile = await db
     .prepare(
-      `SELECT nickname, department, bio, preferred_sports
+      `SELECT nickname, campus_role, department, bio, preferred_sports
        FROM user_profiles
        WHERE email = ?`,
     )
     .bind(decodedEmail)
     .first<{
       nickname: string;
+      campus_role: string;
       department: string;
       bio: string;
       preferred_sports: string;
@@ -60,6 +61,7 @@ export async function GET(
     profile: {
       email: decodedEmail,
       nickname: profile?.nickname || decodedEmail.split("@")[0],
+      campusRole: profile?.campus_role || "",
       department: profile?.department || "",
       bio: profile?.bio || "",
       preferredSports: profile?.preferred_sports

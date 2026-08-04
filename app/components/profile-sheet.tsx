@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
+  CAMPUS_ROLES,
   DEPARTMENTS,
   GENDERS,
   RecentRating,
@@ -24,6 +25,7 @@ type ProfileSheetProps = {
 type ProfileForm = {
   nickname: string;
   gender: string;
+  campusRole: string;
   department: string;
   bio: string;
   preferredSports: Sport[];
@@ -35,6 +37,7 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
   const [profileForm, setProfileForm] = useState<ProfileForm>({
     nickname: "",
     gender: "",
+    campusRole: "",
     department: "",
     bio: "",
     preferredSports: [],
@@ -58,6 +61,7 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
         setProfileForm({
           nickname: payload.profile.nickname,
           gender: payload.profile.gender,
+          campusRole: payload.profile.campusRole,
           department: payload.profile.department,
           bio: payload.profile.bio,
           preferredSports: payload.profile.preferredSports,
@@ -162,6 +166,21 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
                 </select>
               </label>
               <label>
+                직위
+                <select
+                  required
+                  value={profileForm.campusRole}
+                  onChange={(e) =>
+                    setProfileForm((c) => ({ ...c, campusRole: e.target.value }))
+                  }
+                >
+                  <option value="" disabled>직위 선택</option>
+                  {CAMPUS_ROLES.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
                 학과
                 <select
                   required
@@ -216,7 +235,16 @@ export function ProfileSheet({ user, onClose, onLogout, onToast }: ProfileSheetP
             <div className="profile-avatar">
               {(profileData?.nickname || user.fullName || user.email).slice(0, 1).toUpperCase()}
             </div>
-            <h2 id="profile-title">{profileData?.nickname || user.fullName || user.displayName}</h2>
+            <div className="profile-name-row">
+              <h2 id="profile-title">
+                {profileData?.nickname || user.fullName || user.displayName}
+              </h2>
+              {profileData?.campusRole && (
+                <span className="profile-position-badge">
+                  {profileData.campusRole}
+                </span>
+              )}
+            </div>
             {(profileData?.department || profileData?.gender) && (
               <p className="profile-department">
                 {[profileData.department, profileData.gender]

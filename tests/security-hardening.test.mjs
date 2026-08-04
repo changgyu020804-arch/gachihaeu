@@ -107,11 +107,23 @@ test("rate limits authentication and abuse-prone mutations", async () => {
 });
 
 test("keeps login while requiring one-time profile onboarding", async () => {
-  const [auth, schema, loginSheet, profileRoute, meRoute] = await Promise.all([
+  const [
+    auth,
+    schema,
+    loginSheet,
+    profileSheet,
+    profileStyles,
+    profileRoute,
+    publicProfileRoute,
+    meRoute,
+  ] = await Promise.all([
     read("app/auth.ts"),
     read("db/schema.ts"),
     read("app/components/login-sheet.tsx"),
+    read("app/components/profile-sheet.tsx"),
+    read("app/styles/profiles.css"),
     read("app/api/profile/route.ts"),
+    read("app/api/ratings/[email]/route.ts"),
     read("app/api/auth/me/route.ts"),
   ]);
 
@@ -120,12 +132,17 @@ test("keeps login while requiring one-time profile onboarding", async () => {
   assert.match(auth, /auth_time/);
   assert.match(meRoute, /shouldRefreshSession/);
   assert.match(schema, /gender: text\("gender"\)/);
+  assert.match(schema, /campusRole: text\("campus_role"\)/);
   assert.match(
     schema,
     /onboardingCompleted: integer\("onboarding_completed"\)/,
   );
   assert.match(loginSheet, /type LoginStep = "email" \| "code" \| "profile"/);
   assert.match(loginSheet, /GENDERS/);
+  assert.match(loginSheet, /CAMPUS_ROLES/);
   assert.match(loginSheet, /DEPARTMENTS/);
+  assert.match(profileSheet, /profile-position-badge/);
+  assert.match(profileStyles, /\.profile-position-badge/);
+  assert.match(publicProfileRoute, /campusRole/);
   assert.match(profileRoute, /onboarding_completed = 1/);
 });
