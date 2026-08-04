@@ -134,7 +134,7 @@ export const DEPARTMENTS = [
 
 export type Department = (typeof DEPARTMENTS)[number];
 
-export const GENDERS = ["남성", "여성", "기타", "응답하지 않음"] as const;
+export const GENDERS = ["남성", "여성"] as const;
 export type Gender = (typeof GENDERS)[number];
 
 export type UserProfile = {
