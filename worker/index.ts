@@ -20,6 +20,18 @@ interface ExecutionContext {
 }
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const LEGACY_HOSTNAME = "gachihaeu-uos.changgyu020804.chatgpt.site";
+const CANONICAL_HOSTNAME = "www.gachihaeu.com";
+
+function redirectLegacyHostname(request: Request) {
+  const url = new URL(request.url);
+  if (url.hostname !== LEGACY_HOSTNAME) return null;
+
+  url.protocol = "https:";
+  url.hostname = CANONICAL_HOSTNAME;
+  url.port = "";
+  return Response.redirect(url.toString(), 308);
+}
 
 function crossOriginMutationResponse(request: Request) {
   if (
@@ -104,6 +116,9 @@ function addSecurityHeaders(request: Request, response: Response) {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const legacyRedirect = redirectLegacyHostname(request);
+    if (legacyRedirect) return addSecurityHeaders(request, legacyRedirect);
+
     const originError = crossOriginMutationResponse(request);
     if (originError) return addSecurityHeaders(request, originError);
 

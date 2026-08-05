@@ -61,6 +61,9 @@ test("stores one-time codes as hashes and tracks failures", async () => {
 test("protects unsafe API requests and adds browser security headers", async () => {
   const worker = await read("worker/index.ts");
 
+  assert.match(worker, /gachihaeu-uos\.changgyu020804\.chatgpt\.site/);
+  assert.match(worker, /www\.gachihaeu\.com/);
+  assert.match(worker, /Response\.redirect\(url\.toString\(\), 308\)/);
   assert.match(worker, /MUTATION_METHODS/);
   assert.match(worker, /sec-fetch-site/);
   assert.match(worker, /X-Content-Type-Options/);
