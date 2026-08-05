@@ -2,9 +2,9 @@ import type { RoleVerificationStatus } from "./role-verification-types";
 
 export const SPORTS = [
   "전체",
-  "축구",
-  "농구",
   "러닝",
+  "농구",
+  "축구",
   "테니스",
   "배드민턴",
   "헬스",

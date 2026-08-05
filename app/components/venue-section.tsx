@@ -1,16 +1,21 @@
 import { Activity, Sport } from "../activity-data";
 
-const VENUE_ITEMS: Array<{ venue: string; sport: Sport; icon: string }> = [
-  { venue: "대운동장 잔디구장", sport: "축구", icon: "⚽" },
-  { venue: "대운동장 러닝트랙", sport: "러닝", icon: "🏃" },
-  { venue: "실외농구장", sport: "농구", icon: "🏀" },
+const VENUE_ITEMS: Array<{
+  venue: string;
+  sport: Sport;
+  icon: string;
+  featured?: boolean;
+}> = [
+  { venue: "대운동장 러닝트랙", sport: "러닝", icon: "🏃", featured: true },
+  { venue: "실외농구장", sport: "농구", icon: "🏀", featured: true },
+  { venue: "100주년 기념관 농구장", sport: "농구", icon: "🏀", featured: true },
   { venue: "족구장", sport: "족구", icon: "🦶" },
   { venue: "실외테니스장", sport: "테니스", icon: "🎾" },
   { venue: "실내테니스장", sport: "테니스", icon: "🎾" },
   { venue: "스쿼시장", sport: "스쿼시", icon: "🎾" },
-  { venue: "100주년 기념관 농구장", sport: "농구", icon: "🏀" },
   { venue: "100주년 기념관 배드민턴장", sport: "배드민턴", icon: "🏸" },
   { venue: "100주년 기념관 배구장", sport: "배구", icon: "🏐" },
+  { venue: "대운동장 잔디구장", sport: "축구", icon: "⚽" },
 ];
 
 type VenueSectionProps = {
@@ -33,11 +38,13 @@ export function VenueSection({ activities, onSelectSport }: VenueSectionProps) {
           return (
             <button
               key={item.venue}
-              className={`venue-list-item ${count > 0 ? "has-activities" : ""}`}
+              className={`venue-list-item ${count > 0 ? "has-activities" : ""} ${item.featured ? "featured" : ""}`}
+              data-sport={item.sport}
               onClick={() => onSelectSport(item.sport)}
             >
               <span className="venue-list-icon">{item.icon}</span>
               <span className="venue-list-name">{item.venue}</span>
+              {item.featured && <span className="venue-list-badge">추천</span>}
               <span className={`venue-list-count ${count > 0 ? "active" : ""}`}>
                 {count}개 모임
               </span>

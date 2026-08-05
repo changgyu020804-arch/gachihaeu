@@ -46,6 +46,25 @@
   border-color: rgba(23, 107, 255, 0.2);
 }
 
+.venue-list-item.featured {
+  padding-block: 16px;
+  background: linear-gradient(135deg, #f5f8ff 0%, #fff 78%);
+  border-color: #cbd9ff;
+  box-shadow: 0 4px 14px rgba(23, 107, 255, 0.08);
+}
+
+.venue-list-item.featured[data-sport="농구"] {
+  background: linear-gradient(135deg, #fff7f0 0%, #fff 78%);
+  border-color: #ffd8bc;
+  box-shadow: 0 4px 14px rgba(228, 108, 23, 0.08);
+}
+
+.venue-list-item.featured .venue-list-icon {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(23, 107, 255, 0.1);
+}
+
 .venue-list-icon {
   font-size: 20px;
   width: 32px;
@@ -61,6 +80,20 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--ink);
+}
+
+.venue-list-badge {
+  padding: 4px 8px;
+  color: var(--blue);
+  background: rgba(23, 107, 255, 0.1);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.venue-list-item.featured[data-sport="농구"] .venue-list-badge {
+  color: #c5530d;
+  background: rgba(228, 108, 23, 0.12);
 }
 
 .venue-list-count {
