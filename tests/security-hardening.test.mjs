@@ -307,6 +307,7 @@ test("verifies professor and staff roles with private evidence and admin review"
   assert.match(verificationRoute, /crypto\.subtle\.digest\("SHA-256"/);
   assert.match(verificationRoute, /getRoleEvidenceBucket\(\)\.put|bucket\.put/);
   assert.match(adminRoute, /requireAdmin/);
+  assert.match(adminRoute, /verification\.user_email === user\.email/);
   assert.match(adminRoute, /evidence_delete_after = datetime\('now', '\+7 days'\)/);
   assert.match(evidenceRoute, /Cache-Control": "private, no-store/);
   assert.match(verificationUi, /개인정보 처리 안내/);

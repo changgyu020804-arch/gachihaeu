@@ -70,6 +70,12 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (verification.status !== "pending") {
       throw new RequestValidationError("이미 처리된 신청이에요.", 409);
     }
+    if (verification.user_email === user.email) {
+      throw new RequestValidationError(
+        "본인의 인증 신청은 직접 승인하거나 반려할 수 없어요.",
+        403,
+      );
+    }
 
     const approved = action === "approve";
     await db.batch([
