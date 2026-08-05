@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { RoleVerificationStatus } from "../activity-data";
+import { VERIFICATION_DOCUMENT_TYPES } from "../role-verification-types";
+import type { RoleVerificationStatus } from "../role-verification-types";
 import { getErrorMessage } from "./utils";
 
 type LatestVerificationRequest = {
@@ -29,13 +30,6 @@ type RoleVerificationPanelProps = {
   onToast: (message: string) => void;
 };
 
-const DOCUMENT_TYPES = [
-  "교수증",
-  "교직원증",
-  "재직증명서",
-  "기타 재직 증빙자료",
-];
-
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
     year: "numeric",
@@ -51,7 +45,9 @@ export function RoleVerificationPanel({
   onToast,
 }: RoleVerificationPanelProps) {
   const [verification, setVerification] = useState<VerificationState | null>(null);
-  const [documentType, setDocumentType] = useState(DOCUMENT_TYPES[0]);
+  const [documentType, setDocumentType] = useState(
+    VERIFICATION_DOCUMENT_TYPES[0],
+  );
   const [evidence, setEvidence] = useState<File | null>(null);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -164,7 +160,7 @@ export function RoleVerificationPanel({
               disabled={submitting}
               onChange={(event) => setDocumentType(event.target.value)}
             >
-              {DOCUMENT_TYPES.map((item) => (
+              {VERIFICATION_DOCUMENT_TYPES.map((item) => (
                 <option key={item} value={item}>{item}</option>
               ))}
             </select>

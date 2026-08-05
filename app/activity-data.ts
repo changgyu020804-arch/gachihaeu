@@ -1,3 +1,5 @@
+import type { RoleVerificationStatus } from "./role-verification-types";
+
 export const SPORTS = [
   "전체",
   "축구",
@@ -139,12 +141,7 @@ export type Gender = (typeof GENDERS)[number];
 
 export const CAMPUS_ROLES = ["학생", "교수", "교직원"] as const;
 export type CampusRole = (typeof CAMPUS_ROLES)[number];
-export type RoleVerificationStatus =
-  | "not_required"
-  | "not_submitted"
-  | "pending"
-  | "approved"
-  | "rejected";
+export type { RoleVerificationStatus } from "./role-verification-types";
 
 export type UserProfile = {
   email: string;

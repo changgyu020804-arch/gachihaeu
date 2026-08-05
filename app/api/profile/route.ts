@@ -4,12 +4,6 @@ import {
   getSessionUser,
 } from "../../auth";
 import {
-  CAMPUS_ROLES,
-  DEPARTMENTS,
-  GENDERS,
-  SPORTS,
-} from "../../activity-data";
-import {
   enforceRateLimit,
   getClientIp,
   readJsonObject,
@@ -20,19 +14,13 @@ import {
   getRecentRatings,
   getReputation,
 } from "../../reputation";
-import {
-  cleanNickname,
-  isNicknameConflictError,
-  normalizeNickname,
-} from "../../nickname";
+import { isNicknameConflictError } from "../../nickname";
 import { ensureSchema, getD1 } from "../../../db";
 import { isAdminEmail } from "../../runtime-env";
+import { validateProfileInput } from "../../profile-input";
+import { resolveProfileRole } from "../../profile-role";
 
 const NICKNAME_TAKEN_MESSAGE = "이미 사용 중인 닉네임이에요.";
-
-function cleanString(value: unknown, maxLength: number) {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
 
 export async function GET() {
   const user = await getSessionUser();
@@ -104,52 +92,16 @@ export async function PUT(request: Request) {
   try {
     await ensureSchema();
     const payload = await readJsonObject(request, 8_192);
-    const nickname = cleanNickname(payload.nickname);
-    const nicknameNormalized = normalizeNickname(nickname);
-    const gender = cleanString(payload.gender, 20);
-    const campusRole = cleanString(payload.campusRole, 20);
-    const department = cleanString(payload.department, 30);
-    const bio = cleanString(payload.bio, 100);
-    const preferredSportsRaw = Array.isArray(payload.preferredSports)
-      ? payload.preferredSports
-      : [];
-
-    if (nickname.length < 1) {
-      return Response.json(
-        { error: "닉네임을 입력해 주세요." },
-        { status: 400 },
-      );
-    }
-    if (!GENDERS.includes(gender as never)) {
-      return Response.json(
-        { error: "성별 항목을 선택해 주세요." },
-        { status: 400 },
-      );
-    }
-    if (!CAMPUS_ROLES.includes(campusRole as never)) {
-      return Response.json(
-        { error: "직위를 선택해 주세요." },
-        { status: 400 },
-      );
-    }
-    if (
-      !department ||
-      department === "선택 안함" ||
-      !DEPARTMENTS.includes(department as never)
-    ) {
-      return Response.json(
-        { error: "학과를 선택해 주세요." },
-        { status: 400 },
-      );
-    }
-
-    const validSports = preferredSportsRaw.filter(
-      (sport): sport is string =>
-        typeof sport === "string" &&
-        SPORTS.includes(sport as never) &&
-        sport !== "전체",
-    );
-    const preferredSports = validSports.slice(0, 6).join(",");
+    const profileInput = validateProfileInput(payload);
+    const {
+      nickname,
+      nicknameNormalized,
+      gender,
+      campusRole,
+      department,
+      bio,
+      preferredSports,
+    } = profileInput;
     const db = getD1();
     const rateError = await enforceRateLimit(db, {
       action: "profile-update",
@@ -189,38 +141,11 @@ export async function PUT(request: Request) {
         role_verification_status: string;
       }>();
 
-    if (
-      currentRole?.role_verification_status === "pending" &&
-      currentRole.requested_campus_role !== campusRole
-    ) {
-      return Response.json(
-        { error: "직위 인증을 확인 중일 때는 직위를 변경할 수 없어요." },
-        { status: 409 },
-      );
-    }
-
-    let publicCampusRole = "학생";
-    let requestedCampusRole = "학생";
-    let roleVerificationStatus = "not_required";
-
-    if (campusRole !== "학생") {
-      requestedCampusRole = campusRole;
-      const keepsApprovedRole =
-        currentRole?.campus_role === campusRole &&
-        currentRole.role_verification_status === "approved";
-      const keepsExistingRequest =
-        currentRole?.requested_campus_role === campusRole &&
-        ["not_submitted", "pending", "rejected"].includes(
-          currentRole.role_verification_status,
-        );
-
-      publicCampusRole = keepsApprovedRole ? campusRole : "";
-      roleVerificationStatus = keepsApprovedRole
-        ? "approved"
-        : keepsExistingRequest
-          ? currentRole.role_verification_status
-          : "not_submitted";
-    }
+    const {
+      publicCampusRole,
+      requestedCampusRole,
+      roleVerificationStatus,
+    } = resolveProfileRole(campusRole, currentRole ?? null);
 
     try {
       await db

@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { cleanupExpiredRoleEvidence } from "../app/role-evidence-cleanup";
 
 interface Env {
   ASSETS: Fetcher;
@@ -24,36 +25,6 @@ const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const LEGACY_HOSTNAME = "gachihaeu-uos.changgyu020804.chatgpt.site";
 const CANONICAL_HOSTNAME = "www.gachihaeu.com";
 let lastEvidenceCleanupAt = 0;
-
-async function cleanupExpiredRoleEvidence(env: Env) {
-  const expired = await env.DB
-    .prepare(
-      `SELECT id, object_key
-       FROM role_verification_requests
-       WHERE evidence_deleted_at IS NULL
-         AND evidence_delete_after IS NOT NULL
-         AND datetime(evidence_delete_after) <= datetime('now')
-       LIMIT 50`,
-    )
-    .all<{ id: string; object_key: string }>();
-
-  if (expired.results.length === 0) return;
-  await env.ROLE_EVIDENCE.delete(
-    expired.results.map((item) => item.object_key),
-  );
-  await env.DB.batch(
-    expired.results.map((item) =>
-      env.DB
-        .prepare(
-          `UPDATE role_verification_requests
-           SET evidence_deleted_at = CURRENT_TIMESTAMP,
-               updated_at = CURRENT_TIMESTAMP
-           WHERE id = ?`,
-        )
-        .bind(item.id),
-    ),
-  );
-}
 
 function redirectLegacyHostname(request: Request) {
   const url = new URL(request.url);
@@ -150,7 +121,11 @@ const worker = {
     const url = new URL(request.url);
     if (Date.now() - lastEvidenceCleanupAt >= 60 * 60 * 1000) {
       lastEvidenceCleanupAt = Date.now();
-      ctx.waitUntil(cleanupExpiredRoleEvidence(env).catch(() => undefined));
+      ctx.waitUntil(
+        cleanupExpiredRoleEvidence(env.DB, env.ROLE_EVIDENCE).catch(
+          () => undefined,
+        ),
+      );
     }
     const legacyRedirect = redirectLegacyHostname(request);
     if (legacyRedirect) return addSecurityHeaders(request, legacyRedirect);

@@ -1,8 +1,9 @@
 import { getSessionUser } from "../../../auth";
 import {
-  cleanupExpiredRoleEvidence,
+  getRoleEvidenceBucket,
   requireAdmin,
 } from "../../../role-verification";
+import { cleanupExpiredRoleEvidence } from "../../../role-evidence-cleanup";
 import { ensureSchema, getD1 } from "../../../../db";
 
 export async function GET() {
@@ -15,7 +16,7 @@ export async function GET() {
 
   await ensureSchema();
   const db = getD1();
-  await cleanupExpiredRoleEvidence(db);
+  await cleanupExpiredRoleEvidence(db, getRoleEvidenceBucket());
 
   const rows = await db
     .prepare(

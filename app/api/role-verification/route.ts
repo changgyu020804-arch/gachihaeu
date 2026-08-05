@@ -6,64 +6,12 @@ import {
   RequestValidationError,
 } from "../../security";
 import {
-  cleanupExpiredRoleEvidence,
   getRoleEvidenceBucket,
   isVerifiedRole,
-  VERIFICATION_DOCUMENT_TYPES,
 } from "../../role-verification";
+import { cleanupExpiredRoleEvidence } from "../../role-evidence-cleanup";
+import { readRoleEvidenceUpload } from "../../role-evidence-upload";
 import { ensureSchema, getD1 } from "../../../db";
-
-const MAX_EVIDENCE_BYTES = 5 * 1024 * 1024;
-const MAX_REQUEST_BYTES = MAX_EVIDENCE_BYTES + 512 * 1024;
-
-function safeFilename(value: string) {
-  const cleaned = value
-    .normalize("NFKC")
-    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, "_")
-    .trim();
-  return (cleaned || "증빙자료").slice(0, 120);
-}
-
-function detectedContentType(bytes: Uint8Array) {
-  if (
-    bytes.length >= 8 &&
-    bytes[0] === 0x89 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x4e &&
-    bytes[3] === 0x47 &&
-    bytes[4] === 0x0d &&
-    bytes[5] === 0x0a &&
-    bytes[6] === 0x1a &&
-    bytes[7] === 0x0a
-  ) {
-    return "image/png";
-  }
-  if (
-    bytes.length >= 3 &&
-    bytes[0] === 0xff &&
-    bytes[1] === 0xd8 &&
-    bytes[2] === 0xff
-  ) {
-    return "image/jpeg";
-  }
-  if (
-    bytes.length >= 5 &&
-    bytes[0] === 0x25 &&
-    bytes[1] === 0x50 &&
-    bytes[2] === 0x44 &&
-    bytes[3] === 0x46 &&
-    bytes[4] === 0x2d
-  ) {
-    return "application/pdf";
-  }
-  return "";
-}
-
-function bytesToHex(bytes: Uint8Array) {
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
-    "",
-  );
-}
 
 export async function GET() {
   const user = await getSessionUser();
@@ -73,7 +21,7 @@ export async function GET() {
 
   await ensureSchema();
   const db = getD1();
-  await cleanupExpiredRoleEvidence(db);
+  await cleanupExpiredRoleEvidence(db, getRoleEvidenceBucket());
 
   const [profile, latest] = await Promise.all([
     db
@@ -139,14 +87,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const contentLength = Number(request.headers.get("content-length") ?? 0);
-    if (!Number.isFinite(contentLength) || contentLength > MAX_REQUEST_BYTES) {
-      throw new RequestValidationError("파일은 5MB 이하로 올려 주세요.", 413);
-    }
-
     await ensureSchema();
     const db = getD1();
-    await cleanupExpiredRoleEvidence(db);
+    const bucket = getRoleEvidenceBucket();
+    await cleanupExpiredRoleEvidence(db, bucket);
 
     const rateError = await enforceRateLimit(db, {
       action: "role-verification-submit",
@@ -186,48 +130,16 @@ export async function POST(request: Request) {
       throw new RequestValidationError("이미 인증이 완료됐어요.", 409);
     }
 
-    const formData = await request.formData();
-    const evidence = formData.get("evidence");
-    const documentType = formData.get("documentType");
-    const privacyAgreed = formData.get("privacyAgreed");
-
-    if (!(evidence instanceof File) || evidence.size === 0) {
-      throw new RequestValidationError("증빙자료를 선택해 주세요.", 400);
-    }
-    if (evidence.size > MAX_EVIDENCE_BYTES) {
-      throw new RequestValidationError("파일은 5MB 이하로 올려 주세요.", 413);
-    }
-    if (
-      typeof documentType !== "string" ||
-      !VERIFICATION_DOCUMENT_TYPES.includes(documentType as never)
-    ) {
-      throw new RequestValidationError("증빙자료 종류를 선택해 주세요.", 400);
-    }
-    if (privacyAgreed !== "true") {
-      throw new RequestValidationError("개인정보 처리 안내에 동의해 주세요.", 400);
-    }
-
-    const bytes = new Uint8Array(await evidence.arrayBuffer());
-    const contentType = detectedContentType(bytes);
-    if (!contentType) {
-      throw new RequestValidationError(
-        "JPG, PNG 또는 PDF 파일만 올릴 수 있어요.",
-        415,
-      );
-    }
+    const evidence = await readRoleEvidenceUpload(request);
 
     const requestId = crypto.randomUUID();
     const objectKey = `role-verifications/${requestId}`;
-    const digest = bytesToHex(
-      new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
-    );
-    const bucket = getRoleEvidenceBucket();
 
-    await bucket.put(objectKey, bytes, {
-      httpMetadata: { contentType },
+    await bucket.put(objectKey, evidence.bytes, {
+      httpMetadata: { contentType: evidence.contentType },
       customMetadata: {
         requestId,
-        sha256: digest,
+        sha256: evidence.sha256,
       },
     });
 
@@ -244,10 +156,10 @@ export async function POST(request: Request) {
             requestId,
             user.email,
             profile.requested_campus_role,
-            documentType,
-            safeFilename(evidence.name),
-            contentType,
-            evidence.size,
+            evidence.documentType,
+            evidence.originalFilename,
+            evidence.contentType,
+            evidence.sizeBytes,
             objectKey,
           ),
         db

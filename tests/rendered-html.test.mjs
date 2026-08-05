@@ -25,6 +25,7 @@ test("uses the finished 같이해U product shell", async () => {
 test("keeps large UI and style concerns in focused modules", async () => {
   const [
     home,
+    homeController,
     homeActivities,
     loginSheet,
     loginStepForms,
@@ -35,9 +36,15 @@ test("keeps large UI and style concerns in focused modules", async () => {
     layout,
     baseStyles,
     ratingStyles,
+    profileRoute,
+    profileInput,
+    profileRole,
+    verificationRoute,
+    evidenceUpload,
   ] =
     await Promise.all([
       readFile(new URL("app/home-client.tsx", root), "utf8"),
+      readFile(new URL("app/hooks/use-home-controller.ts", root), "utf8"),
       readFile(new URL("app/hooks/use-home-activities.ts", root), "utf8"),
       readFile(new URL("app/components/login-sheet.tsx", root), "utf8"),
       readFile(new URL("app/components/login-step-forms.tsx", root), "utf8"),
@@ -48,10 +55,17 @@ test("keeps large UI and style concerns in focused modules", async () => {
       readFile(new URL("app/layout.tsx", root), "utf8"),
       readFile(new URL("app/styles/base.css", root), "utf8"),
       readFile(new URL("app/styles/ratings.css", root), "utf8"),
+      readFile(new URL("app/api/profile/route.ts", root), "utf8"),
+      readFile(new URL("app/profile-input.ts", root), "utf8"),
+      readFile(new URL("app/profile-role.ts", root), "utf8"),
+      readFile(new URL("app/api/role-verification/route.ts", root), "utf8"),
+      readFile(new URL("app/role-evidence-upload.ts", root), "utf8"),
     ]);
 
-  assert.ok(home.split("\n").length < 330);
-  assert.match(home, /useHomeActivities/);
+  assert.ok(home.split("\n").length < 230);
+  assert.match(home, /useHomeController/);
+  assert.ok(homeController.split("\n").length < 240);
+  assert.match(homeController, /useHomeActivities/);
   assert.match(homeActivities, /visibleActivities/);
   assert.ok(loginSheet.split("\n").length < 250);
   assert.match(loginSheet, /ProfileSetupForm/);
@@ -66,6 +80,13 @@ test("keeps large UI and style concerns in focused modules", async () => {
   assert.match(layout, /styles\/notifications\.css/);
   assert.match(baseStyles, /@import "tailwindcss"/);
   assert.match(ratingStyles, /rate-participant/);
+  assert.ok(profileRoute.split("\n").length < 240);
+  assert.match(profileRoute, /validateProfileInput/);
+  assert.match(profileInput, /preferredSports/);
+  assert.match(profileRole, /resolveProfileRole/);
+  assert.ok(verificationRoute.split("\n").length < 220);
+  assert.match(verificationRoute, /readRoleEvidenceUpload/);
+  assert.match(evidenceUpload, /detectEvidenceContentType/);
   await assert.rejects(access(new URL("app/globals.css", root)));
 });
 

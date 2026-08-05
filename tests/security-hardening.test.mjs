@@ -273,7 +273,9 @@ test("verifies professor and staff roles with private evidence and admin review"
     schema,
     migration,
     profileRoute,
+    profileRole,
     verificationRoute,
+    evidenceUpload,
     adminRoute,
     evidenceRoute,
     verificationUi,
@@ -286,7 +288,9 @@ test("verifies professor and staff roles with private evidence and admin review"
     read("db/schema.ts"),
     read("drizzle/0012_whole_kang.sql"),
     read("app/api/profile/route.ts"),
+    read("app/profile-role.ts"),
     read("app/api/role-verification/route.ts"),
+    read("app/role-evidence-upload.ts"),
     read("app/api/admin/role-verifications/[id]/route.ts"),
     read("app/api/admin/role-verifications/[id]/evidence/route.ts"),
     read("app/components/role-verification-panel.tsx"),
@@ -301,10 +305,11 @@ test("verifies professor and staff roles with private evidence and admin review"
   assert.match(schema, /roleVerificationStatus: text\("role_verification_status"\)/);
   assert.match(migration, /CREATE TABLE `role_verification_requests`/);
   assert.match(migration, /WHERE `campus_role` IN \('교수', '교직원'\)/);
-  assert.match(profileRoute, /publicCampusRole = keepsApprovedRole \? campusRole : ""/);
-  assert.match(verificationRoute, /MAX_EVIDENCE_BYTES = 5 \* 1024 \* 1024/);
-  assert.match(verificationRoute, /detectedContentType/);
-  assert.match(verificationRoute, /crypto\.subtle\.digest\("SHA-256"/);
+  assert.match(profileRoute, /resolveProfileRole/);
+  assert.match(profileRole, /publicCampusRole: keepsApprovedRole \? selectedRole : ""/);
+  assert.match(evidenceUpload, /MAX_EVIDENCE_BYTES = 5 \* 1024 \* 1024/);
+  assert.match(evidenceUpload, /detectEvidenceContentType/);
+  assert.match(evidenceUpload, /crypto\.subtle\.digest\("SHA-256"/);
   assert.match(verificationRoute, /getRoleEvidenceBucket\(\)\.put|bucket\.put/);
   assert.match(adminRoute, /requireAdmin/);
   assert.match(adminRoute, /verification\.user_email === user\.email/);
