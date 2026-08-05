@@ -1,6 +1,7 @@
 "use client";
 
 import { ActivityComment } from "../activity-comments";
+import { CampusRoleBadge } from "./campus-role-badge";
 
 type ActivityCommentCardProps = {
   comment: ActivityComment;
@@ -51,7 +52,9 @@ export function ActivityCommentCard({
           ) : comment.isParticipant ? (
             <span className="comment-role">참가자</span>
           ) : null}
-          {comment.campusRole && <small>{comment.campusRole}</small>}
+          {comment.campusRole && (
+            <CampusRoleBadge role={comment.campusRole} compact />
+          )}
         </div>
         <time>{formatCommentTime(comment.createdAt)}</time>
       </header>

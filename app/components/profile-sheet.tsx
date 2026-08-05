@@ -11,6 +11,7 @@ import { getErrorMessage } from "./utils";
 import { ReputationPanel } from "./reputation-panel";
 import { ProfileEditForm, ProfileForm } from "./profile-edit-form";
 import { AccountDeletionPanel } from "./account-deletion-panel";
+import { CampusRoleBadge } from "./campus-role-badge";
 
 type ProfileSheetProps = {
   user: Viewer;
@@ -153,9 +154,7 @@ export function ProfileSheet({
                 {profileData?.nickname || user.fullName || user.displayName}
               </h2>
               {profileData?.campusRole && (
-                <span className="profile-position-badge">
-                  {profileData.campusRole}
-                </span>
+                <CampusRoleBadge role={profileData.campusRole} />
               )}
             </div>
             {(profileData?.department || profileData?.gender) && (

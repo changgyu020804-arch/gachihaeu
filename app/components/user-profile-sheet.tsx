@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { RecentRating, SPORT_META, UserProfile } from "../activity-data";
 import { ReputationPanel } from "./reputation-panel";
 import { getErrorMessage } from "./utils";
+import { CampusRoleBadge } from "./campus-role-badge";
 
 type UserProfileSheetProps = {
   email: string;
@@ -131,9 +132,7 @@ export function UserProfileSheet({
               <div className="profile-name-row">
                 <h2>{profile.nickname}</h2>
                 {profile.campusRole && (
-                  <span className="profile-position-badge">
-                    {profile.campusRole}
-                  </span>
+                  <CampusRoleBadge role={profile.campusRole} />
                 )}
               </div>
               {profile.department && <span className="dept">{profile.department}</span>}

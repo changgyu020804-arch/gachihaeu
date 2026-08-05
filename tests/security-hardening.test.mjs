@@ -116,6 +116,7 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     loginSheet,
     loginStepForms,
     profileSheet,
+    campusRoleBadge,
     profileStyles,
     profileRoute,
     publicProfileRoute,
@@ -126,6 +127,7 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     read("app/components/login-sheet.tsx"),
     read("app/components/login-step-forms.tsx"),
     read("app/components/profile-sheet.tsx"),
+    read("app/components/campus-role-badge.tsx"),
     read("app/styles/profiles.css"),
     read("app/api/profile/route.ts"),
     read("app/api/ratings/[email]/route.ts"),
@@ -146,8 +148,13 @@ test("keeps login while requiring one-time profile onboarding", async () => {
   assert.match(loginStepForms, /GENDERS/);
   assert.match(loginStepForms, /CAMPUS_ROLES/);
   assert.match(loginStepForms, /DEPARTMENTS/);
-  assert.match(profileSheet, /profile-position-badge/);
-  assert.match(profileStyles, /\.profile-position-badge/);
+  assert.match(profileSheet, /CampusRoleBadge/);
+  assert.match(campusRoleBadge, /학생: "student"/);
+  assert.match(campusRoleBadge, /교수: "professor"/);
+  assert.match(campusRoleBadge, /교직원: "staff"/);
+  assert.match(profileStyles, /\.campus-role-badge\.student/);
+  assert.match(profileStyles, /\.campus-role-badge\.professor/);
+  assert.match(profileStyles, /\.campus-role-badge\.staff/);
   assert.match(publicProfileRoute, /campusRole/);
   assert.match(profileRoute, /onboarding_completed = 1/);
 });
