@@ -59,6 +59,40 @@ export async function createCurrentSchema(db: D1Database) {
       "CREATE UNIQUE INDEX IF NOT EXISTS reports_activity_reporter_idx ON reports(activity_id, reporter_email)",
     ),
     db.prepare(
+      `CREATE TABLE IF NOT EXISTS activity_comments (
+        id TEXT PRIMARY KEY NOT NULL,
+        activity_id TEXT NOT NULL,
+        author_email TEXT NOT NULL,
+        content TEXT NOT NULL,
+        status TEXT DEFAULT 'visible' NOT NULL,
+        is_pinned INTEGER DEFAULT 0 NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
+      )`,
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS activity_comments_activity_created_idx ON activity_comments(activity_id, created_at)",
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS activity_comments_author_idx ON activity_comments(author_email)",
+    ),
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS comment_reports (
+        id TEXT PRIMARY KEY NOT NULL,
+        comment_id TEXT NOT NULL,
+        reporter_email TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (comment_id) REFERENCES activity_comments(id) ON DELETE CASCADE
+      )`,
+    ),
+    db.prepare(
+      "CREATE UNIQUE INDEX IF NOT EXISTS comment_reports_comment_reporter_idx ON comment_reports(comment_id, reporter_email)",
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS comment_reports_comment_idx ON comment_reports(comment_id)",
+    ),
+    db.prepare(
       `CREATE TABLE IF NOT EXISTS user_profiles (
         email TEXT PRIMARY KEY NOT NULL,
         nickname TEXT DEFAULT '' NOT NULL,

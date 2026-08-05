@@ -4,8 +4,7 @@ import { enforceRateLimit, getClientIp } from "../../security";
 import { ensureSchema, getD1 } from "../../../db";
 import { createNotifications } from "../../notification-store";
 import { hasBlockedRelationship } from "../../activity-policy";
-
-const BLOCKED_TERMS = ["씨발", "시발", "병신", "개새끼", "꺼져"];
+import { hasUnsafeUserText } from "../../content-moderation";
 
 function cleanString(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
@@ -17,18 +16,6 @@ function isValidScore(value: unknown): value is number {
     Number.isInteger(value) &&
     value >= 1 &&
     value <= 5
-  );
-}
-
-function hasUnsafeComment(comment: string) {
-  const hasContactInfo =
-    /(?:01[016789][-\s]?\d{3,4}[-\s]?\d{4}|[\w.+-]+@[\w.-]+\.[a-z]{2,}|https?:\/\/|(?:카카오톡|카톡|오픈채팅|인스타|instagram|텔레그램|telegram)\s*[:@]?)/i.test(
-      comment,
-    );
-  const normalized = comment.replace(/\s/g, "").toLowerCase();
-  return (
-    hasContactInfo ||
-    BLOCKED_TERMS.some((term) => normalized.includes(term.replace(/\s/g, "")))
   );
 }
 
@@ -67,7 +54,7 @@ export async function POST(request: Request) {
   ) {
     return Response.json({ error: "점수는 1~5 사이 정수여야 해요." }, { status: 400 });
   }
-  if (comment && hasUnsafeComment(comment)) {
+  if (comment && hasUnsafeUserText(comment)) {
     return Response.json(
       { error: "코멘트에 연락처, 외부 계정 또는 부적절한 표현을 적을 수 없어요." },
       { status: 400 },

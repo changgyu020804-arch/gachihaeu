@@ -151,6 +151,7 @@ export async function upgradeLegacySchema(db: D1Database) {
     db.prepare(
       "DELETE FROM security_audit_logs WHERE created_at < datetime('now', '-90 days')",
     ),
+    db.prepare("PRAGMA optimize"),
   ]);
 
   await db

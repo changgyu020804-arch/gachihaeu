@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Activity, SPORT_META, isReservationRequired } from "../activity-data";
 import { formatFullDate } from "./utils";
+import { ActivityComments } from "./activity-comments";
 
 type DetailSheetProps = {
   activity: Activity;
@@ -16,6 +17,7 @@ type DetailSheetProps = {
   ) => void;
   onOpenRating: (activityId: string) => void;
   onReport: (activity: Activity) => void;
+  onViewProfile: (email: string) => void;
 };
 
 export function DetailSheet({
@@ -25,6 +27,7 @@ export function DetailSheet({
   onPerformAction,
   onOpenRating,
   onReport,
+  onViewProfile,
 }: DetailSheetProps) {
   const isFull = activity.participantCount >= activity.capacity;
   const [renderedAt] = useState(() => Date.now());
@@ -211,6 +214,12 @@ export function DetailSheet({
             )}
           </div>
         )}
+
+        <ActivityComments
+          key={activity.id}
+          activityId={activity.id}
+          onViewProfile={onViewProfile}
+        />
       </section>
     </div>
   );

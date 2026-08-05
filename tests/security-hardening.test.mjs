@@ -183,6 +183,41 @@ test("prevents duplicate nicknames in the UI, API, and database", async () => {
   assert.match(nicknameHelpers, /toLocaleLowerCase\("ko-KR"\)/);
 });
 
+test("keeps activity comments bounded, moderated, and permission checked", async () => {
+  const [
+    schema,
+    migration,
+    commentsRoute,
+    commentRoute,
+    reportRoute,
+    commentsUi,
+    moderation,
+  ] = await Promise.all([
+    read("db/schema.ts"),
+    read("drizzle/0011_many_emma_frost.sql"),
+    read("app/api/activities/[id]/comments/route.ts"),
+    read("app/api/activities/[id]/comments/[commentId]/route.ts"),
+    read("app/api/activities/[id]/comments/[commentId]/report/route.ts"),
+    read("app/components/activity-comments.tsx"),
+    read("app/content-moderation.ts"),
+  ]);
+
+  assert.match(schema, /activityComments = sqliteTable/);
+  assert.match(schema, /commentReports = sqliteTable/);
+  assert.match(migration, /CREATE TABLE `activity_comments`/);
+  assert.match(migration, /activity_comments_activity_created_idx/);
+  assert.match(commentsRoute, /COMMENT_PAGE_SIZE \+ 1/);
+  assert.match(commentsRoute, /user_blocks/);
+  assert.match(commentsRoute, /isCommentingClosed/);
+  assert.match(commentsRoute, /activity-comment-create/);
+  assert.match(commentRoute, /creator_email !== user\.email/);
+  assert.match(commentRoute, /status = 'hidden'/);
+  assert.match(reportRoute, /comment_reports/);
+  assert.match(commentsUi, /COMMENT_RENDER_LIMIT/);
+  assert.match(commentsUi, /AbortController/);
+  assert.match(moderation, /CONTACT_PATTERN/);
+});
+
 test("deletes the account and all directly associated user data", async () => {
   const [route, deletion, profileSheet, deletionPanel] = await Promise.all([
     read("app/api/account/route.ts"),
@@ -200,6 +235,8 @@ test("deletes the account and all directly associated user data", async () => {
   for (const table of [
     "notifications",
     "reports",
+    "comment_reports",
+    "activity_comments",
     "ratings",
     "participants",
     "waitlist",

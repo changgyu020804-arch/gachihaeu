@@ -1,5 +1,9 @@
 const USER_RATE_LIMIT_ACTIONS = [
   "activity-cancel",
+  "activity-comment-create",
+  "activity-comment-delete",
+  "activity-comment-pin",
+  "activity-comment-report",
   "activity-create",
   "activity-join",
   "activity-leave",
@@ -56,6 +60,27 @@ export async function deleteAccountData(
       .prepare(
         `DELETE FROM reports
          WHERE reporter_email = ?
+            OR activity_id IN (
+              SELECT id FROM activities WHERE creator_email = ?
+            )`,
+      )
+      .bind(email, email),
+    db
+      .prepare(
+        `DELETE FROM comment_reports
+         WHERE reporter_email = ?
+            OR comment_id IN (
+              SELECT c.id
+              FROM activity_comments c
+              INNER JOIN activities a ON a.id = c.activity_id
+              WHERE c.author_email = ? OR a.creator_email = ?
+            )`,
+      )
+      .bind(email, email, email),
+    db
+      .prepare(
+        `DELETE FROM activity_comments
+         WHERE author_email = ?
             OR activity_id IN (
               SELECT id FROM activities WHERE creator_email = ?
             )`,

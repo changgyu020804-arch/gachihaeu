@@ -266,6 +266,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
             onPerformAction={(path, method, msg, body) => void performAction(path, method, msg, body)}
             onOpenRating={openRating}
             onReport={(a) => void reportActivity(a)}
+            onViewProfile={setViewingUserEmail}
           />
         )}
 

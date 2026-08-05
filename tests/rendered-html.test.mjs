@@ -147,6 +147,21 @@ test("supports activity operations and trustworthy profiles", async () => {
   assert.match(migration, /cancellation_deadline_minutes/);
 });
 
+test("adds paginated comments to each activity detail", async () => {
+  const [detailSheet, comments, commentsStyles] = await Promise.all([
+    readFile(new URL("app/components/detail-sheet.tsx", root), "utf8"),
+    readFile(new URL("app/components/activity-comments.tsx", root), "utf8"),
+    readFile(new URL("app/styles/comments.css", root), "utf8"),
+  ]);
+
+  assert.match(detailSheet, /ActivityComments/);
+  assert.match(comments, /최근 댓글부터 20개씩 보여줘요/);
+  assert.match(comments, /이전 댓글 더 보기/);
+  assert.match(comments, /모임 종료 후 24시간/);
+  assert.match(commentsStyles, /\.activity-comments/);
+  assert.match(commentsStyles, /\.comment-card\.pinned/);
+});
+
 test("protects school data and ships an installable PWA", async () => {
   const [
     layout,

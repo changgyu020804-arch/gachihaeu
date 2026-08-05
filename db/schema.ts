@@ -170,6 +170,48 @@ export const reports = sqliteTable(
   ],
 );
 
+export const activityComments = sqliteTable(
+  "activity_comments",
+  {
+    id: text("id").primaryKey(),
+    activityId: text("activity_id")
+      .notNull()
+      .references(() => activities.id, { onDelete: "cascade" }),
+    authorEmail: text("author_email").notNull(),
+    content: text("content").notNull(),
+    status: text("status").notNull().default("visible"),
+    isPinned: integer("is_pinned").notNull().default(0),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("activity_comments_activity_created_idx").on(
+      table.activityId,
+      table.createdAt,
+    ),
+    index("activity_comments_author_idx").on(table.authorEmail),
+  ],
+);
+
+export const commentReports = sqliteTable(
+  "comment_reports",
+  {
+    id: text("id").primaryKey(),
+    commentId: text("comment_id")
+      .notNull()
+      .references(() => activityComments.id, { onDelete: "cascade" }),
+    reporterEmail: text("reporter_email").notNull(),
+    reason: text("reason").notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("comment_reports_comment_reporter_idx").on(
+      table.commentId,
+      table.reporterEmail,
+    ),
+    index("comment_reports_comment_idx").on(table.commentId),
+  ],
+);
+
 export const notifications = sqliteTable(
   "notifications",
   {
