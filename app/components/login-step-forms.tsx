@@ -167,6 +167,12 @@ export function ProfileSetupForm({
           ))}
         </select>
       </label>
+      {campusRole !== "" && campusRole !== "학생" && (
+        <p className="role-verification-note">
+          프로필 생성 후 교수증·교직원증·재직증명서를 제출하면 운영자가 직위를
+          확인해 드려요. 승인 전에는 직위 배지가 공개되지 않아요.
+        </p>
+      )}
       <label>
         학과
         <select

@@ -12,6 +12,8 @@ const USER_RATE_LIMIT_ACTIONS = [
   "attendance-update",
   "notifications-read",
   "profile-update",
+  "role-verification-submit",
+  "role-verification-review",
   "rating-comment-report",
   "rating-create",
   "user-block",
@@ -127,6 +129,9 @@ export async function deleteAccountData(
       )
       .bind(email, email),
     db.prepare(`DELETE FROM auth_codes WHERE email = ?`).bind(email),
+    db
+      .prepare(`DELETE FROM role_verification_requests WHERE user_email = ?`)
+      .bind(email),
     db.prepare(`DELETE FROM user_profiles WHERE email = ?`).bind(email),
     db.prepare(`DELETE FROM activities WHERE creator_email = ?`).bind(email),
     db

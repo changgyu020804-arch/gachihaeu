@@ -56,6 +56,10 @@ export const userProfiles = sqliteTable(
     nicknameNormalized: text("nickname_normalized"),
     gender: text("gender").notNull().default(""),
     campusRole: text("campus_role").notNull().default(""),
+    requestedCampusRole: text("requested_campus_role").notNull().default(""),
+    roleVerificationStatus: text("role_verification_status")
+      .notNull()
+      .default("not_required"),
     department: text("department").notNull().default(""),
     bio: text("bio").notNull().default(""),
     preferredSports: text("preferred_sports").notNull().default(""),
@@ -65,6 +69,38 @@ export const userProfiles = sqliteTable(
   (table) => [
     uniqueIndex("user_profiles_nickname_normalized_idx").on(
       table.nicknameNormalized,
+    ),
+  ],
+);
+
+export const roleVerificationRequests = sqliteTable(
+  "role_verification_requests",
+  {
+    id: text("id").primaryKey(),
+    userEmail: text("user_email").notNull(),
+    requestedRole: text("requested_role").notNull(),
+    documentType: text("document_type").notNull(),
+    originalFilename: text("original_filename").notNull(),
+    contentType: text("content_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    objectKey: text("object_key").notNull(),
+    status: text("status").notNull().default("pending"),
+    reviewerEmail: text("reviewer_email"),
+    reviewNote: text("review_note").notNull().default(""),
+    reviewedAt: text("reviewed_at"),
+    evidenceDeleteAfter: text("evidence_delete_after"),
+    evidenceDeletedAt: text("evidence_deleted_at"),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("role_verification_user_created_idx").on(
+      table.userEmail,
+      table.createdAt,
+    ),
+    index("role_verification_status_created_idx").on(
+      table.status,
+      table.createdAt,
     ),
   ],
 );

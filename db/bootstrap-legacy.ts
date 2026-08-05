@@ -48,7 +48,17 @@ async function addMissingProfileColumns(db: D1Database) {
     ["campus_role", "TEXT DEFAULT '' NOT NULL"],
     ["onboarding_completed", "INTEGER DEFAULT 0 NOT NULL"],
     ["nickname_normalized", "TEXT"],
+    ["requested_campus_role", "TEXT DEFAULT '' NOT NULL"],
+    [
+      "role_verification_status",
+      "TEXT DEFAULT 'not_required' NOT NULL",
+    ],
   ] as const;
+
+  const needsRoleVerificationMigration = !hasColumn(
+    columns,
+    "role_verification_status",
+  );
 
   for (const [name, definition] of additions) {
     if (!hasColumn(columns, name)) {
@@ -56,6 +66,18 @@ async function addMissingProfileColumns(db: D1Database) {
         .prepare(`ALTER TABLE user_profiles ADD COLUMN ${name} ${definition}`)
         .run();
     }
+  }
+
+  if (needsRoleVerificationMigration) {
+    await db
+      .prepare(
+        `UPDATE user_profiles
+         SET requested_campus_role = campus_role,
+             campus_role = '',
+             role_verification_status = 'not_submitted'
+         WHERE campus_role IN ('교수', '교직원')`,
+      )
+      .run();
   }
 
   // Keep the oldest account's nickname as the canonical one. Any legacy

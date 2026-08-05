@@ -116,6 +116,7 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     loginSheet,
     loginStepForms,
     profileSheet,
+    profileOverview,
     campusRoleBadge,
     profileStyles,
     profileRoute,
@@ -127,6 +128,7 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     read("app/components/login-sheet.tsx"),
     read("app/components/login-step-forms.tsx"),
     read("app/components/profile-sheet.tsx"),
+    read("app/components/profile-overview.tsx"),
     read("app/components/campus-role-badge.tsx"),
     read("app/styles/profiles.css"),
     read("app/api/profile/route.ts"),
@@ -148,7 +150,8 @@ test("keeps login while requiring one-time profile onboarding", async () => {
   assert.match(loginStepForms, /GENDERS/);
   assert.match(loginStepForms, /CAMPUS_ROLES/);
   assert.match(loginStepForms, /DEPARTMENTS/);
-  assert.match(profileSheet, /CampusRoleBadge/);
+  assert.match(profileSheet, /ProfileOverview/);
+  assert.match(profileOverview, /CampusRoleBadge/);
   assert.match(campusRoleBadge, /학생: "student"/);
   assert.match(campusRoleBadge, /교수: "professor"/);
   assert.match(campusRoleBadge, /교직원: "staff"/);
@@ -250,6 +253,7 @@ test("deletes the account and all directly associated user data", async () => {
     "user_reports",
     "user_blocks",
     "auth_codes",
+    "role_verification_requests",
     "user_profiles",
     "activities",
     "security_audit_logs",
@@ -261,4 +265,55 @@ test("deletes the account and all directly associated user data", async () => {
   assert.match(profileSheet, /AccountDeletionPanel/);
   assert.match(deletionPanel, /계정 영구 삭제/);
   assert.match(deletionPanel, /confirmation !== "탈퇴"/);
+});
+
+test("verifies professor and staff roles with private evidence and admin review", async () => {
+  const [
+    hosting,
+    schema,
+    migration,
+    profileRoute,
+    verificationRoute,
+    adminRoute,
+    evidenceRoute,
+    verificationUi,
+    adminUi,
+    runtimeEnv,
+    accountRoute,
+    worker,
+  ] = await Promise.all([
+    read(".openai/hosting.json"),
+    read("db/schema.ts"),
+    read("drizzle/0012_whole_kang.sql"),
+    read("app/api/profile/route.ts"),
+    read("app/api/role-verification/route.ts"),
+    read("app/api/admin/role-verifications/[id]/route.ts"),
+    read("app/api/admin/role-verifications/[id]/evidence/route.ts"),
+    read("app/components/role-verification-panel.tsx"),
+    read("app/components/admin-verification-panel.tsx"),
+    read("app/runtime-env.ts"),
+    read("app/api/account/route.ts"),
+    read("worker/index.ts"),
+  ]);
+
+  assert.match(hosting, /"r2": "ROLE_EVIDENCE"/);
+  assert.match(schema, /roleVerificationRequests = sqliteTable/);
+  assert.match(schema, /roleVerificationStatus: text\("role_verification_status"\)/);
+  assert.match(migration, /CREATE TABLE `role_verification_requests`/);
+  assert.match(migration, /WHERE `campus_role` IN \('교수', '교직원'\)/);
+  assert.match(profileRoute, /publicCampusRole = keepsApprovedRole \? campusRole : ""/);
+  assert.match(verificationRoute, /MAX_EVIDENCE_BYTES = 5 \* 1024 \* 1024/);
+  assert.match(verificationRoute, /detectedContentType/);
+  assert.match(verificationRoute, /crypto\.subtle\.digest\("SHA-256"/);
+  assert.match(verificationRoute, /getRoleEvidenceBucket\(\)\.put|bucket\.put/);
+  assert.match(adminRoute, /requireAdmin/);
+  assert.match(adminRoute, /evidence_delete_after = datetime\('now', '\+7 days'\)/);
+  assert.match(evidenceRoute, /Cache-Control": "private, no-store/);
+  assert.match(verificationUi, /개인정보 처리 안내/);
+  assert.match(verificationUi, /JPG, PNG, PDF · 최대 5MB/);
+  assert.match(adminUi, /직위 인증 관리/);
+  assert.match(runtimeEnv, /ADMIN_EMAILS/);
+  assert.match(accountRoute, /getRoleEvidenceBucket\(\)\.delete/);
+  assert.match(worker, /cleanupExpiredRoleEvidence/);
+  assert.match(worker, /ctx\.waitUntil/);
 });

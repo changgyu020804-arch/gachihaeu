@@ -90,6 +90,12 @@ export function ProfileEditForm({
             ))}
           </select>
         </label>
+        {value.campusRole !== "" && value.campusRole !== "학생" && (
+          <p className="role-verification-note">
+            교수·교직원 배지는 프로필 저장 후 증빙자료를 제출하고 운영자 승인을
+            받아야 표시돼요.
+          </p>
+        )}
         <label>
           학과
           <select

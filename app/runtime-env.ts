@@ -5,6 +5,7 @@ type RuntimeEnvironment = {
   RATE_LIMIT_SECRET?: string;
   RESEND_API_KEY?: string;
   RESEND_FROM_EMAIL?: string;
+  ADMIN_EMAILS?: string;
 };
 
 const runtimeEnv = env as unknown as RuntimeEnvironment;
@@ -45,4 +46,13 @@ export function getResendConfig() {
   }
 
   return { apiKey, fromEmail };
+}
+
+export function isAdminEmail(email: string) {
+  const normalized = email.trim().toLowerCase();
+  return readRuntimeValue("ADMIN_EMAILS")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+    .includes(normalized);
 }

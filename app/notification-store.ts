@@ -12,7 +12,8 @@ export type NotificationType =
   | "attendance"
   | "rated"
   | "notice"
-  | "comment";
+  | "comment"
+  | "role_verification";
 
 type NewNotification = {
   userEmail: string;

@@ -26,6 +26,7 @@ import {
   normalizeNickname,
 } from "../../nickname";
 import { ensureSchema, getD1 } from "../../../db";
+import { isAdminEmail } from "../../runtime-env";
 
 const NICKNAME_TAKEN_MESSAGE = "이미 사용 중인 닉네임이에요.";
 
@@ -43,7 +44,8 @@ export async function GET() {
   const db = getD1();
   const profile = await db
     .prepare(
-      `SELECT email, nickname, gender, campus_role, department, bio,
+      `SELECT email, nickname, gender, campus_role, requested_campus_role,
+              role_verification_status, department, bio,
               preferred_sports, onboarding_completed
        FROM user_profiles
        WHERE email = ?`,
@@ -54,6 +56,8 @@ export async function GET() {
       nickname: string;
       gender: string;
       campus_role: string;
+      requested_campus_role: string;
+      role_verification_status: "not_required" | "not_submitted" | "pending" | "approved" | "rejected";
       department: string;
       bio: string;
       preferred_sports: string;
@@ -75,6 +79,11 @@ export async function GET() {
       nickname: profile?.nickname || user.fullName || user.email.split("@")[0],
       gender: profile?.gender || "",
       campusRole: profile?.campus_role || "",
+      requestedCampusRole:
+        profile?.requested_campus_role || profile?.campus_role || "",
+      roleVerificationStatus:
+        profile?.role_verification_status || "not_required",
+      isAdmin: isAdminEmail(user.email),
       department: profile?.department || "",
       bio: profile?.bio || "",
       preferredSports,
@@ -167,18 +176,67 @@ export async function PUT(request: Request) {
       );
     }
 
+    const currentRole = await db
+      .prepare(
+        `SELECT campus_role, requested_campus_role, role_verification_status
+         FROM user_profiles
+         WHERE email = ?`,
+      )
+      .bind(user.email)
+      .first<{
+        campus_role: string;
+        requested_campus_role: string;
+        role_verification_status: string;
+      }>();
+
+    if (
+      currentRole?.role_verification_status === "pending" &&
+      currentRole.requested_campus_role !== campusRole
+    ) {
+      return Response.json(
+        { error: "직위 인증을 확인 중일 때는 직위를 변경할 수 없어요." },
+        { status: 409 },
+      );
+    }
+
+    let publicCampusRole = "학생";
+    let requestedCampusRole = "학생";
+    let roleVerificationStatus = "not_required";
+
+    if (campusRole !== "학생") {
+      requestedCampusRole = campusRole;
+      const keepsApprovedRole =
+        currentRole?.campus_role === campusRole &&
+        currentRole.role_verification_status === "approved";
+      const keepsExistingRequest =
+        currentRole?.requested_campus_role === campusRole &&
+        ["not_submitted", "pending", "rejected"].includes(
+          currentRole.role_verification_status,
+        );
+
+      publicCampusRole = keepsApprovedRole ? campusRole : "";
+      roleVerificationStatus = keepsApprovedRole
+        ? "approved"
+        : keepsExistingRequest
+          ? currentRole.role_verification_status
+          : "not_submitted";
+    }
+
     try {
       await db
         .prepare(
           `INSERT INTO user_profiles (
              email, nickname, nickname_normalized, gender, campus_role,
-             department, bio, preferred_sports, onboarding_completed, updated_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
+             requested_campus_role, role_verification_status, department, bio,
+             preferred_sports, onboarding_completed, updated_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
            ON CONFLICT(email) DO UPDATE SET
              nickname = excluded.nickname,
              nickname_normalized = excluded.nickname_normalized,
              gender = excluded.gender,
              campus_role = excluded.campus_role,
+             requested_campus_role = excluded.requested_campus_role,
+             role_verification_status = excluded.role_verification_status,
              department = excluded.department,
              bio = excluded.bio,
              preferred_sports = excluded.preferred_sports,
@@ -190,7 +248,9 @@ export async function PUT(request: Request) {
           nickname,
           nicknameNormalized,
           gender,
-          campusRole,
+          publicCampusRole,
+          requestedCampusRole,
+          roleVerificationStatus,
           department,
           bio,
           preferredSports,

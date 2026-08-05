@@ -139,12 +139,21 @@ export type Gender = (typeof GENDERS)[number];
 
 export const CAMPUS_ROLES = ["학생", "교수", "교직원"] as const;
 export type CampusRole = (typeof CAMPUS_ROLES)[number];
+export type RoleVerificationStatus =
+  | "not_required"
+  | "not_submitted"
+  | "pending"
+  | "approved"
+  | "rejected";
 
 export type UserProfile = {
   email: string;
   nickname: string;
   gender: string;
   campusRole: string;
+  requestedCampusRole?: string;
+  roleVerificationStatus?: RoleVerificationStatus;
+  isAdmin?: boolean;
   department: string;
   bio: string;
   preferredSports: Sport[];

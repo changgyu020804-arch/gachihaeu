@@ -99,12 +99,40 @@ export async function createCurrentSchema(db: D1Database) {
         nickname_normalized TEXT,
         gender TEXT DEFAULT '' NOT NULL,
         campus_role TEXT DEFAULT '' NOT NULL,
+        requested_campus_role TEXT DEFAULT '' NOT NULL,
+        role_verification_status TEXT DEFAULT 'not_required' NOT NULL,
         department TEXT DEFAULT '' NOT NULL,
         bio TEXT DEFAULT '' NOT NULL,
         preferred_sports TEXT DEFAULT '' NOT NULL,
         onboarding_completed INTEGER DEFAULT 0 NOT NULL,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
       )`,
+    ),
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS role_verification_requests (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_email TEXT NOT NULL,
+        requested_role TEXT NOT NULL,
+        document_type TEXT NOT NULL,
+        original_filename TEXT NOT NULL,
+        content_type TEXT NOT NULL,
+        size_bytes INTEGER NOT NULL,
+        object_key TEXT NOT NULL,
+        status TEXT DEFAULT 'pending' NOT NULL,
+        reviewer_email TEXT,
+        review_note TEXT DEFAULT '' NOT NULL,
+        reviewed_at TEXT,
+        evidence_delete_after TEXT,
+        evidence_deleted_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+      )`,
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS role_verification_user_created_idx ON role_verification_requests(user_email, created_at)",
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS role_verification_status_created_idx ON role_verification_requests(status, created_at)",
     ),
     db.prepare(
       `CREATE TABLE IF NOT EXISTS ratings (

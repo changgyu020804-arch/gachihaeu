@@ -3,15 +3,14 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import {
   RecentRating,
-  SPORT_META,
   UserProfile,
   Viewer,
 } from "../activity-data";
 import { getErrorMessage } from "./utils";
-import { ReputationPanel } from "./reputation-panel";
 import { ProfileEditForm, ProfileForm } from "./profile-edit-form";
 import { AccountDeletionPanel } from "./account-deletion-panel";
-import { CampusRoleBadge } from "./campus-role-badge";
+import { AdminVerificationPanel } from "./admin-verification-panel";
+import { ProfileOverview } from "./profile-overview";
 
 type ProfileSheetProps = {
   user: Viewer;
@@ -40,6 +39,7 @@ export function ProfileSheet({
   });
   const [editing, setEditing] = useState(false);
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [showAdminVerifications, setShowAdminVerifications] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -58,7 +58,8 @@ export function ProfileSheet({
         setProfileForm({
           nickname: payload.profile.nickname,
           gender: payload.profile.gender,
-          campusRole: payload.profile.campusRole,
+          campusRole:
+            payload.profile.requestedCampusRole || payload.profile.campusRole,
           department: payload.profile.department,
           bio: payload.profile.bio,
           preferredSports: payload.profile.preferredSports,
@@ -118,7 +119,7 @@ export function ProfileSheet({
   };
 
   return (
-    <div className="sheet-backdrop" onClick={() => { onClose(); setEditing(false); setShowDeleteAccount(false); }}>
+    <div className="sheet-backdrop" onClick={() => { onClose(); setEditing(false); setShowDeleteAccount(false); setShowAdminVerifications(false); }}>
       <section
         className="sheet profile-sheet"
         role="dialog"
@@ -135,6 +136,11 @@ export function ProfileSheet({
             onCancel={() => setShowDeleteAccount(false)}
             onDeleted={onAccountDeleted}
           />
+        ) : showAdminVerifications ? (
+          <AdminVerificationPanel
+            onClose={() => setShowAdminVerifications(false)}
+            onToast={onToast}
+          />
         ) : editing ? (
           <ProfileEditForm
             value={profileForm}
@@ -145,71 +151,18 @@ export function ProfileSheet({
             onSubmit={handleSubmit}
           />
         ) : (
-          <>
-            <div className="profile-avatar">
-              {(profileData?.nickname || user.fullName || user.email).slice(0, 1).toUpperCase()}
-            </div>
-            <div className="profile-name-row">
-              <h2 id="profile-title">
-                {profileData?.nickname || user.fullName || user.displayName}
-              </h2>
-              {profileData?.campusRole && (
-                <CampusRoleBadge role={profileData.campusRole} />
-              )}
-            </div>
-            {(profileData?.department || profileData?.gender) && (
-              <p className="profile-department">
-                {[profileData.department, profileData.gender]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
-            )}
-            {profileData?.bio && <p className="profile-bio">{profileData.bio}</p>}
-            {profileData?.preferredSports && profileData.preferredSports.length > 0 && (
-              <div className="profile-sports">
-                {profileData.preferredSports.map((sport) => (
-                  <span key={sport} className="sport-tag" style={{ color: SPORT_META[sport].color, background: SPORT_META[sport].softColor }}>
-                    {SPORT_META[sport].icon} {sport}
-                  </span>
-                ))}
-              </div>
-            )}
-            <small className="profile-email">{user.email}</small>
-
-            {profileData && (
-              <ReputationPanel
-                profile={profileData}
-                recentRatings={recentRatings}
-                onHideComment={(ratingId) => void hideComment(ratingId)}
-              />
-            )}
-
-            <div className="profile-stats">
-              <div>
-                <strong>{profileData?.participationCount ?? 0}</strong>
-                <span>참석 완료</span>
-              </div>
-              <div>
-                <strong>{profileData?.hostCount ?? 0}</strong>
-                <span>모임장 진행</span>
-              </div>
-              <div className={(profileData?.noShowCount ?? 0) > 0 ? "warning" : ""}>
-                <strong>{profileData?.noShowCount ?? 0}</strong>
-                <span>노쇼</span>
-              </div>
-            </div>
-
-            <button className="edit-profile-button" onClick={() => setEditing(true)}>
-              프로필 수정
-            </button>
-            <button className="signout-link" onClick={onLogout}>로그아웃</button>
-            <button
-              className="delete-account-link"
-              onClick={() => setShowDeleteAccount(true)}
-            >
-              회원 탈퇴
-            </button>
-          </>
+          <ProfileOverview
+            profile={profileData}
+            user={user}
+            recentRatings={recentRatings}
+            onEdit={() => setEditing(true)}
+            onOpenAdmin={() => setShowAdminVerifications(true)}
+            onOpenDeletion={() => setShowDeleteAccount(true)}
+            onLogout={onLogout}
+            onHideComment={(ratingId) => void hideComment(ratingId)}
+            onProfileChanged={loadProfile}
+            onToast={onToast}
+          />
         )}
       </section>
     </div>

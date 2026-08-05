@@ -11,6 +11,7 @@ import {
   getAccountRateLimitIdentifiers,
 } from "../../account-deletion";
 import { ensureSchema, getD1 } from "../../../db";
+import { getRoleEvidenceBucket } from "../../role-verification";
 
 const DELETE_CONFIRMATION = "탈퇴";
 
@@ -43,8 +44,23 @@ export async function DELETE(request: Request) {
       ),
     ]);
 
+    const db = getD1();
+    const evidence = await db
+      .prepare(
+        `SELECT object_key
+         FROM role_verification_requests
+         WHERE user_email = ? AND evidence_deleted_at IS NULL`,
+      )
+      .bind(user.email)
+      .all<{ object_key: string }>();
+    if (evidence.results.length > 0) {
+      await getRoleEvidenceBucket().delete(
+        evidence.results.map((item) => item.object_key),
+      );
+    }
+
     await deleteAccountData(
-      getD1(),
+      db,
       user.email,
       securitySubjectHash,
       rateLimitKeyHashes,
