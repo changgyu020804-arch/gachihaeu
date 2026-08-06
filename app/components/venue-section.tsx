@@ -9,13 +9,13 @@ const VENUE_ITEMS: Array<{
   { venue: "대운동장 러닝트랙", sport: "러닝", icon: "🏃", featured: true },
   { venue: "실외농구장", sport: "농구", icon: "🏀", featured: true },
   { venue: "100주년 기념관 농구장", sport: "농구", icon: "🏀", featured: true },
-  { venue: "족구장", sport: "족구", icon: "🦶" },
+  { venue: "대운동장 잔디구장", sport: "축구", icon: "⚽", featured: true },
   { venue: "실외테니스장", sport: "테니스", icon: "🎾" },
   { venue: "실내테니스장", sport: "테니스", icon: "🎾" },
   { venue: "스쿼시장", sport: "스쿼시", icon: "🎾" },
   { venue: "100주년 기념관 배드민턴장", sport: "배드민턴", icon: "🏸" },
   { venue: "100주년 기념관 배구장", sport: "배구", icon: "🏐" },
-  { venue: "대운동장 잔디구장", sport: "축구", icon: "⚽" },
+  { venue: "족구장", sport: "족구", icon: "🦶" },
 ];
 
 type VenueSectionProps = {
