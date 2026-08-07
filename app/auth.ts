@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { getJwtSecret } from "./runtime-env";
+import { getJwtSecret, isAppReviewEmail } from "./runtime-env";
 
 export type SessionUser = {
   email: string;
@@ -139,7 +139,7 @@ export async function verifyJWT(
       payload.exp > authenticatedAt + SESSION_ABSOLUTE_SECONDS ||
       now - authenticatedAt > SESSION_ABSOLUTE_SECONDS ||
       typeof payload.email !== "string" ||
-      !isValidUosEmail(payload.email)
+      !isValidSessionEmail(payload.email)
     ) {
       return null;
     }
@@ -239,4 +239,22 @@ export function constantTimeEqual(left: string, right: string) {
 export function isValidUosEmail(email: string): boolean {
   const normalized = email.trim().toLowerCase();
   return /^[a-z0-9._%+-]+@uos\.ac\.kr$/.test(normalized);
+}
+
+export function isValidSessionEmail(email: string): boolean {
+  return isValidUosEmail(email) || isAppReviewEmail(email);
+}
+
+export function isReviewSessionEmail(email: string): boolean {
+  return isAppReviewEmail(email);
+}
+
+export async function hashAttendanceCode(activityId: string, code: string) {
+  const key = await getSigningKey();
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    textToUint8Array(`attendance:${activityId}:${code}`) as unknown as ArrayBuffer,
+  );
+  return base64UrlEncode(new Uint8Array(signature));
 }

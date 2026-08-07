@@ -2,6 +2,8 @@
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import { cleanupExpiredRoleEvidence } from "../app/role-evidence-cleanup";
+import { isReviewSessionEmail, verifyJWT } from "../app/auth";
+import { isReviewDataEmail } from "../app/review-account";
 
 interface Env {
   ASSETS: Fetcher;
@@ -77,6 +79,73 @@ function crossOriginMutationResponse(request: Request) {
   return null;
 }
 
+async function getRequestSessionEmail(request: Request) {
+  const cookie = request.headers
+    .get("cookie")
+    ?.split(";")
+    .map((item) => item.trim())
+    .find((item) => item.startsWith("__Host-gachihaeu_session="));
+  if (!cookie) return null;
+  const token = cookie.slice(cookie.indexOf("=") + 1);
+  const payload = await verifyJWT(token);
+  return typeof payload?.email === "string" ? payload.email : null;
+}
+
+async function enforceAccountRestrictions(request: Request, env: Env) {
+  const url = new URL(request.url);
+  if (!url.pathname.startsWith("/api/")) return null;
+
+  const email = await getRequestSessionEmail(request);
+  if (!email) return null;
+
+  const activityMatch = url.pathname.match(/^\/api\/activities\/([^/]+)/);
+  if (activityMatch) {
+    const activity = await env.DB.prepare(
+      `SELECT creator_email FROM activities WHERE id = ?`,
+    ).bind(decodeURIComponent(activityMatch[1])).first<{ creator_email: string }>();
+    if (
+      activity &&
+      isReviewSessionEmail(email) !== isReviewDataEmail(activity.creator_email)
+    ) {
+      return Response.json({ error: "모임을 찾을 수 없어요." }, { status: 404 });
+    }
+  }
+
+  if (!MUTATION_METHODS.has(request.method.toUpperCase())) return null;
+  if (
+    url.pathname.startsWith("/api/auth/") ||
+    url.pathname === "/api/account"
+  ) {
+    return null;
+  }
+
+  const sanction = await env.DB.prepare(
+    `SELECT kind, reason, expires_at
+     FROM user_sanctions
+     WHERE user_email = ?
+       AND revoked_at IS NULL
+       AND kind IN ('suspended', 'banned')
+       AND (expires_at IS NULL OR datetime(expires_at) > datetime('now'))
+     ORDER BY created_at DESC
+     LIMIT 1`,
+  ).bind(email).first<{ kind: string; reason: string; expires_at: string | null }>();
+
+  if (!sanction) return null;
+  return Response.json(
+    {
+      error:
+        sanction.kind === "banned"
+          ? `운영 정책에 따라 이용이 제한된 계정이에요. 사유: ${sanction.reason}`
+          : `계정 이용이 일시 정지됐어요. 사유: ${sanction.reason}`,
+      sanction: {
+        kind: sanction.kind,
+        expiresAt: sanction.expires_at,
+      },
+    },
+    { status: 403 },
+  );
+}
+
 function addSecurityHeaders(request: Request, response: Response) {
   const secured = new Response(response.body, response);
   secured.headers.set("X-Content-Type-Options", "nosniff");
@@ -132,6 +201,9 @@ const worker = {
 
     const originError = crossOriginMutationResponse(request);
     if (originError) return addSecurityHeaders(request, originError);
+
+    const restrictionError = await enforceAccountRestrictions(request, env);
+    if (restrictionError) return addSecurityHeaders(request, restrictionError);
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];

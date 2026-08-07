@@ -229,3 +229,30 @@
     transition-duration: 0.01ms !important;
   }
 }
+.attendance-check-in {
+  padding: 14px;
+  margin: 0 0 16px;
+  background: #f4f7ff;
+  border: 1px solid #dbe7ff;
+  border-radius: 15px;
+}
+
+.attendance-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.attendance-heading span { color: var(--blue); font-size: 8px; font-weight: 900; }
+.attendance-heading h3 { margin: 3px 0 0; font-size: 14px; }
+.attendance-heading b { padding: 4px 7px; color: var(--blue); font-size: 8px; background: white; border-radius: 999px; }
+.attendance-check-in > p { margin: 12px 0; color: #647084; font-size: 10px; line-height: 1.5; }
+.attendance-check-in > button,
+.attendance-check-in form button { height: 38px; padding: 0 13px; color: white; font-size: 10px; font-weight: 850; background: var(--blue); border: 0; border-radius: 10px; cursor: pointer; }
+.attendance-check-in button:disabled { opacity: .55; cursor: wait; }
+.attendance-code { margin: 13px 0; color: var(--ink); font-size: 29px; font-weight: 950; letter-spacing: .13em; text-align: center; }
+.attendance-code span { color: var(--blue); }
+.attendance-check-in form { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 12px 0; }
+.attendance-check-in form input { min-width: 0; height: 38px; padding: 0 10px; color: var(--ink); font-size: 18px; font-weight: 850; letter-spacing: .2em; text-align: center; background: white; border: 1px solid #c8d9ff; border-radius: 10px; }
+.attendance-check-in > small { display: block; margin-top: 9px; color: #8791a0; font-size: 8px; line-height: 1.45; }

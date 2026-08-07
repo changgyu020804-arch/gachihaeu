@@ -14,6 +14,7 @@ import { RatingSheet } from "./components/rating-sheet";
 import { UserProfileSheet } from "./components/user-profile-sheet";
 import { VenueSection } from "./components/venue-section";
 import { useHomeController } from "./hooks/use-home-controller";
+import { PolicyLinks } from "./components/policy-links";
 
 type HomeClientProps = {
   initialUser: Viewer | null;
@@ -68,6 +69,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
           onBrowse={() => home.setMyOnly(false)}
           onCreate={() => home.openCreate()}
         />
+        <PolicyLinks />
         <BottomNavigation
           activeNav={home.activeNav}
           onHome={home.goHome}
@@ -106,6 +108,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
             onOpenRating={home.openRating}
             onReport={(activity) => void home.reportActivity(activity)}
             onViewProfile={home.setViewingUserEmail}
+            onToast={home.setToast}
           />
         )}
 

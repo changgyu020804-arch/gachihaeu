@@ -1,4 +1,4 @@
-import { getSessionUser } from "../../auth";
+import { getSessionUser, isReviewSessionEmail } from "../../auth";
 import { LEVELS, SPORTS, VENUES } from "../../activity-data";
 import { getUserDisplayName } from "../../activity-policy";
 import { enforceRateLimit, getClientIp } from "../../security";
@@ -41,6 +41,7 @@ export async function GET() {
   try {
     await ensureSchema();
     const email = user.email;
+    const reviewMode = isReviewSessionEmail(email) ? 1 : 0;
     const now = new Date().toISOString();
     const upcomingCutoff = new Date(Date.now() - 30 * 60_000).toISOString();
     const historyCutoff = new Date(Date.now() - 30 * 24 * 60 * 60_000).toISOString();
@@ -79,6 +80,11 @@ export async function GET() {
         LEFT JOIN participants p ON p.activity_id = a.id
         WHERE a.status = 'open'
           AND (
+            (? = 1 AND a.creator_email LIKE '%@review.gachihaeu.com')
+            OR
+            (? = 0 AND a.creator_email NOT LIKE '%@review.gachihaeu.com')
+          )
+          AND (
             a.starts_at >= ?
             OR (
               a.starts_at >= ?
@@ -107,6 +113,8 @@ export async function GET() {
         email,
         email,
         email,
+        reviewMode,
+        reviewMode,
         upcomingCutoff,
         historyCutoff,
         email,

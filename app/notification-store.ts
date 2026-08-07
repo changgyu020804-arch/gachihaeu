@@ -13,7 +13,8 @@ export type NotificationType =
   | "rated"
   | "notice"
   | "comment"
-  | "role_verification";
+  | "role_verification"
+  | "moderation";
 
 type NewNotification = {
   userEmail: string;

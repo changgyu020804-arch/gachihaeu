@@ -295,3 +295,57 @@ export const userBlocks = sqliteTable(
     index("user_blocks_blocked_idx").on(table.blockedEmail),
   ],
 );
+
+export const attendanceCodes = sqliteTable(
+  "attendance_codes",
+  {
+    activityId: text("activity_id")
+      .primaryKey()
+      .references(() => activities.id, { onDelete: "cascade" }),
+    codeHash: text("code_hash").notNull(),
+    validFrom: text("valid_from").notNull(),
+    expiresAt: text("expires_at").notNull(),
+    generatedBy: text("generated_by").notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [index("attendance_codes_expiry_idx").on(table.expiresAt)],
+);
+
+export const moderationActions = sqliteTable(
+  "moderation_actions",
+  {
+    id: text("id").primaryKey(),
+    reportType: text("report_type").notNull(),
+    reportId: text("report_id").notNull(),
+    action: text("action").notNull(),
+    targetEmail: text("target_email").notNull(),
+    moderatorEmail: text("moderator_email").notNull(),
+    note: text("note").notNull().default(""),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    uniqueIndex("moderation_actions_report_idx").on(table.reportType, table.reportId),
+    index("moderation_actions_target_idx").on(table.targetEmail, table.createdAt),
+  ],
+);
+
+export const userSanctions = sqliteTable(
+  "user_sanctions",
+  {
+    id: text("id").primaryKey(),
+    userEmail: text("user_email").notNull(),
+    kind: text("kind").notNull(),
+    reason: text("reason").notNull(),
+    expiresAt: text("expires_at"),
+    createdBy: text("created_by").notNull(),
+    revokedAt: text("revoked_at"),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("user_sanctions_active_idx").on(
+      table.userEmail,
+      table.revokedAt,
+      table.expiresAt,
+    ),
+  ],
+);

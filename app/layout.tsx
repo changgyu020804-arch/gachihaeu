@@ -12,6 +12,7 @@ import "./styles/venues.css";
 import "./styles/notifications.css";
 import "./styles/comments.css";
 import "./styles/role-verification.css";
+import "./styles/legal.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

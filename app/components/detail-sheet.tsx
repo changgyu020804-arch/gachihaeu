@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Activity, SPORT_META, isReservationRequired } from "../activity-data";
 import { formatFullDate } from "./utils";
 import { ActivityComments } from "./activity-comments";
+import { AttendanceCheckIn } from "./attendance-check-in";
 
 type DetailSheetProps = {
   activity: Activity;
@@ -18,6 +19,7 @@ type DetailSheetProps = {
   onOpenRating: (activityId: string) => void;
   onReport: (activity: Activity) => void;
   onViewProfile: (email: string) => void;
+  onToast: (message: string) => void;
 };
 
 export function DetailSheet({
@@ -28,6 +30,7 @@ export function DetailSheet({
   onOpenRating,
   onReport,
   onViewProfile,
+  onToast,
 }: DetailSheetProps) {
   const isFull = activity.participantCount >= activity.capacity;
   const [renderedAt] = useState(() => Date.now());
@@ -136,6 +139,11 @@ export function DetailSheet({
 
         {activity.isJoined && (
           <div className="participant-section">
+            <AttendanceCheckIn
+              activityId={activity.id}
+              isOwner={activity.isOwner}
+              onToast={onToast}
+            />
             <h3>참여자 ({activity.participantCount}명)</h3>
             <button
               className="edit-profile-button"

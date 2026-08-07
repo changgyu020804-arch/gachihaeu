@@ -261,5 +261,52 @@ export async function createCurrentSchema(db: D1Database) {
     db.prepare(
       "CREATE INDEX IF NOT EXISTS user_blocks_blocked_idx ON user_blocks(blocked_email)",
     ),
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS attendance_codes (
+        activity_id TEXT PRIMARY KEY NOT NULL,
+        code_hash TEXT NOT NULL,
+        valid_from TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        generated_by TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
+      )`,
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS attendance_codes_expiry_idx ON attendance_codes(expires_at)",
+    ),
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS moderation_actions (
+        id TEXT PRIMARY KEY NOT NULL,
+        report_type TEXT NOT NULL,
+        report_id TEXT NOT NULL,
+        action TEXT NOT NULL,
+        target_email TEXT NOT NULL,
+        moderator_email TEXT NOT NULL,
+        note TEXT DEFAULT '' NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+      )`,
+    ),
+    db.prepare(
+      "CREATE UNIQUE INDEX IF NOT EXISTS moderation_actions_report_idx ON moderation_actions(report_type, report_id)",
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS moderation_actions_target_idx ON moderation_actions(target_email, created_at)",
+    ),
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS user_sanctions (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_email TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        expires_at TEXT,
+        created_by TEXT NOT NULL,
+        revoked_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+      )`,
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS user_sanctions_active_idx ON user_sanctions(user_email, revoked_at, expires_at)",
+    ),
   ]);
 }

@@ -10,6 +10,8 @@ const USER_RATE_LIMIT_ACTIONS = [
   "activity-notice",
   "activity-report",
   "attendance-update",
+  "attendance-code-generate",
+  "attendance-check-in",
   "notifications-read",
   "profile-update",
   "role-verification-submit",
@@ -48,6 +50,14 @@ export async function deleteAccountData(
   rateLimitKeyHashes: string[],
 ) {
   const statements = [
+    db.prepare(`DELETE FROM user_sanctions WHERE user_email = ?`).bind(email),
+    db.prepare(`DELETE FROM moderation_actions WHERE target_email = ? OR moderator_email = ?`).bind(email, email),
+    db.prepare(
+      `DELETE FROM attendance_codes
+       WHERE generated_by = ? OR activity_id IN (
+         SELECT id FROM activities WHERE creator_email = ?
+       )`,
+    ).bind(email, email),
     db
       .prepare(
         `DELETE FROM notifications

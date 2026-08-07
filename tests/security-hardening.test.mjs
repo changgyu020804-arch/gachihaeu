@@ -146,7 +146,7 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     schema,
     /onboardingCompleted: integer\("onboarding_completed"\)/,
   );
-  assert.match(loginSheet, /type LoginStep = "email" \| "code" \| "profile"/);
+  assert.match(loginSheet, /type LoginStep = "email" \| "code" \| "profile" \| "review"/);
   assert.match(loginStepForms, /GENDERS/);
   assert.match(loginStepForms, /CAMPUS_ROLES/);
   assert.match(loginStepForms, /DEPARTMENTS/);
@@ -258,6 +258,9 @@ test("deletes the account and all directly associated user data", async () => {
     "activities",
     "security_audit_logs",
     "security_rate_limits",
+    "attendance_codes",
+    "moderation_actions",
+    "user_sanctions",
   ]) {
     assert.match(deletion, new RegExp(`DELETE FROM ${table}`));
   }
@@ -265,6 +268,77 @@ test("deletes the account and all directly associated user data", async () => {
   assert.match(profileSheet, /AccountDeletionPanel/);
   assert.match(deletionPanel, /계정 영구 삭제/);
   assert.match(deletionPanel, /confirmation !== "탈퇴"/);
+});
+
+test("isolates the App Review account and never stores its password in source", async () => {
+  const [runtimeEnv, reviewRoute, reviewData, activitiesRoute, loginSheet] = await Promise.all([
+    read("app/runtime-env.ts"),
+    read("app/api/auth/review-login/route.ts"),
+    read("app/review-account.ts"),
+    read("app/api/activities/route.ts"),
+    read("app/components/login-sheet.tsx"),
+  ]);
+  assert.match(runtimeEnv, /APP_REVIEW_PASSWORD/);
+  assert.match(reviewRoute, /getAppReviewConfig/);
+  assert.match(reviewRoute, /constantTimeEqual/);
+  assert.match(reviewRoute, /seedReviewData/);
+  assert.match(reviewData, /@review\.gachihaeu\.com/);
+  assert.match(activitiesRoute, /reviewMode/);
+  assert.match(activitiesRoute, /NOT LIKE '%@review\.gachihaeu\.com'/);
+  assert.match(loginSheet, /review-login/);
+  assert.doesNotMatch(`${runtimeEnv}\n${reviewRoute}\n${loginSheet}`, /APP_REVIEW_PASSWORD\s*=\s*["'][^"']+/);
+});
+
+test("supports administrator moderation and active account sanctions", async () => {
+  const [schema, route, panel, worker] = await Promise.all([
+    read("db/schema.ts"),
+    read("app/api/admin/moderation/route.ts"),
+    read("app/components/admin-moderation-panel.tsx"),
+    read("worker/index.ts"),
+  ]);
+  assert.match(schema, /moderationActions = sqliteTable/);
+  assert.match(schema, /userSanctions = sqliteTable/);
+  assert.match(route, /requireAdmin/);
+  assert.match(route, /suspend_30d/);
+  assert.match(route, /UPDATE activities SET status = 'hidden'/);
+  assert.match(panel, /신고·제재 관리/);
+  assert.match(worker, /user_sanctions/);
+  assert.match(worker, /kind IN \('suspended', 'banned'\)/);
+});
+
+test("checks attendance with a short-lived hashed six digit number", async () => {
+  const [schema, auth, codeRoute, checkInRoute, ui] = await Promise.all([
+    read("db/schema.ts"),
+    read("app/auth.ts"),
+    read("app/api/activities/[id]/attendance-code/route.ts"),
+    read("app/api/activities/[id]/check-in/route.ts"),
+    read("app/components/attendance-check-in.tsx"),
+  ]);
+  assert.match(schema, /attendanceCodes = sqliteTable/);
+  assert.match(auth, /hashAttendanceCode/);
+  assert.match(codeRoute, /generateAuthCode/);
+  assert.match(codeRoute, /code_hash/);
+  assert.doesNotMatch(schema, /code: text\("code"\)/);
+  assert.match(checkInRoute, /maximum: 5/);
+  assert.match(checkInRoute, /constantTimeEqual/);
+  assert.match(ui, /6자리 출석번호/);
+});
+
+test("publishes launch policies and support contact", async () => {
+  const [privacy, terms, community, support, links] = await Promise.all([
+    read("app/privacy/page.tsx"),
+    read("app/terms/page.tsx"),
+    read("app/community/page.tsx"),
+    read("app/support/page.tsx"),
+    read("app/components/policy-links.tsx"),
+  ]);
+  assert.match(privacy, /개인정보처리방침/);
+  assert.match(privacy, /Cloudflare D1/);
+  assert.match(terms, /같이해U 이용약관/);
+  assert.match(community, /커뮤니티 운영정책/);
+  assert.match(support, /changgyu1939@uos\.ac\.kr/);
+  assert.match(links, /\/privacy/);
+  assert.match(links, /\/support/);
 });
 
 test("verifies professor and staff roles with private evidence and admin review", async () => {

@@ -5,6 +5,7 @@ import { Viewer } from "../activity-data";
 import {
   EmailLoginForm,
   ProfileSetupForm,
+  ReviewLoginForm,
   VerificationCodeForm,
 } from "./login-step-forms";
 import { getErrorMessage } from "./utils";
@@ -15,7 +16,7 @@ type LoginSheetProps = {
   onLogin: (user: Viewer) => void;
 };
 
-type LoginStep = "email" | "code" | "profile";
+type LoginStep = "email" | "code" | "profile" | "review";
 
 export function LoginSheet({
   existingUser = null,
@@ -176,12 +177,28 @@ export function LoginSheet({
         </div>
 
         {step === "email" && (
-          <EmailLoginForm
-            email={email}
-            error={error}
-            loading={loading}
-            onEmailChange={setEmail}
-            onSubmit={handleSendCode}
+          <>
+            <EmailLoginForm
+              email={email}
+              error={error}
+              loading={loading}
+              onEmailChange={setEmail}
+              onSubmit={handleSendCode}
+            />
+            <button
+              type="button"
+              className="review-login-link"
+              onClick={() => { setStep("review"); setError(""); }}
+            >
+              App Store 심사용 계정
+            </button>
+          </>
+        )}
+
+        {step === "review" && (
+          <ReviewLoginForm
+            onLogin={onLogin}
+            onBack={() => { setStep("email"); setError(""); }}
           />
         )}
 

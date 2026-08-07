@@ -10,6 +10,7 @@ import { getErrorMessage } from "./utils";
 import { ProfileEditForm, ProfileForm } from "./profile-edit-form";
 import { AccountDeletionPanel } from "./account-deletion-panel";
 import { AdminVerificationPanel } from "./admin-verification-panel";
+import { AdminModerationPanel } from "./admin-moderation-panel";
 import { ProfileOverview } from "./profile-overview";
 
 type ProfileSheetProps = {
@@ -40,6 +41,7 @@ export function ProfileSheet({
   const [editing, setEditing] = useState(false);
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [showAdminVerifications, setShowAdminVerifications] = useState(false);
+  const [showAdminModeration, setShowAdminModeration] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -119,7 +121,7 @@ export function ProfileSheet({
   };
 
   return (
-    <div className="sheet-backdrop" onClick={() => { onClose(); setEditing(false); setShowDeleteAccount(false); setShowAdminVerifications(false); }}>
+    <div className="sheet-backdrop" onClick={() => { onClose(); setEditing(false); setShowDeleteAccount(false); setShowAdminVerifications(false); setShowAdminModeration(false); }}>
       <section
         className="sheet profile-sheet"
         role="dialog"
@@ -149,6 +151,11 @@ export function ProfileSheet({
             onClose={() => setShowAdminVerifications(false)}
             onToast={onToast}
           />
+        ) : showAdminModeration ? (
+          <AdminModerationPanel
+            onClose={() => setShowAdminModeration(false)}
+            onToast={onToast}
+          />
         ) : editing ? (
           <ProfileEditForm
             value={profileForm}
@@ -165,6 +172,7 @@ export function ProfileSheet({
             recentRatings={recentRatings}
             onEdit={() => setEditing(true)}
             onOpenAdmin={() => setShowAdminVerifications(true)}
+            onOpenModeration={() => setShowAdminModeration(true)}
             onOpenDeletion={() => setShowDeleteAccount(true)}
             onLogout={onLogout}
             onHideComment={(ratingId) => void hideComment(ratingId)}

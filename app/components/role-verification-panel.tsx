@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { VERIFICATION_DOCUMENT_TYPES } from "../role-verification-types";
 import type { RoleVerificationStatus } from "../role-verification-types";
+import type { VerificationDocumentType } from "../role-verification-types";
 import { getErrorMessage } from "./utils";
 
 type LatestVerificationRequest = {
@@ -45,7 +46,7 @@ export function RoleVerificationPanel({
   onToast,
 }: RoleVerificationPanelProps) {
   const [verification, setVerification] = useState<VerificationState | null>(null);
-  const [documentType, setDocumentType] = useState(
+  const [documentType, setDocumentType] = useState<VerificationDocumentType>(
     VERIFICATION_DOCUMENT_TYPES[0],
   );
   const [evidence, setEvidence] = useState<File | null>(null);
@@ -158,7 +159,7 @@ export function RoleVerificationPanel({
             <select
               value={documentType}
               disabled={submitting}
-              onChange={(event) => setDocumentType(event.target.value)}
+              onChange={(event) => setDocumentType(event.target.value as VerificationDocumentType)}
             >
               {VERIFICATION_DOCUMENT_TYPES.map((item) => (
                 <option key={item} value={item}>{item}</option>
