@@ -114,7 +114,7 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     auth,
     schema,
     loginSheet,
-    loginStepForms,
+    profileSetupForm,
     profileSheet,
     profileOverview,
     campusRoleBadge,
@@ -126,7 +126,7 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     read("app/auth.ts"),
     read("db/schema.ts"),
     read("app/components/login-sheet.tsx"),
-    read("app/components/login-step-forms.tsx"),
+    read("app/components/profile-setup-form.tsx"),
     read("app/components/profile-sheet.tsx"),
     read("app/components/profile-overview.tsx"),
     read("app/components/campus-role-badge.tsx"),
@@ -147,9 +147,9 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     /onboardingCompleted: integer\("onboarding_completed"\)/,
   );
   assert.match(loginSheet, /type LoginStep = "email" \| "code" \| "profile" \| "review"/);
-  assert.match(loginStepForms, /GENDERS/);
-  assert.match(loginStepForms, /CAMPUS_ROLES/);
-  assert.match(loginStepForms, /DEPARTMENTS/);
+  assert.match(profileSetupForm, /GENDERS/);
+  assert.match(profileSetupForm, /CAMPUS_ROLES/);
+  assert.match(profileSetupForm, /DEPARTMENTS/);
   assert.match(profileSheet, /ProfileOverview/);
   assert.match(profileOverview, /CampusRoleBadge/);
   assert.match(campusRoleBadge, /학생: "student"/);
@@ -290,17 +290,19 @@ test("isolates the App Review account and never stores its password in source", 
 });
 
 test("supports administrator moderation and active account sanctions", async () => {
-  const [schema, route, panel, worker] = await Promise.all([
+  const [schema, route, store, types, panel, worker] = await Promise.all([
     read("db/schema.ts"),
     read("app/api/admin/moderation/route.ts"),
+    read("app/moderation-store.ts"),
+    read("app/moderation-types.ts"),
     read("app/components/admin-moderation-panel.tsx"),
     read("worker/index.ts"),
   ]);
   assert.match(schema, /moderationActions = sqliteTable/);
   assert.match(schema, /userSanctions = sqliteTable/);
   assert.match(route, /requireAdmin/);
-  assert.match(route, /suspend_30d/);
-  assert.match(route, /UPDATE activities SET status = 'hidden'/);
+  assert.match(types, /suspend_30d/);
+  assert.match(store, /UPDATE activities SET status = 'hidden'/);
   assert.match(panel, /신고·제재 관리/);
   assert.match(worker, /user_sanctions/);
   assert.match(worker, /kind IN \('suspended', 'banned'\)/);

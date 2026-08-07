@@ -1,0 +1,43 @@
+.profile-loading { padding: 48px 20px; color: var(--muted); text-align: center; }
+.profile-department { margin: 4px 0; color: var(--muted); font-size: 13px; }
+.profile-bio { padding: 10px 14px; margin: 8px 0; color: var(--ink); font-size: 14px; line-height: 1.5; background: var(--soft); border-radius: 10px; }
+.profile-sports { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 10px 0; }
+.sport-tag { display: inline-flex; align-items: center; gap: 3px; padding: 4px 10px; font-size: 12px; font-weight: 600; border-radius: 14px; }
+.profile-email { display: block; margin: 8px 0 16px; color: var(--muted); }
+
+.edit-profile-button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin: 12px 0 8px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.edit-profile-button:hover { background: var(--line); }
+.profile-form { padding: 0 4px; }
+.profile-form label { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; color: var(--muted); font-size: 13px; font-weight: 600; }
+.profile-form input,
+.profile-form select { padding: 10px 12px; color: var(--ink); font-size: 15px; border: 1px solid var(--line); border-radius: 10px; }
+.profile-form fieldset { padding: 0; margin: 0 0 16px; border: none; }
+.profile-form fieldset legend { margin-bottom: 8px; color: var(--muted); font-size: 13px; font-weight: 600; }
+.form-error { margin-bottom: 10px; color: var(--danger); font-size: 13px; }
+.nickname-status { min-height: 18px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.nickname-status.available { color: #18864b; }
+.nickname-status.unavailable,
+.nickname-status.error { color: var(--danger); }
+
+.rating-summary { width: 100%; padding: 16px; margin: 16px 0; background: var(--soft); border-radius: 14px; }
+.rating-summary h3 { margin: 0 0 12px; color: var(--ink); font-size: 14px; font-weight: 700; }
+.rating-scores { display: flex; flex-direction: column; gap: 8px; }
+.rating-score-item { display: flex; align-items: center; gap: 8px; }
+.rating-label { min-width: 42px; color: var(--muted); font-size: 13px; }
+.rating-stars { color: #f5a623; font-size: 15px; letter-spacing: 1px; }
+.rating-value { margin-left: auto; color: var(--ink); font-size: 13px; font-weight: 700; }
+.rating-summary > small { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; text-align: right; }

@@ -7,11 +7,15 @@ import "./styles/matches.css";
 import "./styles/sheets.css";
 import "./styles/details.css";
 import "./styles/ratings.css";
+import "./styles/profile-forms.css";
 import "./styles/profiles.css";
+import "./styles/auth-ui.css";
+import "./styles/account.css";
 import "./styles/venues.css";
 import "./styles/notifications.css";
 import "./styles/comments.css";
 import "./styles/role-verification.css";
+import "./styles/admin.css";
 import "./styles/legal.css";
 
 const geistSans = Geist({

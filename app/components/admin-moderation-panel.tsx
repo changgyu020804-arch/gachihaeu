@@ -1,28 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  MODERATION_ACTION_OPTIONS,
+  type ActiveSanction,
+  type ModerationReport,
+} from "../moderation-types";
 import { getErrorMessage } from "./utils";
-
-type ModerationReport = {
-  type: "activity" | "comment" | "user" | "rating";
-  id: string;
-  reporterEmail: string;
-  targetEmail: string;
-  reason: string;
-  content: string;
-  createdAt: string;
-  resolution: string | null;
-  resolutionNote: string | null;
-};
-
-type ActiveSanction = {
-  id: string;
-  userEmail: string;
-  kind: string;
-  reason: string;
-  expiresAt: string | null;
-  createdAt: string;
-};
 
 const TYPE_LABEL = {
   activity: "모임",
@@ -30,16 +14,6 @@ const TYPE_LABEL = {
   user: "사용자",
   rating: "평가 코멘트",
 };
-
-const ACTIONS = [
-  ["dismiss", "문제없음"],
-  ["hide_content", "콘텐츠 숨김"],
-  ["warn", "경고"],
-  ["suspend_3d", "3일 정지"],
-  ["suspend_7d", "7일 정지"],
-  ["suspend_30d", "30일 정지"],
-  ["ban", "영구 제한"],
-] as const;
 
 type Props = { onClose: () => void; onToast: (message: string) => void };
 
@@ -150,7 +124,7 @@ export function AdminModerationPanel({ onClose, onToast }: Props) {
                   <small>대상 {report.targetEmail}</small>
                   <small>신고자 {report.reporterEmail}</small>
                   <div className="moderation-actions">
-                    {ACTIONS.filter(([value]) => !(report.type === "user" && value === "hide_content")).map(([value, label]) => (
+                    {MODERATION_ACTION_OPTIONS.filter(([value]) => !(report.type === "user" && value === "hide_content")).map(([value, label]) => (
                       <button
                         key={value}
                         disabled={submittingId === report.id}

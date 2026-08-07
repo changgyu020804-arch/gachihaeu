@@ -1,0 +1,73 @@
+.login-sheet { max-height: 85vh; overflow-y: auto; }
+.login-sheet form { padding: 0 4px; }
+.login-description { margin: 0 0 20px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.login-description strong { color: var(--ink); }
+
+.login-sheet label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.login-sheet input,
+.login-sheet select {
+  width: 100%;
+  padding: 12px 14px;
+  color: var(--ink);
+  font-size: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: border-color 0.15s;
+}
+
+.login-sheet input:focus,
+.login-sheet select:focus { border-color: var(--blue); }
+.profile-privacy-note { margin: -5px 0 16px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.login-sheet .code-input { font-size: 24px; font-weight: 700; letter-spacing: 8px; text-align: center; }
+
+.login-sheet .text-button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.login-sheet .text-button:hover { color: var(--blue); }
+.review-login-link {
+  display: block;
+  width: calc(100% - 8px);
+  padding: 12px;
+  margin: 18px 4px 0;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 750;
+  background: #f7f8fa;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.login-button {
+  padding: 7px 14px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  background: var(--blue);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.login-button:hover { background: var(--blue-dark); }

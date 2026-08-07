@@ -2,12 +2,9 @@
 
 import { FormEvent, useState } from "react";
 import { Viewer } from "../activity-data";
-import {
-  EmailLoginForm,
-  ProfileSetupForm,
-  ReviewLoginForm,
-  VerificationCodeForm,
-} from "./login-step-forms";
+import { EmailLoginForm, VerificationCodeForm } from "./email-login-forms";
+import { ProfileSetupForm } from "./profile-setup-form";
+import { ReviewLoginForm } from "./review-login-form";
 import { getErrorMessage } from "./utils";
 
 type LoginSheetProps = {
