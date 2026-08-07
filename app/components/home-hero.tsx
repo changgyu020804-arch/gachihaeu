@@ -19,7 +19,7 @@ export function HomeHero({
         </p>
       </div>
       <div className="hero-score" aria-label={`열린 모임 ${openCount}개`}>
-        <span>오늘의 캠퍼스</span>
+        <span>캠퍼스 전체</span>
         <strong>{openCount}</strong>
         <small>개의 열린 모임</small>
       </div>
