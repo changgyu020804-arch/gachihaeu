@@ -72,6 +72,7 @@ test("keeps large UI and style concerns in focused modules", async () => {
   assert.match(profileSetupForm, /CAMPUS_ROLES/);
   assert.ok(profileSheet.split("\n").length < 230);
   assert.match(profileSheet, /ProfileEditForm/);
+  assert.match(profileSheet, /showRootCloseButton/);
   assert.match(profileEditForm, /preferredSports/);
   assert.ok(ratingSheet.split("\n").length < 250);
   assert.match(ratingSheet, /RatingParticipantCard/);

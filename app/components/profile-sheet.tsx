@@ -45,6 +45,11 @@ export function ProfileSheet({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const showRootCloseButton =
+    !editing &&
+    !showDeleteAccount &&
+    !showAdminVerifications &&
+    !showAdminModeration;
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -130,14 +135,16 @@ export function ProfileSheet({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sheet-handle" />
-        <button
-          type="button"
-          className="close-button profile-close-button"
-          aria-label="마이페이지 닫기"
-          onClick={onClose}
-        >
-          ×
-        </button>
+        {showRootCloseButton && (
+          <button
+            type="button"
+            className="close-button profile-close-button"
+            aria-label="마이페이지 닫기"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        )}
         {loading ? (
           <div className="profile-loading">프로필 불러오는 중...</div>
         ) : showDeleteAccount ? (
