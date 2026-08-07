@@ -121,7 +121,6 @@
   cursor: pointer;
 }
 
-.match-topline,
 .match-footer,
 .host-info,
 .detail-host {
@@ -130,8 +129,29 @@
 }
 
 .match-topline {
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
   margin-bottom: 13px;
+}
+
+.match-topline-left,
+.match-topline-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.match-topline-right {
+  justify-content: flex-end;
+}
+
+.match-topline-center {
+  display: grid;
+  min-width: 42px;
+  place-items: center;
 }
 
 .sport-label,
@@ -148,10 +168,12 @@
 }
 
 .completed-label {
-  padding: 4px 7px;
+  min-width: 42px;
+  padding: 5px 8px;
   color: #667085;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
+  text-align: center;
   background: #eef0f3;
   border-radius: 7px;
 }

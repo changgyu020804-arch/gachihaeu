@@ -78,12 +78,18 @@ export function MatchCard({ activity, submitting, onSelect, onPerformAction, onO
   return (
     <article className="match-card" onClick={() => onSelect(activity)}>
       <div className="match-topline">
-        <span className="sport-label" style={{ color: meta.color, background: meta.softColor }}>
-          {meta.icon} {activity.sport}
-        </span>
-        {activity.facilityReserved && <span className="reserved-label">시설예약 ✓</span>}
-        {hasEnded && <span className="completed-label">종료</span>}
-        {activity.isOwner && <span className="owner-label">내가 만든 모임</span>}
+        <div className="match-topline-left">
+          <span className="sport-label" style={{ color: meta.color, background: meta.softColor }}>
+            {meta.icon} {activity.sport}
+          </span>
+          {activity.facilityReserved && <span className="reserved-label">시설예약 ✓</span>}
+        </div>
+        <div className="match-topline-center">
+          {hasEnded && <span className="completed-label">종료</span>}
+        </div>
+        <div className="match-topline-right">
+          {activity.isOwner && <span className="owner-label">내가 만든 모임</span>}
+        </div>
       </div>
       <div className="match-main">
         <div className="match-date">
