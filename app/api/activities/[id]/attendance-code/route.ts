@@ -24,6 +24,18 @@ function getAttendanceWindow(activity: ActivityRow) {
   };
 }
 
+function getGenerationUnavailableReason(activity: ActivityRow, isOwner: boolean) {
+  if (!isOwner) return "모임장만 출석번호를 만들 수 있어요.";
+  if (activity.status !== "open") {
+    return "취소되거나 종료 처리된 모임에서는 출석번호를 만들 수 없어요.";
+  }
+  const { expiresAt } = getAttendanceWindow(activity);
+  if (Date.now() > new Date(expiresAt).getTime()) {
+    return "출석 확인 시간이 지났어요.";
+  }
+  return null;
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -44,8 +56,12 @@ export async function GET(
   const code = await db.prepare(
     `SELECT valid_from, expires_at FROM attendance_codes WHERE activity_id = ?`,
   ).bind(id).first<{ valid_from: string; expires_at: string }>();
+  const isOwner = activity.creator_email === user.email;
+  const unavailableReason = getGenerationUnavailableReason(activity, isOwner);
   return Response.json({
-    isOwner: activity.creator_email === user.email,
+    isOwner,
+    canGenerate: isOwner && unavailableReason === null,
+    unavailableReason,
     active: Boolean(code && new Date(code.expires_at).getTime() > Date.now()),
     validFrom: code?.valid_from ?? null,
     expiresAt: code?.expires_at ?? null,
@@ -61,6 +77,20 @@ export async function POST(
   await ensureSchema();
   const { id } = await params;
   const db = getD1();
+  const activity = await getActivity(db, id);
+  if (!activity) return Response.json({ error: "모임을 찾을 수 없어요." }, { status: 404 });
+  const unavailableReason = getGenerationUnavailableReason(
+    activity,
+    activity.creator_email === user.email,
+  );
+  if (unavailableReason) {
+    return Response.json(
+      { error: unavailableReason },
+      { status: activity.creator_email === user.email ? 400 : 403 },
+    );
+  }
+
+  const { validFrom, expiresAt } = getAttendanceWindow(activity);
   const rateError = await enforceRateLimit(db, {
     action: "attendance-code-generate",
     identifiers: [`user:${user.email}`, `ip:${getClientIp(request)}`],
@@ -68,20 +98,6 @@ export async function POST(
     windowSeconds: 60 * 60,
   });
   if (rateError) return rateError;
-
-  const activity = await getActivity(db, id);
-  if (!activity) return Response.json({ error: "모임을 찾을 수 없어요." }, { status: 404 });
-  if (activity.creator_email !== user.email) {
-    return Response.json({ error: "모임장만 출석번호를 만들 수 있어요." }, { status: 403 });
-  }
-  if (activity.status !== "open") {
-    return Response.json({ error: "진행 중인 모임에서만 출석번호를 만들 수 있어요." }, { status: 400 });
-  }
-
-  const { validFrom, expiresAt } = getAttendanceWindow(activity);
-  if (Date.now() > new Date(expiresAt).getTime()) {
-    return Response.json({ error: "출석 확인 시간이 지났어요." }, { status: 400 });
-  }
 
   const code = generateAuthCode();
   const codeHash = await hashAttendanceCode(id, code);

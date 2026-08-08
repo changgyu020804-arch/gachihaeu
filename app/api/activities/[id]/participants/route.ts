@@ -23,6 +23,10 @@ type ActivityRow = {
   status: string;
 };
 
+type ViewerActivityRow = ActivityRow & {
+  viewer_attendance_status: AttendanceStatus | null;
+};
+
 async function getActivity(db: D1Database, id: string) {
   return db
     .prepare(
@@ -32,6 +36,29 @@ async function getActivity(db: D1Database, id: string) {
     )
     .bind(id)
     .first<ActivityRow>();
+}
+
+async function getActivityForViewer(
+  db: D1Database,
+  id: string,
+  viewerEmail: string,
+) {
+  return db
+    .prepare(
+      `SELECT
+         a.creator_email,
+         a.title,
+         a.starts_at,
+         a.duration_minutes,
+         a.status,
+         p.attendance_status AS viewer_attendance_status
+       FROM activities a
+       LEFT JOIN participants p
+         ON p.activity_id = a.id AND p.user_email = ?
+       WHERE a.id = ?`,
+    )
+    .bind(viewerEmail, id)
+    .first<ViewerActivityRow>();
 }
 
 function hasActivityEnded(activity: ActivityRow) {
@@ -53,22 +80,14 @@ export async function GET(
   const { id } = await params;
   const db = getD1();
 
-  const activity = await getActivity(db, id);
+  const activity = await getActivityForViewer(db, id, user.email);
   if (!activity) {
     return Response.json({ error: "모임을 찾을 수 없어요." }, { status: 404 });
   }
 
-  const viewerParticipant = await db
-    .prepare(
-      `SELECT attendance_status
-       FROM participants
-       WHERE activity_id = ? AND user_email = ?`,
-    )
-    .bind(id, user.email)
-    .first<{ attendance_status: AttendanceStatus }>();
   const isOwner = activity.creator_email === user.email;
 
-  if (!isOwner && !viewerParticipant) {
+  if (!isOwner && !activity.viewer_attendance_status) {
     return Response.json(
       { error: "이 모임의 참가자만 구성원을 볼 수 있어요." },
       { status: 403 },
@@ -77,26 +96,37 @@ export async function GET(
 
   const rows = await db
     .prepare(
-      `SELECT
-        p.user_email,
-        p.display_name,
-        p.attendance_status,
-        COALESCE(up.nickname, '') AS nickname,
-        COALESCE(up.department, '') AS department,
-        (SELECT AVG((trust_score + skill_score + manner_score) / 3.0)
-         FROM ratings WHERE rated_email = p.user_email) AS reputation_score,
-        (SELECT COUNT(*) FROM ratings WHERE rated_email = p.user_email) AS rating_count,
-        CASE WHEN p.user_email = ? THEN 1 ELSE 0 END AS is_host,
-        CASE WHEN EXISTS (
-          SELECT 1 FROM ratings
-          WHERE activity_id = ? AND rater_email = ? AND rated_email = p.user_email
-        ) THEN 1 ELSE 0 END AS has_rated
-      FROM participants p
-      LEFT JOIN user_profiles up ON up.email = p.user_email
-      WHERE p.activity_id = ?
-      ORDER BY is_host DESC, p.joined_at ASC`,
+      `WITH participant_rating_stats AS (
+         SELECT
+           r.rated_email,
+           AVG((r.trust_score + r.skill_score + r.manner_score) / 3.0) AS reputation_score,
+           COUNT(*) AS rating_count
+         FROM ratings r
+         INNER JOIN participants target
+           ON target.user_email = r.rated_email AND target.activity_id = ?
+         GROUP BY r.rated_email
+       )
+       SELECT
+         p.user_email,
+         p.display_name,
+         p.attendance_status,
+         COALESCE(up.nickname, '') AS nickname,
+         COALESCE(up.department, '') AS department,
+         stats.reputation_score,
+         COALESCE(stats.rating_count, 0) AS rating_count,
+         CASE WHEN p.user_email = ? THEN 1 ELSE 0 END AS is_host,
+         CASE WHEN mine.id IS NULL THEN 0 ELSE 1 END AS has_rated
+       FROM participants p
+       LEFT JOIN user_profiles up ON up.email = p.user_email
+       LEFT JOIN participant_rating_stats stats ON stats.rated_email = p.user_email
+       LEFT JOIN ratings mine
+         ON mine.activity_id = ?
+        AND mine.rater_email = ?
+        AND mine.rated_email = p.user_email
+       WHERE p.activity_id = ?
+       ORDER BY is_host DESC, p.joined_at ASC`,
     )
-    .bind(activity.creator_email, id, user.email, id)
+    .bind(id, activity.creator_email, id, user.email, id)
     .all<{
       user_email: string;
       display_name: string;
@@ -142,7 +172,7 @@ export async function GET(
       activityStatus: activity.status,
       creatorEmail: activity.creator_email,
       currentUserAttendance:
-        viewerParticipant?.attendance_status ?? ("pending" as AttendanceStatus),
+        activity.viewer_attendance_status ?? ("pending" as AttendanceStatus),
     },
   });
 }

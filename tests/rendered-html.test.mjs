@@ -107,6 +107,8 @@ test("enforces attendance and role-based rating rules", async () => {
   assert.match(ratingRoute, /구성원은 모임장만 평가할 수 있어요/);
   assert.match(ratingRoute, /참석이 확인된 구성원만 평가할 수 있어요/);
   assert.match(participantRoute, /모임장만 출석을 확인할 수 있어요/);
+  assert.match(participantRoute, /getActivityForViewer/);
+  assert.match(participantRoute, /participant_rating_stats/);
   assert.match(ratingSheet, /출석 확인 및 구성원 평가/);
   assert.match(ratingSheet, /설명 정확도/);
   assert.match(profile, /같이점수/);
@@ -173,6 +175,10 @@ test("delivers account-bound iPhone push notifications and opens the activity", 
   assert.match(nativePush, /getExpoPushTokenAsync/);
   assert.match(nativeApp, /usePushNotificationBridge/);
   assert.match(nativePushBridge, /addNotificationResponseReceivedListener/);
+  assert.match(nativePushBridge, /registrationInFlightRef/);
+  assert.match(nativePushBridge, /devicePushTokenRef/);
+  assert.match(nativeBridge, /gachihaeu:push-token/);
+  assert.match(nativeBridge, /localStorage\.getItem/);
   assert.match(nativeBridge, /gachihaeu:open-activity/);
   assert.match(webBridge, /gachihaeu:open-activity/);
   assert.match(accountDeletion, /DELETE FROM push_tokens/);

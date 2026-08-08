@@ -21,6 +21,8 @@ export function usePushNotificationBridge(
 ) {
   const webReadyRef = useRef(false);
   const pushTokenRef = useRef<string | null>(null);
+  const devicePushTokenRef = useRef<string | null>(null);
+  const registrationInFlightRef = useRef(false);
   const pendingDestinationRef = useRef<PushDestination | null>(null);
   const permissionPromptShownRef = useRef(false);
 
@@ -49,8 +51,16 @@ export function usePushNotificationBridge(
 
   const registerPushToken = useCallback(
     async (requestPermission: boolean) => {
-      const token = await acquireExpoPushToken(requestPermission);
-      if (token) syncPushTokenToWeb(token);
+      if (registrationInFlightRef.current) return;
+      registrationInFlightRef.current = true;
+      try {
+        const token = await acquireExpoPushToken(requestPermission);
+        if (token && token !== pushTokenRef.current) {
+          syncPushTokenToWeb(token);
+        }
+      } finally {
+        registrationInFlightRef.current = false;
+      }
     },
     [syncPushTokenToWeb],
   );
@@ -99,7 +109,10 @@ export function usePushNotificationBridge(
         const destination = getPushDestination(response);
         if (destination) openPushDestination(destination);
       });
-    const tokenSubscription = Notifications.addPushTokenListener(() => {
+    const tokenSubscription = Notifications.addPushTokenListener((deviceToken) => {
+      const tokenKey = `${deviceToken.type}:${String(deviceToken.data)}`;
+      if (devicePushTokenRef.current === tokenKey) return;
+      devicePushTokenRef.current = tokenKey;
       void registerPushToken(false);
     });
 

@@ -21,6 +21,7 @@ export function pushTokenRegistrationScript(token: string, platform: string) {
   return `
     (() => {
       const token = ${JSON.stringify(token)};
+      if (localStorage.getItem('gachihaeu:push-token') === token) return;
       fetch('/api/push-tokens', {
         method: 'POST',
         credentials: 'same-origin',

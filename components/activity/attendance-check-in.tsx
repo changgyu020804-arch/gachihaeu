@@ -15,21 +15,37 @@ export function AttendanceCheckIn({ activityId, isOwner, onToast }: Props) {
   const [entry, setEntry] = useState("");
   const [validFrom, setValidFrom] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [canGenerate, setCanGenerate] = useState(isOwner);
+  const [unavailableReason, setUnavailableReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
-    const response = await fetch(`/api/activities/${activityId}/attendance-code`, {
-      cache: "no-store",
-    });
-    if (!response.ok) return;
-    const payload = (await response.json()) as {
-      active?: boolean;
-      validFrom?: string | null;
-      expiresAt?: string | null;
-    };
-    setActive(Boolean(payload.active));
-    setValidFrom(payload.validFrom ?? null);
-    setExpiresAt(payload.expiresAt ?? null);
+    try {
+      const response = await fetch(`/api/activities/${activityId}/attendance-code`, {
+        cache: "no-store",
+      });
+      const payload = (await response.json()) as {
+        active?: boolean;
+        canGenerate?: boolean;
+        unavailableReason?: string | null;
+        validFrom?: string | null;
+        expiresAt?: string | null;
+        error?: string;
+      };
+      if (!response.ok) {
+        setCanGenerate(false);
+        setUnavailableReason(payload.error || "출석 정보를 불러오지 못했어요.");
+        return;
+      }
+      setActive(Boolean(payload.active));
+      setCanGenerate(Boolean(payload.canGenerate));
+      setUnavailableReason(payload.unavailableReason ?? "");
+      setValidFrom(payload.validFrom ?? null);
+      setExpiresAt(payload.expiresAt ?? null);
+    } catch {
+      setCanGenerate(false);
+      setUnavailableReason("출석 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    }
   }, [activityId]);
 
   useEffect(() => {
@@ -56,9 +72,12 @@ export function AttendanceCheckIn({ activityId, isOwner, onToast }: Props) {
       setActive(true);
       setValidFrom(payload.validFrom ?? null);
       setExpiresAt(payload.expiresAt ?? null);
+      setUnavailableReason("");
       onToast("새 출석번호를 만들었어요.");
     } catch (error) {
-      onToast(getErrorMessage(error));
+      const message = getErrorMessage(error);
+      setUnavailableReason(message);
+      onToast(message);
     } finally {
       setSubmitting(false);
     }
@@ -103,7 +122,12 @@ export function AttendanceCheckIn({ activityId, isOwner, onToast }: Props) {
           ) : (
             <p>현장에서 번호를 알려주면 참가자가 직접 출석할 수 있어요.</p>
           )}
-          <button type="button" disabled={submitting} onClick={() => void generate()}>
+          {unavailableReason && <p role="status">{unavailableReason}</p>}
+          <button
+            type="button"
+            disabled={submitting || !canGenerate}
+            onClick={() => void generate()}
+          >
             {submitting ? "만드는 중..." : active ? "새 번호로 바꾸기" : "출석번호 만들기"}
           </button>
         </>

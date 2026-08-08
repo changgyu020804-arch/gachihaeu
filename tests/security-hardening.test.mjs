@@ -322,10 +322,13 @@ test("checks attendance with a short-lived hashed six digit number", async () =>
   assert.match(auth, /hashAttendanceCode/);
   assert.match(codeRoute, /generateAuthCode/);
   assert.match(codeRoute, /code_hash/);
+  assert.match(codeRoute, /getGenerationUnavailableReason/);
+  assert.match(codeRoute, /canGenerate/);
   assert.doesNotMatch(schema, /code: text\("code"\)/);
   assert.match(checkInRoute, /maximum: 5/);
   assert.match(checkInRoute, /constantTimeEqual/);
   assert.match(ui, /6자리 출석번호/);
+  assert.match(ui, /unavailableReason/);
 });
 
 test("publishes launch policies and support contact", async () => {
