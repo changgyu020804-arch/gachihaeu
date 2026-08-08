@@ -1,4 +1,5 @@
 import { getD1 } from "../db";
+import { sendPushNotifications } from "./push-notification-store";
 
 export type NotificationType =
   | "joined"
@@ -25,12 +26,16 @@ type NewNotification = {
   dedupeKey: string;
 };
 
-export async function createNotifications(items: NewNotification[]) {
+export async function createNotifications(
+  items: NewNotification[],
+  options: { sendPush?: boolean } = {},
+) {
   if (items.length === 0) return;
   const db = getD1();
 
-  await db.batch(
-    items.map((item) =>
+  const ids = items.map(() => crypto.randomUUID());
+  const results = await db.batch(
+    items.map((item, index) =>
       db
         .prepare(
           `INSERT OR IGNORE INTO notifications (
@@ -38,7 +43,7 @@ export async function createNotifications(items: NewNotification[]) {
            ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         )
         .bind(
-          crypto.randomUUID(),
+          ids[index],
           item.userEmail,
           item.activityId ?? null,
           item.type,
@@ -48,6 +53,20 @@ export async function createNotifications(items: NewNotification[]) {
         ),
     ),
   );
+
+  if (options.sendPush === false) return;
+  const insertedItems = items.flatMap((item, index) =>
+    Number(results[index]?.meta.changes ?? 0) > 0
+      ? [{ id: ids[index], ...item }]
+      : [],
+  );
+  if (insertedItems.length === 0) return;
+
+  try {
+    await sendPushNotifications(insertedItems);
+  } catch (error) {
+    console.error("Push notification delivery failed", error);
+  }
 }
 
 export async function syncScheduledNotifications(userEmail: string) {
@@ -111,5 +130,5 @@ export async function syncScheduledNotifications(userEmail: string) {
     }
   }
 
-  await createNotifications(notifications);
+  await createNotifications(notifications, { sendPush: false });
 }

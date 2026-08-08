@@ -14,6 +14,7 @@ const USER_RATE_LIMIT_ACTIONS = [
   "attendance-check-in",
   "notifications-read",
   "profile-update",
+  "push-token-register",
   "role-verification-submit",
   "role-verification-review",
   "rating-comment-report",
@@ -50,6 +51,7 @@ export async function deleteAccountData(
   rateLimitKeyHashes: string[],
 ) {
   const statements = [
+    db.prepare(`DELETE FROM push_tokens WHERE user_email = ?`).bind(email),
     db.prepare(`DELETE FROM user_sanctions WHERE user_email = ?`).bind(email),
     db.prepare(`DELETE FROM moderation_actions WHERE target_email = ? OR moderator_email = ?`).bind(email, email),
     db.prepare(

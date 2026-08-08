@@ -25,19 +25,23 @@ import {
   canOpenOutsideApp,
   isInternalUrl,
 } from "./src/config";
+import { usePushNotificationBridge } from "./src/use-push-notification-bridge";
 
 export default function App() {
   const webViewRef = useRef<WebViewType>(null);
+  const { markWebReady, markWebUnavailable, onWebMessage } =
+    usePushNotificationBridge(webViewRef);
   const [canGoBack, setCanGoBack] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   const reload = useCallback(() => {
+    markWebUnavailable();
     setLoadFailed(false);
     setIsLoading(true);
     setReloadKey((current) => current + 1);
-  }, []);
+  }, [markWebUnavailable]);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
@@ -93,6 +97,11 @@ export default function App() {
     setCanGoBack(state.canGoBack);
   }, []);
 
+  const onWebLoadEnd = useCallback(() => {
+    setIsLoading(false);
+    markWebReady();
+  }, [markWebReady]);
+
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <StatusBar style="dark" />
@@ -128,9 +137,14 @@ export default function App() {
                 originWhitelist={["https://www.gachihaeu.com", "https://gachihaeu.com"]}
                 onShouldStartLoadWithRequest={shouldStartLoading}
                 onNavigationStateChange={onNavigationChange}
-                onLoadStart={() => setIsLoading(true)}
-                onLoadEnd={() => setIsLoading(false)}
+                onMessage={onWebMessage}
+                onLoadStart={() => {
+                  markWebUnavailable();
+                  setIsLoading(true);
+                }}
+                onLoadEnd={onWebLoadEnd}
                 onError={() => {
+                  markWebUnavailable();
                   setIsLoading(false);
                   setLoadFailed(true);
                 }}

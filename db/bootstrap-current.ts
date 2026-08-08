@@ -236,6 +236,22 @@ export async function createCurrentSchema(db: D1Database) {
       "CREATE INDEX IF NOT EXISTS notifications_user_read_idx ON notifications(user_email, read_at)",
     ),
     db.prepare(
+      `CREATE TABLE IF NOT EXISTS push_tokens (
+        token TEXT PRIMARY KEY NOT NULL,
+        user_email TEXT NOT NULL,
+        platform TEXT NOT NULL,
+        enabled INTEGER DEFAULT 1 NOT NULL,
+        last_seen_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+      )`,
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS push_tokens_user_enabled_idx ON push_tokens(user_email, enabled)",
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS push_tokens_last_seen_idx ON push_tokens(last_seen_at)",
+    ),
+    db.prepare(
       `CREATE TABLE IF NOT EXISTS user_reports (
         id TEXT PRIMARY KEY NOT NULL,
         reporter_email TEXT NOT NULL,

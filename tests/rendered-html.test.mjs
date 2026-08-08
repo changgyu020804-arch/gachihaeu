@@ -134,6 +134,51 @@ test("persists and displays user notifications", async () => {
   assert.match(migration, /notifications_user_dedupe_idx/);
 });
 
+test("delivers account-bound iPhone push notifications and opens the activity", async () => {
+  const [
+    schema,
+    migration,
+    tokenRoute,
+    pushStore,
+    notificationStore,
+    nativeApp,
+    nativePushBridge,
+    nativePush,
+    nativeBridge,
+    webBridge,
+    accountDeletion,
+    appConfig,
+  ] = await Promise.all([
+    readFile(new URL("db/schema.ts", root), "utf8"),
+    readFile(new URL("drizzle/0014_aberrant_the_anarchist.sql", root), "utf8"),
+    readFile(new URL("app/api/push-tokens/route.ts", root), "utf8"),
+    readFile(new URL("app/push-notification-store.ts", root), "utf8"),
+    readFile(new URL("app/notification-store.ts", root), "utf8"),
+    readFile(new URL("mobile/App.tsx", root), "utf8"),
+    readFile(new URL("mobile/src/use-push-notification-bridge.ts", root), "utf8"),
+    readFile(new URL("mobile/src/push-notifications.ts", root), "utf8"),
+    readFile(new URL("mobile/src/webview-bridge.ts", root), "utf8"),
+    readFile(new URL("app/hooks/use-native-app-bridge.ts", root), "utf8"),
+    readFile(new URL("app/account-deletion.ts", root), "utf8"),
+    readFile(new URL("mobile/app.json", root), "utf8"),
+  ]);
+
+  assert.match(schema, /pushTokens = sqliteTable/);
+  assert.match(migration, /CREATE TABLE `push_tokens`/);
+  assert.match(tokenRoute, /getSessionUser/);
+  assert.match(tokenRoute, /ON CONFLICT\(token\) DO UPDATE/);
+  assert.match(pushStore, /exp\.host\/--\/api\/v2\/push\/send/);
+  assert.match(pushStore, /DeviceNotRegistered/);
+  assert.match(notificationStore, /sendPushNotifications/);
+  assert.match(nativePush, /getExpoPushTokenAsync/);
+  assert.match(nativeApp, /usePushNotificationBridge/);
+  assert.match(nativePushBridge, /addNotificationResponseReceivedListener/);
+  assert.match(nativeBridge, /gachihaeu:open-activity/);
+  assert.match(webBridge, /gachihaeu:open-activity/);
+  assert.match(accountDeletion, /DELETE FROM push_tokens/);
+  assert.match(appConfig, /expo-notifications/);
+});
+
 test("supports activity operations and trustworthy profiles", async () => {
   const [
     activityRoute,

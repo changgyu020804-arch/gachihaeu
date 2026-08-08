@@ -6,6 +6,10 @@ import type { ActiveNav } from "../components/bottom-navigation";
 import type { AppNotification } from "../components/notification-sheet";
 import { getErrorMessage } from "../components/utils";
 import { useHomeActivities } from "./use-home-activities";
+import {
+  postNativeSessionState,
+  useNativeActivityNavigation,
+} from "./use-native-app-bridge";
 import { useNotificationCount } from "./use-notification-count";
 import { useSessionUser } from "./use-session-user";
 
@@ -35,6 +39,17 @@ export function useHomeController(initialUser: Viewer | null) {
     const timer = window.setTimeout(() => setToast(""), 2800);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    postNativeSessionState(Boolean(session.currentUser?.onboardingComplete));
+  }, [session.currentUser?.onboardingComplete]);
+
+  useNativeActivityNavigation(
+    activityState.activities,
+    activityState.loading,
+    setSelectedActivity,
+    () => setToast("알림에 연결된 모임을 찾지 못했어요."),
+  );
 
   const openCreate = (sport?: Sport, venue?: string) => {
     session.requireLogin(() => {
@@ -90,6 +105,15 @@ export function useHomeController(initialUser: Viewer | null) {
   };
 
   const handleLogout = async () => {
+    const pushToken = window.localStorage.getItem("gachihaeu:push-token");
+    if (pushToken) {
+      await fetch("/api/push-tokens", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: pushToken }),
+      }).catch(() => undefined);
+      window.localStorage.removeItem("gachihaeu:push-token");
+    }
     await fetch("/api/auth/logout", { method: "POST" });
     session.setCurrentUser(null);
     setShowProfile(false);

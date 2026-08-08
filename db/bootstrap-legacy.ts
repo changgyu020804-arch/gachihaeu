@@ -173,6 +173,9 @@ export async function upgradeLegacySchema(db: D1Database) {
     db.prepare(
       "DELETE FROM security_audit_logs WHERE created_at < datetime('now', '-90 days')",
     ),
+    db.prepare(
+      "DELETE FROM push_tokens WHERE last_seen_at < datetime('now', '-180 days')",
+    ),
     db.prepare("PRAGMA optimize"),
   ]);
 

@@ -268,6 +268,22 @@ export const notifications = sqliteTable(
   ],
 );
 
+export const pushTokens = sqliteTable(
+  "push_tokens",
+  {
+    token: text("token").primaryKey(),
+    userEmail: text("user_email").notNull(),
+    platform: text("platform").notNull(),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    lastSeenAt: text("last_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("push_tokens_user_enabled_idx").on(table.userEmail, table.enabled),
+    index("push_tokens_last_seen_idx").on(table.lastSeenAt),
+  ],
+);
+
 export const userReports = sqliteTable(
   "user_reports",
   {

@@ -26,6 +26,13 @@
           "imageWidth": 220,
           "resizeMode": "contain"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#4771f5",
+          "defaultChannel": "activity-updates"
+        }
       ]
     ],
     "extra": {

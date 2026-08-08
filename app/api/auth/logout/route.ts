@@ -1,9 +1,23 @@
-import { deleteSessionCookies } from "../../../auth";
+import { deleteSessionCookies, getSessionUser } from "../../../auth";
 import { rejectCrossOriginMutation } from "../../../security";
+import { ensureSchema, getD1 } from "../../../../db";
 
 export async function POST(request: Request) {
   const originError = rejectCrossOriginMutation(request);
   if (originError) return originError;
+
+  const user = await getSessionUser();
+  if (user) {
+    try {
+      await ensureSchema();
+      await getD1()
+        .prepare(`UPDATE push_tokens SET enabled = 0 WHERE user_email = ?`)
+        .bind(user.email)
+        .run();
+    } catch (error) {
+      console.error("Could not disable push tokens during logout", error);
+    }
+  }
 
   const headers = new Headers({
     "Content-Type": "application/json",
