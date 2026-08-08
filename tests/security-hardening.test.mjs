@@ -198,6 +198,7 @@ test("keeps activity comments bounded, moderated, and permission checked", async
     schema,
     migration,
     commentsRoute,
+    commentsStore,
     commentRoute,
     reportRoute,
     commentsUi,
@@ -206,6 +207,7 @@ test("keeps activity comments bounded, moderated, and permission checked", async
     read("db/schema.ts"),
     read("drizzle/0011_many_emma_frost.sql"),
     read("app/api/activities/[id]/comments/route.ts"),
+    read("app/activity-comment-store.ts"),
     read("app/api/activities/[id]/comments/[commentId]/route.ts"),
     read("app/api/activities/[id]/comments/[commentId]/report/route.ts"),
     read("app/components/activity-comments.tsx"),
@@ -216,8 +218,8 @@ test("keeps activity comments bounded, moderated, and permission checked", async
   assert.match(schema, /commentReports = sqliteTable/);
   assert.match(migration, /CREATE TABLE `activity_comments`/);
   assert.match(migration, /activity_comments_activity_created_idx/);
-  assert.match(commentsRoute, /COMMENT_PAGE_SIZE \+ 1/);
-  assert.match(commentsRoute, /user_blocks/);
+  assert.match(commentsStore, /COMMENT_PAGE_SIZE \+ 1/);
+  assert.match(commentsStore, /user_blocks/);
   assert.match(commentsRoute, /isCommentingClosed/);
   assert.match(commentsRoute, /activity-comment-create/);
   assert.match(commentRoute, /creator_email !== user\.email/);
@@ -271,11 +273,11 @@ test("deletes the account and all directly associated user data", async () => {
 });
 
 test("isolates the App Review account and never stores its password in source", async () => {
-  const [runtimeEnv, reviewRoute, reviewData, activitiesRoute, loginSheet] = await Promise.all([
+  const [runtimeEnv, reviewRoute, reviewData, activitiesStore, loginSheet] = await Promise.all([
     read("app/runtime-env.ts"),
     read("app/api/auth/review-login/route.ts"),
     read("app/review-account.ts"),
-    read("app/api/activities/route.ts"),
+    read("app/activity-list-store.ts"),
     read("app/components/login-sheet.tsx"),
   ]);
   assert.match(runtimeEnv, /APP_REVIEW_PASSWORD/);
@@ -283,8 +285,8 @@ test("isolates the App Review account and never stores its password in source", 
   assert.match(reviewRoute, /constantTimeEqual/);
   assert.match(reviewRoute, /seedReviewData/);
   assert.match(reviewData, /@review\.gachihaeu\.com/);
-  assert.match(activitiesRoute, /reviewMode/);
-  assert.match(activitiesRoute, /NOT LIKE '%@review\.gachihaeu\.com'/);
+  assert.match(activitiesStore, /reviewMode/);
+  assert.match(activitiesStore, /NOT LIKE '%@review\.gachihaeu\.com'/);
   assert.match(loginSheet, /review-login/);
   assert.doesNotMatch(`${runtimeEnv}\n${reviewRoute}\n${loginSheet}`, /APP_REVIEW_PASSWORD\s*=\s*["'][^"']+/);
 });
