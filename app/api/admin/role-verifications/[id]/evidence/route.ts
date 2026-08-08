@@ -1,9 +1,9 @@
-import { getSessionUser } from "../../../../../auth";
+import { getSessionUser } from "@/server/auth/session";
 import {
   getRoleEvidenceBucket,
   requireAdmin,
-} from "../../../../../role-verification";
-import { ensureSchema, getD1 } from "../../../../../../db";
+} from "@/server/services/role-verification";
+import { ensureSchema, getD1 } from "@/db/index";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

@@ -30,8 +30,8 @@ async function collectRouteFiles(directory) {
 test("removes the fixed administrator login and hard-coded secrets", async () => {
   const [sendCode, auth, loginSheet] = await Promise.all([
     read("app/api/auth/send-code/route.ts"),
-    read("app/auth.ts"),
-    read("app/components/login-sheet.tsx"),
+    read("server/auth/session.ts"),
+    read("components/auth/login-sheet.tsx"),
   ]);
   const combined = `${sendCode}\n${auth}\n${loginSheet}`;
 
@@ -123,13 +123,13 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     publicProfileRoute,
     meRoute,
   ] = await Promise.all([
-    read("app/auth.ts"),
+    read("server/auth/session.ts"),
     read("db/schema.ts"),
-    read("app/components/login-sheet.tsx"),
-    read("app/components/profile-setup-form.tsx"),
-    read("app/components/profile-sheet.tsx"),
-    read("app/components/profile-overview.tsx"),
-    read("app/components/campus-role-badge.tsx"),
+    read("components/auth/login-sheet.tsx"),
+    read("components/profile/profile-setup-form.tsx"),
+    read("components/profile/profile-sheet.tsx"),
+    read("components/profile/profile-overview.tsx"),
+    read("components/profile/campus-role-badge.tsx"),
     read("app/styles/profiles.css"),
     read("app/api/profile/route.ts"),
     read("app/api/ratings/[email]/route.ts"),
@@ -175,8 +175,8 @@ test("prevents duplicate nicknames in the UI, API, and database", async () => {
     read("drizzle/0010_fine_brother_voodoo.sql"),
     read("app/api/profile/route.ts"),
     read("app/api/profile/nickname/route.ts"),
-    read("app/components/nickname-field.tsx"),
-    read("app/nickname.ts"),
+    read("components/profile/nickname-field.tsx"),
+    read("lib/validation/nickname.ts"),
   ]);
 
   assert.match(schema, /nicknameNormalized: text\("nickname_normalized"\)/);
@@ -207,11 +207,11 @@ test("keeps activity comments bounded, moderated, and permission checked", async
     read("db/schema.ts"),
     read("drizzle/0011_many_emma_frost.sql"),
     read("app/api/activities/[id]/comments/route.ts"),
-    read("app/activity-comment-store.ts"),
+    read("server/repositories/activity-comment.repository.ts"),
     read("app/api/activities/[id]/comments/[commentId]/route.ts"),
     read("app/api/activities/[id]/comments/[commentId]/report/route.ts"),
-    read("app/components/activity-comments.tsx"),
-    read("app/content-moderation.ts"),
+    read("components/activity/activity-comments.tsx"),
+    read("server/validation/content-moderation.ts"),
   ]);
 
   assert.match(schema, /activityComments = sqliteTable/);
@@ -233,9 +233,9 @@ test("keeps activity comments bounded, moderated, and permission checked", async
 test("deletes the account and all directly associated user data", async () => {
   const [route, deletion, profileSheet, deletionPanel] = await Promise.all([
     read("app/api/account/route.ts"),
-    read("app/account-deletion.ts"),
-    read("app/components/profile-sheet.tsx"),
-    read("app/components/account-deletion-panel.tsx"),
+    read("server/services/account-deletion.ts"),
+    read("components/profile/profile-sheet.tsx"),
+    read("components/profile/account-deletion-panel.tsx"),
   ]);
 
   assert.match(route, /export async function DELETE/);
@@ -274,11 +274,11 @@ test("deletes the account and all directly associated user data", async () => {
 
 test("isolates the App Review account and never stores its password in source", async () => {
   const [runtimeEnv, reviewRoute, reviewData, activitiesStore, loginSheet] = await Promise.all([
-    read("app/runtime-env.ts"),
+    read("server/config/runtime-env.ts"),
     read("app/api/auth/review-login/route.ts"),
-    read("app/review-account.ts"),
-    read("app/activity-list-store.ts"),
-    read("app/components/login-sheet.tsx"),
+    read("server/services/review-account.ts"),
+    read("server/repositories/activity.repository.ts"),
+    read("components/auth/login-sheet.tsx"),
   ]);
   assert.match(runtimeEnv, /APP_REVIEW_PASSWORD/);
   assert.match(reviewRoute, /getAppReviewConfig/);
@@ -295,9 +295,9 @@ test("supports administrator moderation and active account sanctions", async () 
   const [schema, route, store, types, panel, worker] = await Promise.all([
     read("db/schema.ts"),
     read("app/api/admin/moderation/route.ts"),
-    read("app/moderation-store.ts"),
-    read("app/moderation-types.ts"),
-    read("app/components/admin-moderation-panel.tsx"),
+    read("server/repositories/moderation.repository.ts"),
+    read("lib/types/moderation.ts"),
+    read("components/admin/admin-moderation-panel.tsx"),
     read("worker/index.ts"),
   ]);
   assert.match(schema, /moderationActions = sqliteTable/);
@@ -313,10 +313,10 @@ test("supports administrator moderation and active account sanctions", async () 
 test("checks attendance with a short-lived hashed six digit number", async () => {
   const [schema, auth, codeRoute, checkInRoute, ui] = await Promise.all([
     read("db/schema.ts"),
-    read("app/auth.ts"),
+    read("server/auth/session.ts"),
     read("app/api/activities/[id]/attendance-code/route.ts"),
     read("app/api/activities/[id]/check-in/route.ts"),
-    read("app/components/attendance-check-in.tsx"),
+    read("components/activity/attendance-check-in.tsx"),
   ]);
   assert.match(schema, /attendanceCodes = sqliteTable/);
   assert.match(auth, /hashAttendanceCode/);
@@ -334,7 +334,7 @@ test("publishes launch policies and support contact", async () => {
     read("app/terms/page.tsx"),
     read("app/community/page.tsx"),
     read("app/support/page.tsx"),
-    read("app/components/policy-links.tsx"),
+    read("components/layout/policy-links.tsx"),
   ]);
   assert.match(privacy, /개인정보처리방침/);
   assert.match(privacy, /Cloudflare D1/);
@@ -366,14 +366,14 @@ test("verifies professor and staff roles with private evidence and admin review"
     read("db/schema.ts"),
     read("drizzle/0012_whole_kang.sql"),
     read("app/api/profile/route.ts"),
-    read("app/profile-role.ts"),
+    read("server/policies/profile-role.ts"),
     read("app/api/role-verification/route.ts"),
-    read("app/role-evidence-upload.ts"),
+    read("server/services/role-evidence-upload.ts"),
     read("app/api/admin/role-verifications/[id]/route.ts"),
     read("app/api/admin/role-verifications/[id]/evidence/route.ts"),
-    read("app/components/role-verification-panel.tsx"),
-    read("app/components/admin-verification-panel.tsx"),
-    read("app/runtime-env.ts"),
+    read("components/profile/role-verification-panel.tsx"),
+    read("components/admin/admin-verification-panel.tsx"),
+    read("server/config/runtime-env.ts"),
     read("app/api/account/route.ts"),
     read("worker/index.ts"),
   ]);

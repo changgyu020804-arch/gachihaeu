@@ -1,17 +1,17 @@
-import { getSessionUser } from "../../auth";
+import { getSessionUser } from "@/server/auth/session";
 import {
   enforceRateLimit,
   recordSecurityEvent,
   requestErrorResponse,
   RequestValidationError,
-} from "../../security";
+} from "@/server/security/request";
 import {
   getRoleEvidenceBucket,
   isVerifiedRole,
-} from "../../role-verification";
-import { cleanupExpiredRoleEvidence } from "../../role-evidence-cleanup";
-import { readRoleEvidenceUpload } from "../../role-evidence-upload";
-import { ensureSchema, getD1 } from "../../../db";
+} from "@/server/services/role-verification";
+import { cleanupExpiredRoleEvidence } from "@/server/services/role-evidence-cleanup";
+import { readRoleEvidenceUpload } from "@/server/services/role-evidence-upload";
+import { ensureSchema, getD1 } from "@/db/index";
 
 export async function GET() {
   const user = await getSessionUser();

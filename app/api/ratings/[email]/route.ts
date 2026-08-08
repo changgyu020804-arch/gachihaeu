@@ -1,10 +1,10 @@
-import { getSessionUser } from "../../../auth";
+import { getSessionUser } from "@/server/auth/session";
 import {
   getActivityStats,
   getRecentRatings,
   getReputation,
-} from "../../../reputation";
-import { ensureSchema, getD1 } from "../../../../db";
+} from "@/server/repositories/reputation.repository";
+import { ensureSchema, getD1 } from "@/db/index";
 
 export async function GET(
   _request: Request,

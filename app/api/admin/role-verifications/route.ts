@@ -1,10 +1,10 @@
-import { getSessionUser } from "../../../auth";
+import { getSessionUser } from "@/server/auth/session";
 import {
   getRoleEvidenceBucket,
   requireAdmin,
-} from "../../../role-verification";
-import { cleanupExpiredRoleEvidence } from "../../../role-evidence-cleanup";
-import { ensureSchema, getD1 } from "../../../../db";
+} from "@/server/services/role-verification";
+import { cleanupExpiredRoleEvidence } from "@/server/services/role-evidence-cleanup";
+import { ensureSchema, getD1 } from "@/db/index";
 
 export async function GET() {
   const user = await getSessionUser();

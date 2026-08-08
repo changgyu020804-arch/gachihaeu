@@ -2,8 +2,8 @@ import {
   generateAuthCode,
   hashAuthCode,
   isValidUosEmail,
-} from "../../../auth";
-import { getResendConfig } from "../../../runtime-env";
+} from "@/server/auth/session";
+import { getResendConfig } from "@/server/config/runtime-env";
 import {
   enforceRateLimit,
   getClientIp,
@@ -11,8 +11,8 @@ import {
   recordSecurityEvent,
   rejectCrossOriginMutation,
   requestErrorResponse,
-} from "../../../security";
-import { ensureSchema, getD1 } from "../../../../db";
+} from "@/server/security/request";
+import { ensureSchema, getD1 } from "@/db/index";
 
 const CODE_EXPIRY_MINUTES = 5;
 const RESEND_COOLDOWN_SECONDS = 60;

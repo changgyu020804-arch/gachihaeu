@@ -1,9 +1,9 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
-import { cleanupExpiredRoleEvidence } from "../app/role-evidence-cleanup";
-import { isReviewSessionEmail, verifyJWT } from "../app/auth";
-import { isReviewDataEmail } from "../app/review-account";
+import { cleanupExpiredRoleEvidence } from "@/server/services/role-evidence-cleanup";
+import { isReviewSessionEmail, verifyJWT } from "@/server/auth/session";
+import { isReviewDataEmail } from "@/server/services/review-account";
 
 interface Env {
   ASSETS: Fetcher;

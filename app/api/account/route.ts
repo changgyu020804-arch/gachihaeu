@@ -1,17 +1,17 @@
-import { deleteSessionCookies, getSessionUser } from "../../auth";
+import { deleteSessionCookies, getSessionUser } from "@/server/auth/session";
 import {
   getRateLimitKeyHash,
   getSecuritySubjectHash,
   readJsonObject,
   rejectCrossOriginMutation,
   requestErrorResponse,
-} from "../../security";
+} from "@/server/security/request";
 import {
   deleteAccountData,
   getAccountRateLimitIdentifiers,
-} from "../../account-deletion";
-import { ensureSchema, getD1 } from "../../../db";
-import { getRoleEvidenceBucket } from "../../role-verification";
+} from "@/server/services/account-deletion";
+import { ensureSchema, getD1 } from "@/db/index";
+import { getRoleEvidenceBucket } from "@/server/services/role-verification";
 
 const DELETE_CONFIRMATION = "탈퇴";
 

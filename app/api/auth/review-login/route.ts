@@ -3,17 +3,17 @@ import {
   createJWT,
   createSessionCookie,
   deleteSessionCookies,
-} from "../../../auth";
-import { ensureSchema, getD1 } from "../../../../db";
-import { getAppReviewConfig } from "../../../runtime-env";
-import { seedReviewData } from "../../../review-account";
+} from "@/server/auth/session";
+import { ensureSchema, getD1 } from "@/db/index";
+import { getAppReviewConfig } from "@/server/config/runtime-env";
+import { seedReviewData } from "@/server/services/review-account";
 import {
   enforceRateLimit,
   getClientIp,
   readJsonObject,
   rejectCrossOriginMutation,
   requestErrorResponse,
-} from "../../../security";
+} from "@/server/security/request";
 
 export async function POST(request: Request) {
   const originError = rejectCrossOriginMutation(request);

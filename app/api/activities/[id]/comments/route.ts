@@ -1,26 +1,26 @@
-import { getSessionUser } from "../../../../auth";
+import { getSessionUser } from "@/server/auth/session";
 import {
   COMMENT_MAX_LENGTH,
   isCommentingClosed,
-} from "../../../../activity-comments";
+} from "@/lib/types/activity-comment";
 import {
   getCommentActivity,
   getOwnerCommentRecipientEmails,
   listActivityComments,
-} from "../../../../activity-comment-store";
-import { hasBlockedRelationship } from "../../../../activity-policy";
+} from "@/server/repositories/activity-comment.repository";
+import { hasBlockedRelationship } from "@/server/policies/activity-policy";
 import {
   cleanUserText,
   hasUnsafeUserText,
-} from "../../../../content-moderation";
-import { createNotifications } from "../../../../notification-store";
+} from "@/server/validation/content-moderation";
+import { createNotifications } from "@/server/services/notification.service";
 import {
   enforceRateLimit,
   getClientIp,
   readJsonObject,
   requestErrorResponse,
-} from "../../../../security";
-import { ensureSchema, getD1 } from "../../../../../db";
+} from "@/server/security/request";
+import { ensureSchema, getD1 } from "@/db/index";
 
 function readOffset(request: Request) {
   const value = Number(new URL(request.url).searchParams.get("offset") ?? 0);

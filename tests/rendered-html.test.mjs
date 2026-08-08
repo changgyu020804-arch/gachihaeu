@@ -9,7 +9,7 @@ test("uses the finished 같이해U product shell", async () => {
     readFile(new URL("app/page.tsx", root), "utf8"),
     readFile(new URL("app/layout.tsx", root), "utf8"),
     readFile(new URL("app/home-client.tsx", root), "utf8"),
-    readFile(new URL("app/components/venue-section.tsx", root), "utf8"),
+    readFile(new URL("components/activity/venue-section.tsx", root), "utf8"),
   ]);
 
   assert.match(page, /<HomeClient/);
@@ -44,22 +44,22 @@ test("keeps large UI and style concerns in focused modules", async () => {
   ] =
     await Promise.all([
       readFile(new URL("app/home-client.tsx", root), "utf8"),
-      readFile(new URL("app/hooks/use-home-controller.ts", root), "utf8"),
-      readFile(new URL("app/hooks/use-home-activities.ts", root), "utf8"),
-      readFile(new URL("app/components/login-sheet.tsx", root), "utf8"),
-      readFile(new URL("app/components/profile-setup-form.tsx", root), "utf8"),
-      readFile(new URL("app/components/profile-sheet.tsx", root), "utf8"),
-      readFile(new URL("app/components/profile-edit-form.tsx", root), "utf8"),
-      readFile(new URL("app/components/rating-sheet.tsx", root), "utf8"),
-      readFile(new URL("app/components/rating-participant-card.tsx", root), "utf8"),
+      readFile(new URL("hooks/use-home-controller.ts", root), "utf8"),
+      readFile(new URL("hooks/use-home-activities.ts", root), "utf8"),
+      readFile(new URL("components/auth/login-sheet.tsx", root), "utf8"),
+      readFile(new URL("components/profile/profile-setup-form.tsx", root), "utf8"),
+      readFile(new URL("components/profile/profile-sheet.tsx", root), "utf8"),
+      readFile(new URL("components/profile/profile-edit-form.tsx", root), "utf8"),
+      readFile(new URL("components/rating/rating-sheet.tsx", root), "utf8"),
+      readFile(new URL("components/rating/rating-participant-card.tsx", root), "utf8"),
       readFile(new URL("app/layout.tsx", root), "utf8"),
       readFile(new URL("app/styles/base.css", root), "utf8"),
       readFile(new URL("app/styles/ratings.css", root), "utf8"),
       readFile(new URL("app/api/profile/route.ts", root), "utf8"),
-      readFile(new URL("app/profile-input.ts", root), "utf8"),
-      readFile(new URL("app/profile-role.ts", root), "utf8"),
+      readFile(new URL("server/validation/profile-input.ts", root), "utf8"),
+      readFile(new URL("server/policies/profile-role.ts", root), "utf8"),
       readFile(new URL("app/api/role-verification/route.ts", root), "utf8"),
-      readFile(new URL("app/role-evidence-upload.ts", root), "utf8"),
+      readFile(new URL("server/services/role-evidence-upload.ts", root), "utf8"),
     ]);
 
   assert.ok(home.split("\n").length < 230);
@@ -99,8 +99,8 @@ test("enforces attendance and role-based rating rules", async () => {
         new URL("app/api/activities/[id]/participants/route.ts", root),
         "utf8",
       ),
-      readFile(new URL("app/components/rating-sheet.tsx", root), "utf8"),
-      readFile(new URL("app/components/reputation-panel.tsx", root), "utf8"),
+      readFile(new URL("components/rating/rating-sheet.tsx", root), "utf8"),
+      readFile(new URL("components/profile/reputation-panel.tsx", root), "utf8"),
       readFile(new URL("drizzle/0002_lively_sabra.sql", root), "utf8"),
     ]);
 
@@ -119,8 +119,8 @@ test("persists and displays user notifications", async () => {
   const [notificationRoute, notificationSheet, notificationStore, migration] =
     await Promise.all([
       readFile(new URL("app/api/notifications/route.ts", root), "utf8"),
-      readFile(new URL("app/components/notification-sheet.tsx", root), "utf8"),
-      readFile(new URL("app/notification-store.ts", root), "utf8"),
+      readFile(new URL("components/notifications/notification-sheet.tsx", root), "utf8"),
+      readFile(new URL("server/services/notification.service.ts", root), "utf8"),
       readFile(new URL("drizzle/0003_oval_puppet_master.sql", root), "utf8"),
     ]);
 
@@ -152,14 +152,14 @@ test("delivers account-bound iPhone push notifications and opens the activity", 
     readFile(new URL("db/schema.ts", root), "utf8"),
     readFile(new URL("drizzle/0014_aberrant_the_anarchist.sql", root), "utf8"),
     readFile(new URL("app/api/push-tokens/route.ts", root), "utf8"),
-    readFile(new URL("app/push-notification-store.ts", root), "utf8"),
-    readFile(new URL("app/notification-store.ts", root), "utf8"),
+    readFile(new URL("server/services/push-notification.service.ts", root), "utf8"),
+    readFile(new URL("server/services/notification.service.ts", root), "utf8"),
     readFile(new URL("mobile/App.tsx", root), "utf8"),
-    readFile(new URL("mobile/src/use-push-notification-bridge.ts", root), "utf8"),
-    readFile(new URL("mobile/src/push-notifications.ts", root), "utf8"),
-    readFile(new URL("mobile/src/webview-bridge.ts", root), "utf8"),
-    readFile(new URL("app/hooks/use-native-app-bridge.ts", root), "utf8"),
-    readFile(new URL("app/account-deletion.ts", root), "utf8"),
+    readFile(new URL("mobile/src/hooks/use-push-notification-bridge.ts", root), "utf8"),
+    readFile(new URL("mobile/src/notifications/push-notifications.ts", root), "utf8"),
+    readFile(new URL("mobile/src/bridge/webview-bridge.ts", root), "utf8"),
+    readFile(new URL("hooks/use-native-app-bridge.ts", root), "utf8"),
+    readFile(new URL("server/services/account-deletion.ts", root), "utf8"),
     readFile(new URL("mobile/app.json", root), "utf8"),
   ]);
 
@@ -192,9 +192,9 @@ test("supports activity operations and trustworthy profiles", async () => {
   ] = await Promise.all([
     readFile(new URL("app/api/activities/[id]/route.ts", root), "utf8"),
     readFile(new URL("app/api/activities/[id]/join/route.ts", root), "utf8"),
-    readFile(new URL("app/components/detail-sheet.tsx", root), "utf8"),
-    readFile(new URL("app/reputation.ts", root), "utf8"),
-    readFile(new URL("app/components/user-profile-sheet.tsx", root), "utf8"),
+    readFile(new URL("components/activity/detail-sheet.tsx", root), "utf8"),
+    readFile(new URL("server/repositories/reputation.repository.ts", root), "utf8"),
+    readFile(new URL("components/profile/user-profile-sheet.tsx", root), "utf8"),
     readFile(new URL("app/api/users/[email]/block/route.ts", root), "utf8"),
     readFile(new URL("app/api/users/[email]/report/route.ts", root), "utf8"),
     readFile(new URL("drizzle/0004_low_gabe_jones.sql", root), "utf8"),
@@ -216,8 +216,8 @@ test("supports activity operations and trustworthy profiles", async () => {
 
 test("adds paginated comments to each activity detail", async () => {
   const [detailSheet, comments, commentsStyles] = await Promise.all([
-    readFile(new URL("app/components/detail-sheet.tsx", root), "utf8"),
-    readFile(new URL("app/components/activity-comments.tsx", root), "utf8"),
+    readFile(new URL("components/activity/detail-sheet.tsx", root), "utf8"),
+    readFile(new URL("components/activity/activity-comments.tsx", root), "utf8"),
     readFile(new URL("app/styles/comments.css", root), "utf8"),
   ]);
 
@@ -242,9 +242,9 @@ test("protects school data and ships an installable PWA", async () => {
     readFile(new URL("app/layout.tsx", root), "utf8"),
     readFile(new URL("public/manifest.webmanifest", root), "utf8"),
     readFile(new URL("public/service-worker.js", root), "utf8"),
-    readFile(new URL("app/components/pwa-install-button.tsx", root), "utf8"),
+    readFile(new URL("components/layout/pwa-install-button.tsx", root), "utf8"),
     readFile(new URL("app/api/activities/route.ts", root), "utf8"),
-    readFile(new URL("app/hooks/use-home-activities.ts", root), "utf8"),
+    readFile(new URL("hooks/use-home-activities.ts", root), "utf8"),
     readFile(new URL("worker/index.ts", root), "utf8"),
   ]);
   const manifest = JSON.parse(manifestSource);

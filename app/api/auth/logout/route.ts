@@ -1,6 +1,6 @@
-import { deleteSessionCookies, getSessionUser } from "../../../auth";
-import { rejectCrossOriginMutation } from "../../../security";
-import { ensureSchema, getD1 } from "../../../../db";
+import { deleteSessionCookies, getSessionUser } from "@/server/auth/session";
+import { rejectCrossOriginMutation } from "@/server/security/request";
+import { ensureSchema, getD1 } from "@/db/index";
 
 export async function POST(request: Request) {
   const originError = rejectCrossOriginMutation(request);

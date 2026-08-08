@@ -1,6 +1,6 @@
-import { getSessionUser } from "../../../auth";
-import { cleanNickname, normalizeNickname } from "../../../nickname";
-import { ensureSchema, getD1 } from "../../../../db";
+import { getSessionUser } from "@/server/auth/session";
+import { cleanNickname, normalizeNickname } from "@/lib/validation/nickname";
+import { ensureSchema, getD1 } from "@/db/index";
 
 export async function GET(request: Request) {
   const user = await getSessionUser();

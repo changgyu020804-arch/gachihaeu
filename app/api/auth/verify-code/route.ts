@@ -5,7 +5,7 @@ import {
   deleteSessionCookies,
   hashAuthCode,
   isValidUosEmail,
-} from "../../../auth";
+} from "@/server/auth/session";
 import {
   enforceRateLimit,
   getClientIp,
@@ -13,8 +13,8 @@ import {
   recordSecurityEvent,
   rejectCrossOriginMutation,
   requestErrorResponse,
-} from "../../../security";
-import { ensureSchema, getD1 } from "../../../../db";
+} from "@/server/security/request";
+import { ensureSchema, getD1 } from "@/db/index";
 
 const MAX_CODE_ATTEMPTS = 5;
 

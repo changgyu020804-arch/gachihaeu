@@ -1,10 +1,10 @@
-import { getSessionUser } from "../../auth";
-import { AttendanceStatus, RatingType } from "../../activity-data";
-import { enforceRateLimit, getClientIp } from "../../security";
-import { ensureSchema, getD1 } from "../../../db";
-import { createNotifications } from "../../notification-store";
-import { hasBlockedRelationship } from "../../activity-policy";
-import { hasUnsafeUserText } from "../../content-moderation";
+import { getSessionUser } from "@/server/auth/session";
+import { AttendanceStatus, RatingType } from "@/lib/types/activity";
+import { enforceRateLimit, getClientIp } from "@/server/security/request";
+import { ensureSchema, getD1 } from "@/db/index";
+import { createNotifications } from "@/server/services/notification.service";
+import { hasBlockedRelationship } from "@/server/policies/activity-policy";
+import { hasUnsafeUserText } from "@/server/validation/content-moderation";
 
 function cleanString(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";

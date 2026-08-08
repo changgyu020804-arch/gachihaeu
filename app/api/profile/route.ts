@@ -2,23 +2,23 @@ import {
   createJWT,
   createSessionCookie,
   getSessionUser,
-} from "../../auth";
+} from "@/server/auth/session";
 import {
   enforceRateLimit,
   getClientIp,
   readJsonObject,
   requestErrorResponse,
-} from "../../security";
+} from "@/server/security/request";
 import {
   getActivityStats,
   getRecentRatings,
   getReputation,
-} from "../../reputation";
-import { isNicknameConflictError } from "../../nickname";
-import { ensureSchema, getD1 } from "../../../db";
-import { isAdminEmail } from "../../runtime-env";
-import { validateProfileInput } from "../../profile-input";
-import { resolveProfileRole } from "../../profile-role";
+} from "@/server/repositories/reputation.repository";
+import { isNicknameConflictError } from "@/lib/validation/nickname";
+import { ensureSchema, getD1 } from "@/db/index";
+import { isAdminEmail } from "@/server/config/runtime-env";
+import { validateProfileInput } from "@/server/validation/profile-input";
+import { resolveProfileRole } from "@/server/policies/profile-role";
 
 const NICKNAME_TAKEN_MESSAGE = "이미 사용 중인 닉네임이에요.";
 

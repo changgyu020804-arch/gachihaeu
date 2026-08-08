@@ -1,6 +1,6 @@
-import { getSessionUser } from "../../../../auth";
-import { createNotifications } from "../../../../notification-store";
-import { requireAdmin } from "../../../../role-verification";
+import { getSessionUser } from "@/server/auth/session";
+import { createNotifications } from "@/server/services/notification.service";
+import { requireAdmin } from "@/server/services/role-verification";
 import {
   enforceRateLimit,
   getClientIp,
@@ -8,8 +8,8 @@ import {
   recordSecurityEvent,
   requestErrorResponse,
   RequestValidationError,
-} from "../../../../security";
-import { ensureSchema, getD1 } from "../../../../../db";
+} from "@/server/security/request";
+import { ensureSchema, getD1 } from "@/db/index";
 
 type RouteContext = { params: Promise<{ id: string }> };
 

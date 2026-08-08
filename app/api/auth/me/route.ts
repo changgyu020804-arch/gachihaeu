@@ -3,8 +3,8 @@ import {
   createSessionCookie,
   getSessionUser,
   shouldRefreshSession,
-} from "../../../auth";
-import { getViewerForSession } from "../../../viewer";
+} from "@/server/auth/session";
+import { getViewerForSession } from "@/server/services/viewer";
 
 export async function GET() {
   const session = await getSessionUser();

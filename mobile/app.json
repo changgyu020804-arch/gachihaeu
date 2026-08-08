@@ -36,7 +36,10 @@
       ]
     ],
     "extra": {
-      "appUrl": "https://www.gachihaeu.com/"
+      "appUrl": "https://www.gachihaeu.com/",
+      "eas": {
+        "projectId": "f15bb901-4222-472a-a957-520748a56bcd"
+      }
     }
   }
 }

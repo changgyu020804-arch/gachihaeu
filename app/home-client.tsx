@@ -1,20 +1,20 @@
 "use client";
 
-import { Viewer } from "./activity-data";
-import { BottomNavigation } from "./components/bottom-navigation";
-import { CreateSheet } from "./components/create-sheet";
-import { DetailSheet } from "./components/detail-sheet";
-import { HomeHeader } from "./components/home-header";
-import { HomeHero } from "./components/home-hero";
-import { LoginSheet } from "./components/login-sheet";
-import { MatchesSection } from "./components/matches-section";
-import { NotificationSheet } from "./components/notification-sheet";
-import { ProfileSheet } from "./components/profile-sheet";
-import { RatingSheet } from "./components/rating-sheet";
-import { UserProfileSheet } from "./components/user-profile-sheet";
-import { VenueSection } from "./components/venue-section";
-import { useHomeController } from "./hooks/use-home-controller";
-import { PolicyLinks } from "./components/policy-links";
+import { Viewer } from "@/lib/types/activity";
+import { BottomNavigation } from "@/components/layout/bottom-navigation";
+import { CreateSheet } from "@/components/activity/create-sheet";
+import { DetailSheet } from "@/components/activity/detail-sheet";
+import { HomeHeader } from "@/components/layout/home-header";
+import { HomeHero } from "@/components/layout/home-hero";
+import { LoginSheet } from "@/components/auth/login-sheet";
+import { ActivitiesSection } from "@/components/activity/activities-section";
+import { NotificationSheet } from "@/components/notifications/notification-sheet";
+import { ProfileSheet } from "@/components/profile/profile-sheet";
+import { RatingSheet } from "@/components/rating/rating-sheet";
+import { UserProfileSheet } from "@/components/profile/user-profile-sheet";
+import { VenueSection } from "@/components/activity/venue-section";
+import { useHomeController } from "@/hooks/use-home-controller";
+import { PolicyLinks } from "@/components/layout/policy-links";
 
 type HomeClientProps = {
   initialUser: Viewer | null;
@@ -49,7 +49,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
               ?.scrollIntoView({ behavior: "smooth" });
           }}
         />
-        <MatchesSection
+        <ActivitiesSection
           activities={home.visibleActivities}
           dateFilters={home.dateFilters}
           selectedDate={home.selectedDate}

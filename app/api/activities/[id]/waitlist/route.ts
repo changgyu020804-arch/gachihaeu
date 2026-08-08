@@ -1,11 +1,11 @@
-import { getSessionUser } from "../../../../auth";
-import { enforceRateLimit, getClientIp } from "../../../../security";
-import { ensureSchema, getD1 } from "../../../../../db";
-import { createNotifications } from "../../../../notification-store";
+import { getSessionUser } from "@/server/auth/session";
+import { enforceRateLimit, getClientIp } from "@/server/security/request";
+import { ensureSchema, getD1 } from "@/db/index";
+import { createNotifications } from "@/server/services/notification.service";
 import {
   getUserDisplayName,
   hasBlockedRelationship,
-} from "../../../../activity-policy";
+} from "@/server/policies/activity-policy";
 
 // GET: 내 대기 상태 + 대기 인원 수 조회
 export async function GET(

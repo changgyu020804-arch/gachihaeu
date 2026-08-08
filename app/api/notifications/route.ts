@@ -1,7 +1,7 @@
-import { getSessionUser } from "../../auth";
-import { enforceRateLimit, getClientIp } from "../../security";
-import { ensureSchema, getD1 } from "../../../db";
-import { syncScheduledNotifications } from "../../notification-store";
+import { getSessionUser } from "@/server/auth/session";
+import { enforceRateLimit, getClientIp } from "@/server/security/request";
+import { ensureSchema, getD1 } from "@/db/index";
+import { syncScheduledNotifications } from "@/server/services/notification.service";
 
 export async function GET() {
   const user = await getSessionUser();

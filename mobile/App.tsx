@@ -24,8 +24,8 @@ import {
   APP_URL,
   canOpenOutsideApp,
   isInternalUrl,
-} from "./src/config";
-import { usePushNotificationBridge } from "./src/use-push-notification-bridge";
+} from "./src/services/config";
+import { usePushNotificationBridge } from "./src/hooks/use-push-notification-bridge";
 
 export default function App() {
   const webViewRef = useRef<WebViewType>(null);

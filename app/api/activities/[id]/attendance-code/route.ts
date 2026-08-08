@@ -1,6 +1,6 @@
-import { generateAuthCode, getSessionUser, hashAttendanceCode } from "../../../../auth";
-import { ensureSchema, getD1 } from "../../../../../db";
-import { enforceRateLimit, getClientIp } from "../../../../security";
+import { generateAuthCode, getSessionUser, hashAttendanceCode } from "@/server/auth/session";
+import { ensureSchema, getD1 } from "@/db/index";
+import { enforceRateLimit, getClientIp } from "@/server/security/request";
 
 type ActivityRow = {
   creator_email: string;

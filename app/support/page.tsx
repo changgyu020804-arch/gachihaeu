@@ -1,4 +1,4 @@
-import { LegalPage } from "../components/legal-page";
+import { LegalPage } from "@/components/layout/legal-page";
 
 const SUPPORT_ITEMS = [
   ["서비스 이용 문의", "로그인, 모임 생성·참가, 출석번호 사용 방법을 문의해 주세요.", "%5B같이해U%5D%20서비스%20이용%20문의"],

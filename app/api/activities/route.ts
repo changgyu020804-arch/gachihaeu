@@ -1,9 +1,9 @@
-import { getSessionUser } from "../../auth";
-import { LEVELS, SPORTS, VENUES } from "../../activity-data";
-import { listActivities } from "../../activity-list-store";
-import { getUserDisplayName } from "../../activity-policy";
-import { enforceRateLimit, getClientIp } from "../../security";
-import { ensureSchema, getD1 } from "../../../db";
+import { getSessionUser } from "@/server/auth/session";
+import { LEVELS, SPORTS, VENUES } from "@/lib/types/activity";
+import { listActivities } from "@/server/repositories/activity.repository";
+import { getUserDisplayName } from "@/server/policies/activity-policy";
+import { enforceRateLimit, getClientIp } from "@/server/security/request";
+import { ensureSchema, getD1 } from "@/db/index";
 
 function cleanString(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";

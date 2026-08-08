@@ -1,13 +1,13 @@
-import { getSessionUser } from "../../../../../../auth";
+import { getSessionUser } from "@/server/auth/session";
 import {
   enforceRateLimit,
   getClientIp,
   readJsonObject,
   recordSecurityEvent,
   requestErrorResponse,
-} from "../../../../../../security";
-import { cleanUserText } from "../../../../../../content-moderation";
-import { ensureSchema, getD1 } from "../../../../../../../db";
+} from "@/server/security/request";
+import { cleanUserText } from "@/server/validation/content-moderation";
+import { ensureSchema, getD1 } from "@/db/index";
 
 export async function POST(
   request: Request,

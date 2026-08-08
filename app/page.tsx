@@ -1,5 +1,5 @@
-import { HomeClient } from "./home-client";
-import { getCurrentViewer } from "./viewer";
+import { HomeClient } from "@/app/home-client";
+import { getCurrentViewer } from "@/server/services/viewer";
 
 export const dynamic = "force-dynamic";
 

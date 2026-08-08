@@ -1,18 +1,18 @@
-import { getSessionUser } from "../../../auth";
-import { ensureSchema, getD1 } from "../../../../db";
+import { getSessionUser } from "@/server/auth/session";
+import { ensureSchema, getD1 } from "@/db/index";
 import {
   applyModerationAction,
   getModerationDashboard,
   ModerationStoreError,
-} from "../../../moderation-store";
+} from "@/server/repositories/moderation.repository";
 import {
   MODERATION_ACTIONS,
   REPORT_TYPES,
   type ModerationAction,
   type ReportType,
-} from "../../../moderation-types";
-import { requireAdmin } from "../../../role-verification";
-import { readJsonObject, requestErrorResponse } from "../../../security";
+} from "@/lib/types/moderation";
+import { requireAdmin } from "@/server/services/role-verification";
+import { readJsonObject, requestErrorResponse } from "@/server/security/request";
 
 async function requireModerator() {
   const user = await getSessionUser();
