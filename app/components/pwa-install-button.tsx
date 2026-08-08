@@ -14,6 +14,7 @@ export function PwaInstallButton() {
     useState<InstallPromptEvent | null>(null);
   const [isIos, setIsIos] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isNativeApp, setIsNativeApp] = useState(false);
 
   useEffect(() => {
     const standalone =
@@ -22,6 +23,7 @@ export function PwaInstallButton() {
     const detectionTimer = window.setTimeout(() => {
       setIsInstalled(standalone);
       setIsIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
+      setIsNativeApp(/GachihaeU-iOS/i.test(navigator.userAgent));
     }, 0);
 
     if ("serviceWorker" in navigator) {
@@ -48,7 +50,7 @@ export function PwaInstallButton() {
     };
   }, []);
 
-  if (isInstalled || (!installPrompt && !isIos)) return null;
+  if (isNativeApp || isInstalled || (!installPrompt && !isIos)) return null;
 
   const install = async () => {
     if (installPrompt) {
