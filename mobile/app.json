@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "같이해U",
+    "slug": "gachihaeu",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "gachihaeu",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.gachihaeu.ios",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "교수·교직원 인증 서류를 촬영해 제출할 때 카메라를 사용합니다.",
+        "NSPhotoLibraryUsageDescription": "교수·교직원 인증 서류를 선택해 제출할 때 사진 보관함을 사용합니다.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#4771f5",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain"
+        }
+      ]
+    ],
+    "extra": {
+      "appUrl": "https://www.gachihaeu.com/"
+    }
+  }
+}
