@@ -13,7 +13,7 @@ export async function cleanupExpiredRoleEvidence(
     )
     .all<{ id: string; object_key: string }>();
 
-  if (expired.results.length === 0) return;
+  if (expired.results.length === 0) return 0;
 
   await bucket.delete(expired.results.map((item) => item.object_key));
   await db.batch(
@@ -28,4 +28,5 @@ export async function cleanupExpiredRoleEvidence(
         .bind(item.id),
     ),
   );
+  return expired.results.length;
 }

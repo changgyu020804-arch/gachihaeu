@@ -1,7 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
-import { cleanupExpiredRoleEvidence } from "@/server/services/role-evidence-cleanup";
+import { runDailyDatabaseCleanup } from "@/server/services/database-cleanup";
 import { isReviewSessionEmail, verifyJWT } from "@/server/auth/session";
 import { isReviewDataEmail } from "@/server/services/review-account";
 
@@ -23,10 +23,15 @@ interface ExecutionContext {
   passThroughOnException(): void;
 }
 
+interface ScheduledController {
+  scheduledTime: number;
+  cron: string;
+  noRetry(): void;
+}
+
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const LEGACY_HOSTNAME = "gachihaeu-uos.changgyu020804.chatgpt.site";
 const CANONICAL_HOSTNAME = "www.gachihaeu.com";
-let lastEvidenceCleanupAt = 0;
 
 function redirectLegacyHostname(request: Request) {
   const url = new URL(request.url);
@@ -188,14 +193,6 @@ function addSecurityHeaders(request: Request, response: Response) {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-    if (Date.now() - lastEvidenceCleanupAt >= 60 * 60 * 1000) {
-      lastEvidenceCleanupAt = Date.now();
-      ctx.waitUntil(
-        cleanupExpiredRoleEvidence(env.DB, env.ROLE_EVIDENCE).catch(
-          () => undefined,
-        ),
-      );
-    }
     const legacyRedirect = redirectLegacyHostname(request);
     if (legacyRedirect) return addSecurityHeaders(request, legacyRedirect);
 
@@ -219,6 +216,13 @@ const worker = {
 
     const response = await handler.fetch(request, env, ctx);
     return addSecurityHeaders(request, response);
+  },
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ) {
+    ctx.waitUntil(runDailyDatabaseCleanup(env.DB, env.ROLE_EVIDENCE));
   },
 };
 

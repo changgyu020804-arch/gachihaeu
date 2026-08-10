@@ -51,10 +51,14 @@ export async function createCurrentSchema(db: D1Database) {
     ),
     db.prepare(
       "CREATE INDEX IF NOT EXISTS activities_status_idx ON activities(status)",
+    ),
+    db.prepare(
       "CREATE INDEX IF NOT EXISTS activities_status_starts_idx ON activities(status, starts_at)",
     ),
     db.prepare(
       "CREATE INDEX IF NOT EXISTS participants_user_idx ON participants(user_email)",
+    ),
+    db.prepare(
       "CREATE INDEX IF NOT EXISTS participants_activity_joined_idx ON participants(activity_id, joined_at)",
     ),
     db.prepare(
@@ -182,6 +186,15 @@ export async function createCurrentSchema(db: D1Database) {
       )`,
     ),
     db.prepare(
+      `CREATE TABLE IF NOT EXISTS maintenance_jobs (
+        job_name TEXT PRIMARY KEY NOT NULL,
+        last_started_at TEXT NOT NULL,
+        last_completed_at TEXT,
+        last_deleted_rows INTEGER DEFAULT 0 NOT NULL,
+        last_error TEXT DEFAULT '' NOT NULL
+      )`,
+    ),
+    db.prepare(
       `CREATE TABLE IF NOT EXISTS security_audit_logs (
         id TEXT PRIMARY KEY NOT NULL,
         event_type TEXT NOT NULL,
@@ -214,6 +227,8 @@ export async function createCurrentSchema(db: D1Database) {
     ),
     db.prepare(
       "CREATE INDEX IF NOT EXISTS waitlist_activity_position_idx ON waitlist(activity_id, position)",
+    ),
+    db.prepare(
       "CREATE INDEX IF NOT EXISTS waitlist_activity_status_position_idx ON waitlist(activity_id, status, position)",
     ),
     db.prepare(
@@ -237,6 +252,9 @@ export async function createCurrentSchema(db: D1Database) {
     ),
     db.prepare(
       "CREATE INDEX IF NOT EXISTS notifications_user_read_idx ON notifications(user_email, read_at)",
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS notifications_read_at_idx ON notifications(read_at)",
     ),
     db.prepare(
       `CREATE TABLE IF NOT EXISTS push_tokens (

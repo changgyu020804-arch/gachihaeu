@@ -141,6 +141,14 @@ export const authCodes = sqliteTable("auth_codes", {
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const maintenanceJobs = sqliteTable("maintenance_jobs", {
+  jobName: text("job_name").primaryKey(),
+  lastStartedAt: text("last_started_at").notNull(),
+  lastCompletedAt: text("last_completed_at"),
+  lastDeletedRows: integer("last_deleted_rows").notNull().default(0),
+  lastError: text("last_error").notNull().default(""),
+});
+
 export const securityRateLimits = sqliteTable(
   "security_rate_limits",
   {
@@ -272,6 +280,7 @@ export const notifications = sqliteTable(
     uniqueIndex("notifications_user_dedupe_idx").on(table.userEmail, table.dedupeKey),
     index("notifications_user_created_idx").on(table.userEmail, table.createdAt),
     index("notifications_user_read_idx").on(table.userEmail, table.readAt),
+    index("notifications_read_at_idx").on(table.readAt),
   ],
 );
 

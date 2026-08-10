@@ -364,6 +364,7 @@ test("verifies professor and staff roles with private evidence and admin review"
     runtimeEnv,
     accountRoute,
     worker,
+    databaseCleanup,
   ] = await Promise.all([
     read(".openai/hosting.json"),
     read("db/schema.ts"),
@@ -379,6 +380,7 @@ test("verifies professor and staff roles with private evidence and admin review"
     read("server/config/runtime-env.ts"),
     read("app/api/account/route.ts"),
     read("worker/index.ts"),
+    read("server/services/database-cleanup.ts"),
   ]);
 
   assert.match(hosting, /"r2": "ROLE_EVIDENCE"/);
@@ -401,6 +403,7 @@ test("verifies professor and staff roles with private evidence and admin review"
   assert.match(adminUi, /직위 인증 관리/);
   assert.match(runtimeEnv, /ADMIN_EMAILS/);
   assert.match(accountRoute, /getRoleEvidenceBucket\(\)\.delete/);
-  assert.match(worker, /cleanupExpiredRoleEvidence/);
+  assert.match(databaseCleanup, /cleanupExpiredRoleEvidence/);
+  assert.match(worker, /runDailyDatabaseCleanup/);
   assert.match(worker, /ctx\.waitUntil/);
 });
