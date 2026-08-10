@@ -17,7 +17,7 @@ type CreateForm = {
   venue: string;
   startsAt: string;
   durationMinutes: number;
-  capacity: number;
+  capacity: string;
   level: string;
   description: string;
   facilityReserved: boolean;
@@ -30,7 +30,7 @@ const initialForm: CreateForm = {
   venue: "실외농구장",
   startsAt: "",
   durationMinutes: 90,
-  capacity: 6,
+  capacity: "6",
   level: "초보 환영",
   description: "",
   facilityReserved: false,
@@ -57,6 +57,11 @@ export function CreateSheet({ onClose, onCreated, onToast, defaultSport, default
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const capacity = Number(form.capacity);
+    if (!Number.isInteger(capacity) || capacity < 2 || capacity > 30) {
+      setError("모집 인원은 2명에서 30명 사이로 입력해 주세요.");
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
@@ -65,6 +70,7 @@ export function CreateSheet({ onClose, onCreated, onToast, defaultSport, default
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          capacity,
           startsAt: new Date(form.startsAt).toISOString(),
         }),
       });
@@ -202,8 +208,13 @@ export function CreateSheet({ onClose, onCreated, onToast, defaultSport, default
                 type="number"
                 min={2}
                 max={30}
+                step={1}
+                inputMode="numeric"
                 value={form.capacity}
-                onChange={(e) => setForm((c) => ({ ...c, capacity: Number(e.target.value) }))}
+                onChange={(e) => {
+                  const capacity = e.target.value.replace(/^0+(?=\d)/, "");
+                  setForm((current) => ({ ...current, capacity }));
+                }}
               />
             </label>
             <label>
