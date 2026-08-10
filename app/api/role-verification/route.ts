@@ -11,15 +11,13 @@ import {
 } from "@/server/services/role-verification";
 import { cleanupExpiredRoleEvidence } from "@/server/services/role-evidence-cleanup";
 import { readRoleEvidenceUpload } from "@/server/services/role-evidence-upload";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 export async function GET() {
   const user = await getSessionUser();
   if (!user) {
     return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
-
-  await ensureSchema();
   const db = getD1();
   await cleanupExpiredRoleEvidence(db, getRoleEvidenceBucket());
 
@@ -87,7 +85,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    await ensureSchema();
     const db = getD1();
     const bucket = getRoleEvidenceBucket();
     await cleanupExpiredRoleEvidence(db, bucket);

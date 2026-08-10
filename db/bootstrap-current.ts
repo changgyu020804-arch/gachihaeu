@@ -51,9 +51,11 @@ export async function createCurrentSchema(db: D1Database) {
     ),
     db.prepare(
       "CREATE INDEX IF NOT EXISTS activities_status_idx ON activities(status)",
+      "CREATE INDEX IF NOT EXISTS activities_status_starts_idx ON activities(status, starts_at)",
     ),
     db.prepare(
       "CREATE INDEX IF NOT EXISTS participants_user_idx ON participants(user_email)",
+      "CREATE INDEX IF NOT EXISTS participants_activity_joined_idx ON participants(activity_id, joined_at)",
     ),
     db.prepare(
       "CREATE UNIQUE INDEX IF NOT EXISTS reports_activity_reporter_idx ON reports(activity_id, reporter_email)",
@@ -212,6 +214,7 @@ export async function createCurrentSchema(db: D1Database) {
     ),
     db.prepare(
       "CREATE INDEX IF NOT EXISTS waitlist_activity_position_idx ON waitlist(activity_id, position)",
+      "CREATE INDEX IF NOT EXISTS waitlist_activity_status_position_idx ON waitlist(activity_id, status, position)",
     ),
     db.prepare(
       `CREATE TABLE IF NOT EXISTS notifications (

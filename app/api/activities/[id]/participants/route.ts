@@ -1,7 +1,7 @@
 import { getSessionUser } from "@/server/auth/session";
 import { AttendanceStatus } from "@/lib/types/activity";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 import { createNotifications } from "@/server/services/notification.service";
 
 const ATTENDANCE_STATUSES: AttendanceStatus[] = [
@@ -75,8 +75,6 @@ export async function GET(
 ) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
-
-  await ensureSchema();
   const { id } = await params;
   const db = getD1();
 
@@ -183,8 +181,6 @@ export async function PATCH(
 ) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
-
-  await ensureSchema();
   const { id } = await params;
   const payload = (await request.json()) as Record<string, unknown>;
   const participantEmail = cleanString(payload.participantEmail, 100);

@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/server/auth/session";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 function cleanString(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
@@ -24,8 +24,6 @@ export async function POST(
   if (reason.length < 5) {
     return Response.json({ error: "신고 사유를 다섯 글자 이상 입력해 주세요." }, { status: 400 });
   }
-
-  await ensureSchema();
   const db = getD1();
   const rateError = await enforceRateLimit(db, {
     action: "user-report",

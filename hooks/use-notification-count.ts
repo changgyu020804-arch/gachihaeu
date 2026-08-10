@@ -28,7 +28,7 @@ export function useNotificationCount(currentUser: Viewer | null) {
     const controller = new AbortController();
     const initialTimer = window.setTimeout(
       () => void refresh(controller.signal),
-      0,
+      1_500,
     );
     if (!currentUser) {
       return () => {

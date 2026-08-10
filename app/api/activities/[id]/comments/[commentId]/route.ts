@@ -6,7 +6,7 @@ import {
   readJsonObject,
   requestErrorResponse,
 } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 type CommentContext = {
   author_email: string;
@@ -49,7 +49,6 @@ export async function PATCH(
   }
 
   try {
-    await ensureSchema();
     const { id, commentId } = await params;
     const payload = await readJsonObject(request, 2_048);
     const pinned = payload.pinned === true;
@@ -141,8 +140,6 @@ export async function DELETE(
   if (!user) {
     return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
-
-  await ensureSchema();
   const { id, commentId } = await params;
   const db = getD1();
   const rateError = await enforceRateLimit(db, {

@@ -102,6 +102,24 @@
   gap: 10px;
 }
 
+.load-more-activities {
+  display: block;
+  width: calc(100% - 32px);
+  min-height: 50px;
+  margin: 16px auto 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--blue);
+  background: #fff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.load-more-activities:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .match-skeleton {
   height: 186px;
   background:

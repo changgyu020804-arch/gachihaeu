@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/server/auth/session";
 import { cleanNickname, normalizeNickname } from "@/lib/validation/nickname";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 export async function GET(request: Request) {
   const user = await getSessionUser();
@@ -15,8 +15,6 @@ export async function GET(request: Request) {
       { status: 400 },
     );
   }
-
-  await ensureSchema();
   const duplicate = await getD1()
     .prepare(
       `SELECT email

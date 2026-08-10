@@ -14,7 +14,7 @@ import {
   rejectCrossOriginMutation,
   requestErrorResponse,
 } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 const MAX_CODE_ATTEMPTS = 5;
 
@@ -37,8 +37,6 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-
-    await ensureSchema();
     const db = getD1();
     const clientIp = getClientIp(request);
 

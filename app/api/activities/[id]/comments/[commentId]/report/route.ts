@@ -7,7 +7,7 @@ import {
   requestErrorResponse,
 } from "@/server/security/request";
 import { cleanUserText } from "@/server/validation/content-moderation";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 export async function POST(
   request: Request,
@@ -21,7 +21,6 @@ export async function POST(
   }
 
   try {
-    await ensureSchema();
     const { id, commentId } = await params;
     const payload = await readJsonObject(request, 2_048);
     const reason =

@@ -10,7 +10,7 @@ import {
   deleteAccountData,
   getAccountRateLimitIdentifiers,
 } from "@/server/services/account-deletion";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 import { getRoleEvidenceBucket } from "@/server/services/role-verification";
 
 const DELETE_CONFIRMATION = "탈퇴";
@@ -32,8 +32,6 @@ export async function DELETE(request: Request) {
         { status: 400 },
       );
     }
-
-    await ensureSchema();
     const rateLimitIdentifiers = getAccountRateLimitIdentifiers(user.email);
     const [securitySubjectHash, rateLimitKeyHashes] = await Promise.all([
       getSecuritySubjectHash(user.email),

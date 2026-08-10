@@ -1,5 +1,5 @@
 import { getSessionUser } from "@/server/auth/session";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 import {
   applyModerationAction,
   getModerationDashboard,
@@ -28,8 +28,6 @@ async function requireModerator() {
 export async function GET() {
   const auth = await requireModerator();
   if ("error" in auth) return auth.error;
-
-  await ensureSchema();
   return Response.json(await getModerationDashboard(getD1()));
 }
 
@@ -66,8 +64,6 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-
-    await ensureSchema();
     await applyModerationAction(getD1(), {
       reportType: reportTypeValue as ReportType,
       reportId,

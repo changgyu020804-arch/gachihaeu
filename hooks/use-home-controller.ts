@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, Sport, Viewer } from "@/lib/types/activity";
+import { Activity, ActivitySummary, Sport, Viewer } from "@/lib/types/activity";
+import { clearActivityCache } from "@/lib/client/activity-cache";
 import type { ActiveNav } from "@/components/layout/bottom-navigation";
 import type { AppNotification } from "@/components/notifications/notification-sheet";
 import { getErrorMessage } from "@/lib/utils/ui";
@@ -13,11 +14,27 @@ import {
 import { useNotificationCount } from "@/hooks/use-notification-count";
 import { useSessionUser } from "@/hooks/use-session-user";
 
-export function useHomeController(initialUser: Viewer | null) {
+type HomeControllerOptions = {
+  initialUser: Viewer | null;
+  initialActivities: Activity[];
+  initialNextCursor: string | null;
+  initialSummary: ActivitySummary;
+};
+
+export function useHomeController({
+  initialUser,
+  initialActivities,
+  initialNextCursor,
+  initialSummary,
+}: HomeControllerOptions) {
   const session = useSessionUser(initialUser);
-  const activityState = useHomeActivities(
-    Boolean(session.currentUser?.onboardingComplete),
-  );
+  const activityState = useHomeActivities({
+    canLoad: Boolean(session.currentUser?.onboardingComplete),
+    userEmail: session.currentUser?.email ?? null,
+    initialActivities,
+    initialNextCursor,
+    initialSummary,
+  });
   const notifications = useNotificationCount(session.currentUser);
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
@@ -105,6 +122,7 @@ export function useHomeController(initialUser: Viewer | null) {
   };
 
   const handleLogout = async () => {
+    const currentEmail = session.currentUser?.email;
     const pushToken = window.localStorage.getItem("gachihaeu:push-token");
     if (pushToken) {
       await fetch("/api/push-tokens", {
@@ -115,6 +133,7 @@ export function useHomeController(initialUser: Viewer | null) {
       window.localStorage.removeItem("gachihaeu:push-token");
     }
     await fetch("/api/auth/logout", { method: "POST" });
+    clearActivityCache(currentEmail);
     session.setCurrentUser(null);
     setShowProfile(false);
     setShowNotifications(false);
@@ -123,6 +142,7 @@ export function useHomeController(initialUser: Viewer | null) {
   };
 
   const handleAccountDeleted = () => {
+    clearActivityCache(session.currentUser?.email);
     session.setCurrentUser(null);
     setShowProfile(false);
     setShowNotifications(false);
@@ -150,7 +170,6 @@ export function useHomeController(initialUser: Viewer | null) {
     session.setShowLogin(false);
     setShowProfile(true);
     setToast("로그인 되었어요! 환영합니다.");
-    void activityState.loadActivities();
   };
 
   const goHome = () => {

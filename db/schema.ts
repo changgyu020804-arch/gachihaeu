@@ -27,6 +27,7 @@ export const activities = sqliteTable(
     index("activities_starts_at_idx").on(table.startsAt),
     index("activities_creator_idx").on(table.creatorEmail),
     index("activities_status_idx").on(table.status),
+    index("activities_status_starts_idx").on(table.status, table.startsAt),
   ],
 );
 
@@ -45,6 +46,7 @@ export const participants = sqliteTable(
     primaryKey({ columns: [table.activityId, table.userEmail] }),
     index("participants_user_idx").on(table.userEmail),
     index("participants_attendance_idx").on(table.activityId, table.attendanceStatus),
+    index("participants_activity_joined_idx").on(table.activityId, table.joinedAt),
   ],
 );
 
@@ -187,6 +189,11 @@ export const waitlist = sqliteTable(
   (table) => [
     primaryKey({ columns: [table.activityId, table.userEmail] }),
     index("waitlist_activity_position_idx").on(table.activityId, table.position),
+    index("waitlist_activity_status_position_idx").on(
+      table.activityId,
+      table.status,
+      table.position,
+    ),
   ],
 );
 

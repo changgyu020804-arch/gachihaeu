@@ -4,7 +4,7 @@ import {
   createSessionCookie,
   deleteSessionCookies,
 } from "@/server/auth/session";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 import { getAppReviewConfig } from "@/server/config/runtime-env";
 import { seedReviewData } from "@/server/services/review-account";
 import {
@@ -20,7 +20,6 @@ export async function POST(request: Request) {
   if (originError) return originError;
 
   try {
-    await ensureSchema();
     const db = getD1();
     const rateError = await enforceRateLimit(db, {
       action: "app-review-login",

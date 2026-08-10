@@ -1,6 +1,6 @@
 import { Viewer } from "@/lib/types/activity";
-import { getSessionUser, SessionUser } from "@/server/auth/session";
-import { ensureSchema, getD1 } from "@/db/index";
+import { SessionUser } from "@/server/auth/session";
+import { getD1 } from "@/db/index";
 
 type ProfileIdentity = {
   nickname: string;
@@ -10,7 +10,6 @@ type ProfileIdentity = {
 export async function getViewerForSession(
   session: SessionUser,
 ): Promise<Viewer> {
-  await ensureSchema();
   const profile = await getD1()
     .prepare(
       `SELECT nickname, onboarding_completed
@@ -28,10 +27,4 @@ export async function getViewerForSession(
     fullName: displayName,
     onboardingComplete: Boolean(profile?.onboarding_completed),
   };
-}
-
-export async function getCurrentViewer(): Promise<Viewer | null> {
-  const session = await getSessionUser();
-  if (!session) return null;
-  return getViewerForSession(session);
 }

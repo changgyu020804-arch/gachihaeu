@@ -15,6 +15,8 @@ type ActivitiesSectionProps = {
   selectedSport: SportFilter;
   myOnly: boolean;
   loading: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
   submitting: boolean;
   error: string;
   onSelectDate: (date: string) => void;
@@ -27,6 +29,7 @@ type ActivitiesSectionProps = {
   ) => void;
   onOpenRating: (activityId: string) => void;
   onRetry: () => void;
+  onLoadMore: () => void;
   onBrowse: () => void;
   onCreate: () => void;
 };
@@ -38,6 +41,8 @@ export function ActivitiesSection({
   selectedSport,
   myOnly,
   loading,
+  loadingMore,
+  hasMore,
   submitting,
   error,
   onSelectDate,
@@ -46,6 +51,7 @@ export function ActivitiesSection({
   onPerformAction,
   onOpenRating,
   onRetry,
+  onLoadMore,
   onBrowse,
   onCreate,
 }: ActivitiesSectionProps) {
@@ -136,6 +142,16 @@ export function ActivitiesSection({
           </div>
         )}
       </div>
+
+      {!loading && activities.length > 0 && hasMore && (
+        <button
+          className="load-more-activities"
+          disabled={loadingMore}
+          onClick={onLoadMore}
+        >
+          {loadingMore ? "불러오는 중..." : "모임 더 보기"}
+        </button>
+      )}
 
       <aside className="safety-note">
         <span>🛡️</span>

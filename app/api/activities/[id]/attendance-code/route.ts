@@ -1,5 +1,5 @@
 import { generateAuthCode, getSessionUser, hashAttendanceCode } from "@/server/auth/session";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
 
 type ActivityRow = {
@@ -42,7 +42,6 @@ export async function GET(
 ) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
-  await ensureSchema();
   const { id } = await params;
   const db = getD1();
   const activity = await getActivity(db, id);
@@ -74,7 +73,6 @@ export async function POST(
 ) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
-  await ensureSchema();
   const { id } = await params;
   const db = getD1();
   const activity = await getActivity(db, id);
@@ -128,7 +126,6 @@ export async function DELETE(
 ) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
-  await ensureSchema();
   const { id } = await params;
   const db = getD1();
   const activity = await getActivity(db, id);

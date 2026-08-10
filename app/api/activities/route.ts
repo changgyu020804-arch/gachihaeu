@@ -1,25 +1,57 @@
 import { getSessionUser } from "@/server/auth/session";
 import { LEVELS, SPORTS, VENUES } from "@/lib/types/activity";
-import { listActivities } from "@/server/repositories/activity.repository";
+import {
+  getActivitySummary,
+  listActivityPage,
+} from "@/server/repositories/activity.repository";
 import { getUserDisplayName } from "@/server/policies/activity-policy";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 function cleanString(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const user = await getSessionUser();
   if (!user) {
     return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
 
   try {
-    await ensureSchema();
-    const activities = await listActivities(getD1(), user.email);
+    const url = new URL(request.url);
+    const requestedSport = cleanString(url.searchParams.get("sport"), 20);
+    const sport =
+      requestedSport &&
+      requestedSport !== "전체" &&
+      SPORTS.includes(requestedSport as never)
+        ? requestedSport
+        : null;
+    const requestedDate = cleanString(url.searchParams.get("date"), 10);
+    const dateKey = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
+      ? requestedDate
+      : null;
+    const cursor = cleanString(url.searchParams.get("cursor"), 180) || null;
+    const includeSummary = url.searchParams.get("summary") === "1";
+    const db = getD1();
+    const [page, summary] = await Promise.all([
+      listActivityPage(db, user.email, {
+        limit: 20,
+        cursor,
+        sport,
+        dateKey,
+        myOnly: url.searchParams.get("mine") === "1",
+      }),
+      includeSummary
+        ? getActivitySummary(db, user.email)
+        : Promise.resolve(null),
+    ]);
 
-    return Response.json({ activities });
+    return Response.json({
+      activities: page.activities,
+      nextCursor: page.nextCursor,
+      ...(summary ? { summary } : {}),
+    });
   } catch {
     console.error("Activity list request failed");
     return Response.json(
@@ -36,7 +68,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    await ensureSchema();
     const payload = (await request.json()) as Record<string, unknown>;
     const sport = cleanString(payload.sport, 20);
     const title = cleanString(payload.title, 50);

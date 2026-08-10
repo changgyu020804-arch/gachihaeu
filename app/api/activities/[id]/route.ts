@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/server/auth/session";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 import { createNotifications } from "@/server/services/notification.service";
 
 function cleanString(value: unknown, maxLength: number) {
@@ -34,8 +34,6 @@ export async function PATCH(
   if (!notice) {
     return Response.json({ error: "공지 내용을 입력해 주세요." }, { status: 400 });
   }
-
-  await ensureSchema();
   const { id } = await params;
   const db = getD1();
   const rateError = await enforceRateLimit(db, {
@@ -88,8 +86,6 @@ export async function DELETE(
 ) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
-
-  await ensureSchema();
   const { id } = await params;
   const payload = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const cancellationReason = cleanString(payload.cancellationReason, 120);

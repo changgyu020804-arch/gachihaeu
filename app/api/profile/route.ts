@@ -15,7 +15,7 @@ import {
   getReputation,
 } from "@/server/repositories/reputation.repository";
 import { isNicknameConflictError } from "@/lib/validation/nickname";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 import { isAdminEmail } from "@/server/config/runtime-env";
 import { validateProfileInput } from "@/server/validation/profile-input";
 import { resolveProfileRole } from "@/server/policies/profile-role";
@@ -27,8 +27,6 @@ export async function GET() {
   if (!user) {
     return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
-
-  await ensureSchema();
   const db = getD1();
   const profile = await db
     .prepare(
@@ -90,7 +88,6 @@ export async function PUT(request: Request) {
   }
 
   try {
-    await ensureSchema();
     const payload = await readJsonObject(request, 8_192);
     const profileInput = validateProfileInput(payload);
     const {

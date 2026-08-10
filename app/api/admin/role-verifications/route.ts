@@ -4,7 +4,7 @@ import {
   requireAdmin,
 } from "@/server/services/role-verification";
 import { cleanupExpiredRoleEvidence } from "@/server/services/role-evidence-cleanup";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -13,8 +13,6 @@ export async function GET() {
   }
   const adminError = requireAdmin(user.email);
   if (adminError) return adminError;
-
-  await ensureSchema();
   const db = getD1();
   await cleanupExpiredRoleEvidence(db, getRoleEvidenceBucket());
 

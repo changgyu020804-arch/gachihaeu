@@ -1,4 +1,4 @@
-import { Activity, Sport } from "@/lib/types/activity";
+import { Sport } from "@/lib/types/activity";
 
 const VENUE_ITEMS: Array<{
   venue: string;
@@ -19,11 +19,11 @@ const VENUE_ITEMS: Array<{
 ];
 
 type VenueSectionProps = {
-  activities: Activity[];
+  venueCounts: Record<string, number>;
   onSelectSport: (sport: Sport) => void;
 };
 
-export function VenueSection({ activities, onSelectSport }: VenueSectionProps) {
+export function VenueSection({ venueCounts, onSelectSport }: VenueSectionProps) {
   return (
     <section className="venue-list-section">
       <div className="section-title-row">
@@ -34,7 +34,7 @@ export function VenueSection({ activities, onSelectSport }: VenueSectionProps) {
       </div>
       <div className="venue-list">
         {VENUE_ITEMS.map((item) => {
-          const count = activities.filter((activity) => activity.venue === item.venue).length;
+          const count = venueCounts[item.venue] ?? 0;
           return (
             <button
               key={item.venue}

@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/server/auth/session";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 function parseEmail(value: string) {
   return decodeURIComponent(value).trim().toLowerCase().slice(0, 100);
@@ -18,8 +18,6 @@ export async function POST(
   if (!blockedEmail || blockedEmail === user.email) {
     return Response.json({ error: "자기 자신은 차단할 수 없어요." }, { status: 400 });
   }
-
-  await ensureSchema();
   const db = getD1();
   const rateError = await enforceRateLimit(db, {
     action: "user-block",
@@ -49,7 +47,6 @@ export async function DELETE(
 
   const { email } = await params;
   const blockedEmail = parseEmail(email);
-  await ensureSchema();
   const db = getD1();
   const rateError = await enforceRateLimit(db, {
     action: "user-unblock",

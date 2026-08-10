@@ -1,13 +1,11 @@
 import { getSessionUser } from "@/server/auth/session";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 import { syncScheduledNotifications } from "@/server/services/notification.service";
 
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
-
-  await ensureSchema();
   await syncScheduledNotifications(user.email);
   const db = getD1();
 
@@ -67,7 +65,6 @@ export async function PATCH(request: Request) {
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
 
   const payload = (await request.json()) as { id?: unknown; all?: unknown };
-  await ensureSchema();
   const db = getD1();
   const rateError = await enforceRateLimit(db, {
     action: "notifications-read",

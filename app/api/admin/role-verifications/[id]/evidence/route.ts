@@ -3,7 +3,7 @@ import {
   getRoleEvidenceBucket,
   requireAdmin,
 } from "@/server/services/role-verification";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -14,8 +14,6 @@ export async function GET(_request: Request, context: RouteContext) {
   }
   const adminError = requireAdmin(user.email);
   if (adminError) return adminError;
-
-  await ensureSchema();
   const { id } = await context.params;
   const row = await getD1()
     .prepare(

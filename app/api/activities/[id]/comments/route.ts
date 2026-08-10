@@ -20,7 +20,7 @@ import {
   readJsonObject,
   requestErrorResponse,
 } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 function readOffset(request: Request) {
   const value = Number(new URL(request.url).searchParams.get("offset") ?? 0);
@@ -37,8 +37,6 @@ export async function GET(
   if (!user) {
     return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
-
-  await ensureSchema();
   const { id } = await params;
   const db = getD1();
   const activity = await getCommentActivity(db, id);
@@ -72,7 +70,6 @@ export async function POST(
   }
 
   try {
-    await ensureSchema();
     const { id } = await params;
     const payload = await readJsonObject(request, 4_096);
     const content = cleanUserText(payload.content, COMMENT_MAX_LENGTH);

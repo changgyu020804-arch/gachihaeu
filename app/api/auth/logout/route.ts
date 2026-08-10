@@ -1,6 +1,6 @@
 import { deleteSessionCookies, getSessionUser } from "@/server/auth/session";
 import { rejectCrossOriginMutation } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 export async function POST(request: Request) {
   const originError = rejectCrossOriginMutation(request);
@@ -9,7 +9,6 @@ export async function POST(request: Request) {
   const user = await getSessionUser();
   if (user) {
     try {
-      await ensureSchema();
       await getD1()
         .prepare(`UPDATE push_tokens SET enabled = 0 WHERE user_email = ?`)
         .bind(user.email)

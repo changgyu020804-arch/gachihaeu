@@ -9,7 +9,7 @@ import {
   requestErrorResponse,
   RequestValidationError,
 } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -22,7 +22,6 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (adminError) return adminError;
 
   try {
-    await ensureSchema();
     const db = getD1();
     const rateError = await enforceRateLimit(db, {
       action: "role-verification-review",

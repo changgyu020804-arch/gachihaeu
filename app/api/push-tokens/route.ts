@@ -6,7 +6,7 @@ import {
   rejectCrossOriginMutation,
   requestErrorResponse,
 } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 const EXPO_PUSH_TOKEN = /^(Expo|Exponent)PushToken\[[A-Za-z0-9_-]{16,180}\]$/;
 
@@ -33,8 +33,6 @@ export async function POST(request: Request) {
     if (!token || !platform) {
       return Response.json({ error: "푸시 토큰이 올바르지 않아요." }, { status: 400 });
     }
-
-    await ensureSchema();
     const db = getD1();
     const rateError = await enforceRateLimit(db, {
       action: "push-token-register",
@@ -77,8 +75,6 @@ export async function DELETE(request: Request) {
     if (!token) {
       return Response.json({ error: "푸시 토큰이 올바르지 않아요." }, { status: 400 });
     }
-
-    await ensureSchema();
     const db = getD1();
     await db
       .prepare(

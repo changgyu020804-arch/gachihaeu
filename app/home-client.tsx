@@ -1,6 +1,6 @@
 "use client";
 
-import { Viewer } from "@/lib/types/activity";
+import { Activity, ActivitySummary, Viewer } from "@/lib/types/activity";
 import { BottomNavigation } from "@/components/layout/bottom-navigation";
 import { CreateSheet } from "@/components/activity/create-sheet";
 import { DetailSheet } from "@/components/activity/detail-sheet";
@@ -18,10 +18,23 @@ import { PolicyLinks } from "@/components/layout/policy-links";
 
 type HomeClientProps = {
   initialUser: Viewer | null;
+  initialActivities: Activity[];
+  initialNextCursor: string | null;
+  initialSummary: ActivitySummary;
 };
 
-export function HomeClient({ initialUser }: HomeClientProps) {
-  const home = useHomeController(initialUser);
+export function HomeClient({
+  initialUser,
+  initialActivities,
+  initialNextCursor,
+  initialSummary,
+}: HomeClientProps) {
+  const home = useHomeController({
+    initialUser,
+    initialActivities,
+    initialNextCursor,
+    initialSummary,
+  });
 
   return (
     <main className="page-shell">
@@ -41,7 +54,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
           remainingCount={home.stats.remaining}
         />
         <VenueSection
-          activities={home.activities}
+          venueCounts={home.venueCounts}
           onSelectSport={(sport) => {
             home.setSelectedSport(sport);
             document
@@ -56,6 +69,8 @@ export function HomeClient({ initialUser }: HomeClientProps) {
           selectedSport={home.selectedSport}
           myOnly={home.myOnly}
           loading={home.loading}
+          loadingMore={home.loadingMore}
+          hasMore={home.hasMore}
           submitting={home.submitting}
           error={home.error}
           onSelectDate={home.setSelectedDate}
@@ -66,6 +81,7 @@ export function HomeClient({ initialUser }: HomeClientProps) {
           }
           onOpenRating={home.openRating}
           onRetry={() => void home.loadActivities()}
+          onLoadMore={() => void home.loadMore()}
           onBrowse={() => home.setMyOnly(false)}
           onCreate={() => home.openCreate()}
         />

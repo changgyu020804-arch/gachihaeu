@@ -12,7 +12,7 @@ import {
   rejectCrossOriginMutation,
   requestErrorResponse,
 } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 const CODE_EXPIRY_MINUTES = 5;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -34,8 +34,6 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-
-    await ensureSchema();
     const db = getD1();
     const clientIp = getClientIp(request);
 

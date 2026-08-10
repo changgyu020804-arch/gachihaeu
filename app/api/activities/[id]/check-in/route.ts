@@ -1,5 +1,5 @@
 import { constantTimeEqual, getSessionUser, hashAttendanceCode } from "@/server/auth/session";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 import { createNotifications } from "@/server/services/notification.service";
 import {
   enforceRateLimit,
@@ -21,8 +21,6 @@ export async function POST(
     if (!/^\d{6}$/.test(code)) {
       return Response.json({ error: "6자리 출석번호를 입력해 주세요." }, { status: 400 });
     }
-
-    await ensureSchema();
     const { id } = await params;
     const db = getD1();
     const rateError = await enforceRateLimit(db, {

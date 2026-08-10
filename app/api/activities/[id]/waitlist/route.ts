@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/server/auth/session";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 import { createNotifications } from "@/server/services/notification.service";
 import {
   getUserDisplayName,
@@ -12,7 +12,6 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  await ensureSchema();
   const user = await getSessionUser();
   const { id } = await params;
   const db = getD1();
@@ -45,8 +44,6 @@ export async function POST(
 ) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
-
-  await ensureSchema();
   const { id } = await params;
   const db = getD1();
   const rateError = await enforceRateLimit(db, {
@@ -164,8 +161,6 @@ export async function DELETE(
 ) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
-
-  await ensureSchema();
   const { id } = await params;
   const db = getD1();
   const rateError = await enforceRateLimit(db, {

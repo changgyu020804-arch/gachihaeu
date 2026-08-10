@@ -1,7 +1,7 @@
 import { getSessionUser } from "@/server/auth/session";
 import { AttendanceStatus, RatingType } from "@/lib/types/activity";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 import { createNotifications } from "@/server/services/notification.service";
 import { hasBlockedRelationship } from "@/server/policies/activity-policy";
 import { hasUnsafeUserText } from "@/server/validation/content-moderation";
@@ -22,8 +22,6 @@ function isValidScore(value: unknown): value is number {
 export async function POST(request: Request) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
-
-  await ensureSchema();
   const db = getD1();
   const rateError = await enforceRateLimit(db, {
     action: "rating-create",

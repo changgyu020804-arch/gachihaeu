@@ -4,7 +4,7 @@ import {
   getRecentRatings,
   getReputation,
 } from "@/server/repositories/reputation.repository";
-import { ensureSchema, getD1 } from "@/db/index";
+import { getD1 } from "@/db/index";
 
 export async function GET(
   _request: Request,
@@ -12,8 +12,6 @@ export async function GET(
 ) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
-
-  await ensureSchema();
   const { email } = await params;
   const decodedEmail = decodeURIComponent(email).trim().slice(0, 100);
   if (!decodedEmail) {

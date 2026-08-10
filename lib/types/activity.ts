@@ -86,6 +86,13 @@ export type Activity = {
   cancellationDeadlineMinutes: number;
 };
 
+export type ActivitySummary = {
+  open: number;
+  people: number;
+  remaining: number;
+  venueCounts: Record<string, number>;
+};
+
 export type Viewer = {
   displayName: string;
   email: string;
