@@ -6,6 +6,20 @@ import type { RoleVerificationStatus } from "@/lib/types/role-verification";
 import type { VerificationDocumentType } from "@/lib/types/role-verification";
 import { getErrorMessage } from "@/lib/utils/ui";
 
+const MAX_EVIDENCE_BYTES = 5 * 1024 * 1024;
+
+async function readSubmissionPayload(response: Response) {
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    return {} as { error?: string };
+  }
+
+  try {
+    return (await response.json()) as { error?: string };
+  } catch {
+    return {} as { error?: string };
+  }
+}
+
 type LatestVerificationRequest = {
   id: string;
   requestedRole: string;
@@ -85,6 +99,10 @@ export function RoleVerificationPanel({
       setError("증빙자료를 선택해 주세요.");
       return;
     }
+    if (evidence.size > MAX_EVIDENCE_BYTES) {
+      setError("파일은 5MB 이하로 올려 주세요.");
+      return;
+    }
 
     setSubmitting(true);
     setError("");
@@ -97,9 +115,14 @@ export function RoleVerificationPanel({
         method: "POST",
         body,
       });
-      const payload = (await response.json()) as { error?: string };
+      const payload = await readSubmissionPayload(response);
       if (!response.ok) {
-        throw new Error(payload.error || "인증자료를 제출하지 못했어요.");
+        throw new Error(
+          payload.error ||
+            (response.status === 413
+              ? "파일은 5MB 이하로 올려 주세요."
+              : "인증자료를 제출하지 못했어요. 잠시 후 다시 시도해 주세요."),
+        );
       }
       setEvidence(null);
       onToast("증빙자료를 제출했어요. 운영자가 확인한 뒤 알려드릴게요.");

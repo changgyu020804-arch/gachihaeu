@@ -365,6 +365,7 @@ test("verifies professor and staff roles with private evidence and admin review"
     accountRoute,
     worker,
     databaseCleanup,
+    nextConfig,
   ] = await Promise.all([
     read(".openai/hosting.json"),
     read("db/schema.ts"),
@@ -381,6 +382,7 @@ test("verifies professor and staff roles with private evidence and admin review"
     read("app/api/account/route.ts"),
     read("worker/index.ts"),
     read("server/services/database-cleanup.ts"),
+    read("next.config.ts"),
   ]);
 
   assert.match(hosting, /"r2": "ROLE_EVIDENCE"/);
@@ -391,6 +393,9 @@ test("verifies professor and staff roles with private evidence and admin review"
   assert.match(profileRoute, /resolveProfileRole/);
   assert.match(profileRole, /publicCampusRole: keepsApprovedRole \? selectedRole : ""/);
   assert.match(evidenceUpload, /MAX_EVIDENCE_BYTES = 5 \* 1024 \* 1024/);
+  assert.match(nextConfig, /bodySizeLimit: "6mb"/);
+  assert.match(verificationUi, /evidence\.size > MAX_EVIDENCE_BYTES/);
+  assert.match(verificationUi, /response\.status === 413/);
   assert.match(evidenceUpload, /detectEvidenceContentType/);
   assert.match(evidenceUpload, /crypto\.subtle\.digest\("SHA-256"/);
   assert.match(verificationRoute, /getRoleEvidenceBucket\(\)\.put|bucket\.put/);
