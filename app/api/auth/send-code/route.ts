@@ -28,6 +28,13 @@ export async function POST(request: Request) {
         ? payload.email.trim().toLowerCase()
         : "";
 
+    if (payload.termsAccepted !== true) {
+      return Response.json(
+        { error: "이용약관과 커뮤니티 운영정책에 동의해 주세요." },
+        { status: 400 },
+      );
+    }
+
     if (!isValidUosEmail(email)) {
       return Response.json(
         { error: "서울시립대 이메일(@uos.ac.kr)을 확인해 주세요." },

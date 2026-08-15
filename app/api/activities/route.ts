@@ -6,6 +6,7 @@ import {
 } from "@/server/repositories/activity.repository";
 import { getUserDisplayName } from "@/server/policies/activity-policy";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
+import { hasUnsafeUserText } from "@/server/validation/content-moderation";
 import { getD1 } from "@/db/index";
 
 function cleanString(value: unknown, maxLength: number) {
@@ -86,6 +87,12 @@ export async function POST(request: Request) {
     }
     if (title.length < 2) {
       return Response.json({ error: "모임 제목을 두 글자 이상 입력해 주세요." }, { status: 400 });
+    }
+    if (hasUnsafeUserText(title) || hasUnsafeUserText(description)) {
+      return Response.json(
+        { error: "모임 정보에 연락처, 외부 계정 또는 부적절한 표현을 적을 수 없어요." },
+        { status: 400 },
+      );
     }
     if (!VENUES.includes(venue as never)) {
       return Response.json({ error: "교내 장소를 선택해 주세요." }, { status: 400 });

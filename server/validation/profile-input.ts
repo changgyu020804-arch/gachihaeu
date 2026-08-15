@@ -6,6 +6,7 @@ import {
 } from "@/lib/types/activity";
 import { cleanNickname, normalizeNickname } from "@/lib/validation/nickname";
 import { RequestValidationError } from "@/server/security/request";
+import { hasUnsafeUserText } from "@/server/validation/content-moderation";
 
 export type ValidatedProfileInput = {
   nickname: string;
@@ -32,6 +33,12 @@ export function validateProfileInput(
 
   if (!nickname) {
     throw new RequestValidationError("닉네임을 입력해 주세요.", 400);
+  }
+  if (hasUnsafeUserText(nickname) || (bio && hasUnsafeUserText(bio))) {
+    throw new RequestValidationError(
+      "프로필에 연락처, 외부 계정 또는 부적절한 표현을 적을 수 없어요.",
+      400,
+    );
   }
   if (!GENDERS.includes(gender as never)) {
     throw new RequestValidationError("성별 항목을 선택해 주세요.", 400);

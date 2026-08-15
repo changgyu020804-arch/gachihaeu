@@ -37,6 +37,7 @@ export function LoginSheet({
   const [department, setDepartment] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handleSendCode = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -46,7 +47,7 @@ export function LoginSheet({
       const response = await fetch("/api/auth/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, termsAccepted }),
       });
       const payload = (await response.json()) as { error?: string };
       if (!response.ok) {
@@ -68,7 +69,7 @@ export function LoginSheet({
       const response = await fetch("/api/auth/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
+        body: JSON.stringify({ email, code, termsAccepted }),
       });
       const payload = (await response.json()) as {
         error?: string;
@@ -179,7 +180,9 @@ export function LoginSheet({
               email={email}
               error={error}
               loading={loading}
+              termsAccepted={termsAccepted}
               onEmailChange={setEmail}
+              onTermsAcceptedChange={setTermsAccepted}
               onSubmit={handleSendCode}
             />
             <button

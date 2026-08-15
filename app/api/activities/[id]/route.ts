@@ -2,6 +2,7 @@ import { getSessionUser } from "@/server/auth/session";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
 import { getD1 } from "@/db/index";
 import { createNotifications } from "@/server/services/notification.service";
+import { hasUnsafeUserText } from "@/server/validation/content-moderation";
 
 function cleanString(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
@@ -33,6 +34,12 @@ export async function PATCH(
   const notice = cleanString(payload.notice, 300);
   if (!notice) {
     return Response.json({ error: "공지 내용을 입력해 주세요." }, { status: 400 });
+  }
+  if (hasUnsafeUserText(notice)) {
+    return Response.json(
+      { error: "공지에 연락처, 외부 계정 또는 부적절한 표현을 적을 수 없어요." },
+      { status: 400 },
+    );
   }
   const { id } = await params;
   const db = getD1();
@@ -91,6 +98,12 @@ export async function DELETE(
   const cancellationReason = cleanString(payload.cancellationReason, 120);
   if (cancellationReason.length < 2) {
     return Response.json({ error: "참가자에게 전달할 취소 사유를 입력해 주세요." }, { status: 400 });
+  }
+  if (hasUnsafeUserText(cancellationReason)) {
+    return Response.json(
+      { error: "취소 사유에 연락처, 외부 계정 또는 부적절한 표현을 적을 수 없어요." },
+      { status: 400 },
+    );
   }
   const db = getD1();
   const rateError = await enforceRateLimit(db, {

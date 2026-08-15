@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { Viewer } from "@/lib/types/activity";
 import { getErrorMessage } from "@/lib/utils/ui";
+import { TermsAgreement } from "@/components/auth/terms-agreement";
 
 type ReviewLoginFormProps = {
   onBack: () => void;
@@ -14,6 +15,7 @@ export function ReviewLoginForm({ onBack, onLogin }: ReviewLoginFormProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -23,7 +25,7 @@ export function ReviewLoginForm({ onBack, onLogin }: ReviewLoginFormProps) {
       const response = await fetch("/api/auth/review-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, termsAccepted }),
       });
       const payload = (await response.json()) as { error?: string; user?: Viewer };
       if (!response.ok || !payload.user) {
@@ -64,8 +66,13 @@ export function ReviewLoginForm({ onBack, onLogin }: ReviewLoginFormProps) {
           autoComplete="current-password"
         />
       </label>
+      <TermsAgreement
+        checked={termsAccepted}
+        disabled={loading}
+        onChange={setTermsAccepted}
+      />
       {error && <div className="form-error">{error}</div>}
-      <button className="primary-button" disabled={loading}>
+      <button className="primary-button" disabled={loading || !termsAccepted}>
         {loading ? "로그인 중..." : "심사용 계정 로그인"}
       </button>
       <button type="button" className="text-button" onClick={onBack}>

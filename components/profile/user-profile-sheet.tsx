@@ -10,7 +10,7 @@ type UserProfileSheetProps = {
   email: string;
   onClose: () => void;
   onToast: (message: string) => void;
-  onRelationshipChanged: () => void;
+  onRelationshipChanged: () => Promise<void>;
 };
 
 type ViewerState = {
@@ -58,26 +58,37 @@ export function UserProfileSheet({
   const toggleBlock = async () => {
     if (!viewerState || viewerState.isSelf) return;
     const shouldBlock = !viewerState.isBlocked;
-    if (
-      shouldBlock &&
-      !window.confirm(
-        "이 사용자를 차단하면 서로의 새 모임을 볼 수 없고 참가할 수도 없어요. 차단할까요?",
-      )
-    ) {
-      return;
+    let reason = "";
+    if (shouldBlock) {
+      const answer = window.prompt(
+        "차단 사유를 입력해 주세요. 차단과 동시에 운영자에게 신고되며, 이 사용자의 콘텐츠는 내 화면에서 즉시 사라집니다.",
+      );
+      if (answer === null) return;
+      reason = answer.trim();
+      if (reason.length < 5) {
+        window.alert("차단 및 신고 사유를 다섯 글자 이상 입력해 주세요.");
+        return;
+      }
     }
     setSubmitting(true);
     try {
       const response = await fetch(`/api/users/${encodeURIComponent(email)}/block`, {
         method: shouldBlock ? "POST" : "DELETE",
+        headers: shouldBlock ? { "Content-Type": "application/json" } : undefined,
+        body: shouldBlock ? JSON.stringify({ reason }) : undefined,
       });
       const payload = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(payload.error || "차단 상태를 변경하지 못했어요.");
       setViewerState((current) =>
         current ? { ...current, isBlocked: shouldBlock } : current,
       );
-      onRelationshipChanged();
-      onToast(shouldBlock ? "사용자를 차단했어요." : "차단을 해제했어요.");
+      if (shouldBlock) onClose();
+      await onRelationshipChanged();
+      onToast(
+        shouldBlock
+          ? "운영자에게 신고하고 차단했어요. 해당 사용자의 콘텐츠를 숨겼어요."
+          : "차단을 해제했어요.",
+      );
     } catch (error) {
       onToast(getErrorMessage(error));
     } finally {
@@ -172,7 +183,7 @@ export function UserProfileSheet({
                   disabled={submitting}
                   onClick={() => void toggleBlock()}
                 >
-                  {viewerState.isBlocked ? "차단 해제" : "사용자 차단"}
+                  {viewerState.isBlocked ? "차단 해제" : "신고하고 차단"}
                 </button>
               </div>
             )}

@@ -29,6 +29,36 @@
 .profile-privacy-note { margin: -5px 0 16px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .login-sheet .code-input { font-size: 24px; font-weight: 700; letter-spacing: 8px; text-align: center; }
 
+.login-sheet .terms-agreement {
+  padding: 13px 14px;
+  margin: 4px 0 16px;
+  background: #f7f9fc;
+  border: 1px solid #dfe5ee;
+  border-radius: 12px;
+}
+
+.login-sheet .terms-agreement-check {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 9px;
+  align-items: start;
+  margin: 0;
+  color: #384250;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.login-sheet .terms-agreement-check input {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin-top: 1px;
+  accent-color: var(--blue);
+}
+
+.terms-agreement a { color: var(--blue); font-weight: 800; }
+.terms-agreement > p { margin: 8px 0 0 29px; color: #7a8492; font-size: 10px; line-height: 1.55; }
+
 .login-sheet .text-button {
   display: block;
   width: 100%;

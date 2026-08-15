@@ -160,7 +160,10 @@ export function HomeClient({
             email={home.viewingUserEmail}
             onClose={() => home.setViewingUserEmail(null)}
             onToast={home.setToast}
-            onRelationshipChanged={() => void home.loadActivities()}
+            onRelationshipChanged={async () => {
+              home.setSelectedActivity(null);
+              await home.loadActivities();
+            }}
           />
         )}
 

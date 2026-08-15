@@ -213,11 +213,52 @@ test("supports activity operations and trustworthy profiles", async () => {
   assert.match(reputation, /participationCount/);
   assert.match(reputation, /noShowCount/);
   assert.match(userProfile, /사용자 신고/);
-  assert.match(userProfile, /사용자 차단/);
+  assert.match(userProfile, /신고하고 차단/);
   assert.match(blockRoute, /INSERT OR IGNORE INTO user_blocks/);
+  assert.match(blockRoute, /INSERT INTO user_reports/);
   assert.match(reportRoute, /같은 모임에 참여한 사용자만 신고할 수 있어요/);
   assert.match(migration, /CREATE TABLE `user_blocks`/);
   assert.match(migration, /cancellation_deadline_minutes/);
+});
+
+test("meets the user-generated content safety requirements", async () => {
+  const [
+    loginSheet,
+    agreement,
+    sendCode,
+    reviewLogin,
+    activityRoute,
+    activityDetailRoute,
+    profileInput,
+    userProfile,
+    blockRoute,
+    terms,
+    community,
+  ] = await Promise.all([
+    readFile(new URL("components/auth/login-sheet.tsx", root), "utf8"),
+    readFile(new URL("components/auth/terms-agreement.tsx", root), "utf8"),
+    readFile(new URL("app/api/auth/send-code/route.ts", root), "utf8"),
+    readFile(new URL("app/api/auth/review-login/route.ts", root), "utf8"),
+    readFile(new URL("app/api/activities/route.ts", root), "utf8"),
+    readFile(new URL("app/api/activities/[id]/route.ts", root), "utf8"),
+    readFile(new URL("server/validation/profile-input.ts", root), "utf8"),
+    readFile(new URL("components/profile/user-profile-sheet.tsx", root), "utf8"),
+    readFile(new URL("app/api/users/[email]/block/route.ts", root), "utf8"),
+    readFile(new URL("app/terms/page.tsx", root), "utf8"),
+    readFile(new URL("app/community/page.tsx", root), "utf8"),
+  ]);
+
+  assert.match(loginSheet, /termsAccepted/);
+  assert.match(agreement, /무관용 원칙/);
+  assert.match(sendCode, /payload\.termsAccepted !== true/);
+  assert.match(reviewLogin, /payload\.termsAccepted !== true/);
+  assert.match(activityRoute, /hasUnsafeUserText\(title\)/);
+  assert.match(activityDetailRoute, /hasUnsafeUserText\(notice\)/);
+  assert.match(profileInput, /hasUnsafeUserText\(nickname\)/);
+  assert.match(userProfile, /운영자에게 신고하고 차단/);
+  assert.match(blockRoute, /user_reported_and_blocked/);
+  assert.match(terms, /24시간 이내/);
+  assert.match(community, /영구 퇴출/);
 });
 
 test("adds paginated comments to each activity detail", async () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent } from "react";
+import { TermsAgreement } from "@/components/auth/terms-agreement";
 
 export type LoginSubmitHandler = (event: FormEvent<HTMLFormElement>) => void;
 
@@ -8,7 +9,9 @@ type EmailLoginFormProps = {
   email: string;
   error: string;
   loading: boolean;
+  termsAccepted: boolean;
   onEmailChange: (email: string) => void;
+  onTermsAcceptedChange: (accepted: boolean) => void;
   onSubmit: LoginSubmitHandler;
 };
 
@@ -16,7 +19,9 @@ export function EmailLoginForm({
   email,
   error,
   loading,
+  termsAccepted,
   onEmailChange,
+  onTermsAcceptedChange,
   onSubmit,
 }: EmailLoginFormProps) {
   return (
@@ -36,8 +41,13 @@ export function EmailLoginForm({
           autoFocus
         />
       </label>
+      <TermsAgreement
+        checked={termsAccepted}
+        disabled={loading}
+        onChange={onTermsAcceptedChange}
+      />
       {error && <div className="form-error">{error}</div>}
-      <button className="primary-button" disabled={loading}>
+      <button className="primary-button" disabled={loading || !termsAccepted}>
         {loading ? "전송 중..." : "인증코드 받기"}
       </button>
     </form>

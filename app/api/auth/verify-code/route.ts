@@ -31,6 +31,13 @@ export async function POST(request: Request) {
     const code =
       typeof payload.code === "string" ? payload.code.trim() : "";
 
+    if (payload.termsAccepted !== true) {
+      return Response.json(
+        { error: "이용약관과 커뮤니티 운영정책에 동의해 주세요." },
+        { status: 400 },
+      );
+    }
+
     if (!isValidUosEmail(email) || !/^\d{6}$/.test(code)) {
       return Response.json(
         { error: "이메일 또는 인증번호 형식을 확인해 주세요." },

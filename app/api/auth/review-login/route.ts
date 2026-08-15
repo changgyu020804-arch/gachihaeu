@@ -30,6 +30,12 @@ export async function POST(request: Request) {
     if (rateError) return rateError;
 
     const payload = await readJsonObject(request, 2_048);
+    if (payload.termsAccepted !== true) {
+      return Response.json(
+        { error: "이용약관과 커뮤니티 운영정책에 동의해 주세요." },
+        { status: 400 },
+      );
+    }
     const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
     const password = typeof payload.password === "string" ? payload.password : "";
     const review = getAppReviewConfig();
