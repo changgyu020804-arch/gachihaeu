@@ -1,10 +1,7 @@
 import { getSessionUser } from "@/server/auth/session";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
+import { cleanUserText } from "@/server/validation/content-moderation";
 import { getD1 } from "@/db/index";
-
-function cleanString(value: unknown, maxLength: number) {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
 
 export async function POST(
   request: Request,
@@ -16,7 +13,7 @@ export async function POST(
   const { email } = await params;
   const reportedEmail = decodeURIComponent(email).trim().toLowerCase().slice(0, 100);
   const payload = (await request.json()) as Record<string, unknown>;
-  const reason = cleanString(payload.reason, 300);
+  const reason = cleanUserText(payload.reason, 300);
 
   if (!reportedEmail || reportedEmail === user.email) {
     return Response.json({ error: "자기 자신은 신고할 수 없어요." }, { status: 400 });

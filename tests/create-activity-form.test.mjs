@@ -5,14 +5,18 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 
 test("lets users clear and replace the activity capacity without a leading zero", async () => {
-  const createSheet = await readFile(
-    new URL("components/activity/create-sheet.tsx", root),
-    "utf8",
-  );
+  const [createSheet, createFields] = await Promise.all([
+    readFile(new URL("components/activity/create-sheet.tsx", root), "utf8"),
+    readFile(
+      new URL("components/activity/create-activity-fields.tsx", root),
+      "utf8",
+    ),
+  ]);
 
-  assert.match(createSheet, /capacity: string/);
+  assert.match(createFields, /capacity: string/);
   assert.match(createSheet, /capacity: "6"/);
-  assert.match(createSheet, /const capacity = e\.target\.value\.replace/);
-  assert.doesNotMatch(createSheet, /capacity: Number\(e\.target\.value\)/);
+  assert.match(createFields, /const capacity = event\.target\.value\.replace/);
+  assert.doesNotMatch(createFields, /capacity: Number\(event\.target\.value\)/);
   assert.match(createSheet, /const capacity = Number\(form\.capacity\)/);
+  assert.ok(createSheet.split("\n").length < 130);
 });

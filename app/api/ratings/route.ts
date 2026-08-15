@@ -4,11 +4,10 @@ import { enforceRateLimit, getClientIp } from "@/server/security/request";
 import { getD1 } from "@/db/index";
 import { createNotifications } from "@/server/services/notification.service";
 import { hasBlockedRelationship } from "@/server/policies/activity-policy";
-import { hasUnsafeUserText } from "@/server/validation/content-moderation";
-
-function cleanString(value: unknown, maxLength: number) {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
+import {
+  cleanUserText,
+  hasUnsafeUserText,
+} from "@/server/validation/content-moderation";
 
 function isValidScore(value: unknown): value is number {
   return (
@@ -32,12 +31,12 @@ export async function POST(request: Request) {
   if (rateError) return rateError;
 
   const payload = (await request.json()) as Record<string, unknown>;
-  const activityId = cleanString(payload.activityId, 50);
-  const ratedEmail = cleanString(payload.ratedEmail, 100);
+  const activityId = cleanUserText(payload.activityId, 50);
+  const ratedEmail = cleanUserText(payload.ratedEmail, 100);
   const scoreOne = payload.scoreOne;
   const scoreTwo = payload.scoreTwo;
   const scoreThree = payload.scoreThree;
-  const comment = cleanString(payload.comment, 100);
+  const comment = cleanUserText(payload.comment, 100);
 
   if (!activityId || !ratedEmail) {
     return Response.json({ error: "필수 정보가 부족해요." }, { status: 400 });

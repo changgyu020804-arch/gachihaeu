@@ -202,6 +202,7 @@ test("keeps activity comments bounded, moderated, and permission checked", async
     commentRoute,
     reportRoute,
     commentsUi,
+    commentsHook,
     moderation,
   ] = await Promise.all([
     read("db/schema.ts"),
@@ -211,6 +212,7 @@ test("keeps activity comments bounded, moderated, and permission checked", async
     read("app/api/activities/[id]/comments/[commentId]/route.ts"),
     read("app/api/activities/[id]/comments/[commentId]/report/route.ts"),
     read("components/activity/activity-comments.tsx"),
+    read("hooks/use-activity-comments.ts"),
     read("server/validation/content-moderation.ts"),
   ]);
 
@@ -226,7 +228,8 @@ test("keeps activity comments bounded, moderated, and permission checked", async
   assert.match(commentRoute, /status = 'hidden'/);
   assert.match(reportRoute, /comment_reports/);
   assert.match(commentsUi, /COMMENT_RENDER_LIMIT/);
-  assert.match(commentsUi, /AbortController/);
+  assert.match(commentsUi, /useActivityComments/);
+  assert.match(commentsHook, /AbortController/);
   assert.match(moderation, /CONTACT_PATTERN/);
 });
 

@@ -6,12 +6,11 @@ import {
 } from "@/server/repositories/activity.repository";
 import { getUserDisplayName } from "@/server/policies/activity-policy";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
-import { hasUnsafeUserText } from "@/server/validation/content-moderation";
+import {
+  cleanUserText,
+  hasUnsafeUserText,
+} from "@/server/validation/content-moderation";
 import { getD1 } from "@/db/index";
-
-function cleanString(value: unknown, maxLength: number) {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
 
 export async function GET(request: Request) {
   const user = await getSessionUser();
@@ -21,18 +20,18 @@ export async function GET(request: Request) {
 
   try {
     const url = new URL(request.url);
-    const requestedSport = cleanString(url.searchParams.get("sport"), 20);
+    const requestedSport = cleanUserText(url.searchParams.get("sport"), 20);
     const sport =
       requestedSport &&
       requestedSport !== "전체" &&
       SPORTS.includes(requestedSport as never)
         ? requestedSport
         : null;
-    const requestedDate = cleanString(url.searchParams.get("date"), 10);
+    const requestedDate = cleanUserText(url.searchParams.get("date"), 10);
     const dateKey = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
       ? requestedDate
       : null;
-    const cursor = cleanString(url.searchParams.get("cursor"), 180) || null;
+    const cursor = cleanUserText(url.searchParams.get("cursor"), 180) || null;
     const includeSummary = url.searchParams.get("summary") === "1";
     const db = getD1();
     const [page, summary] = await Promise.all([
@@ -70,12 +69,12 @@ export async function POST(request: Request) {
 
   try {
     const payload = (await request.json()) as Record<string, unknown>;
-    const sport = cleanString(payload.sport, 20);
-    const title = cleanString(payload.title, 50);
-    const venue = cleanString(payload.venue, 80);
-    const level = cleanString(payload.level, 30);
-    const description = cleanString(payload.description, 280);
-    const startsAt = cleanString(payload.startsAt, 40);
+    const sport = cleanUserText(payload.sport, 20);
+    const title = cleanUserText(payload.title, 50);
+    const venue = cleanUserText(payload.venue, 80);
+    const level = cleanUserText(payload.level, 30);
+    const description = cleanUserText(payload.description, 280);
+    const startsAt = cleanUserText(payload.startsAt, 40);
     const durationMinutes = Number(payload.durationMinutes);
     const capacity = Number(payload.capacity);
     const facilityReserved = Boolean(payload.facilityReserved);

@@ -6,7 +6,10 @@ import {
 } from "@/lib/types/activity";
 import { cleanNickname, normalizeNickname } from "@/lib/validation/nickname";
 import { RequestValidationError } from "@/server/security/request";
-import { hasUnsafeUserText } from "@/server/validation/content-moderation";
+import {
+  cleanUserText,
+  hasUnsafeUserText,
+} from "@/server/validation/content-moderation";
 
 export type ValidatedProfileInput = {
   nickname: string;
@@ -18,18 +21,14 @@ export type ValidatedProfileInput = {
   preferredSports: string;
 };
 
-function cleanString(value: unknown, maxLength: number) {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
-
 export function validateProfileInput(
   payload: Record<string, unknown>,
 ): ValidatedProfileInput {
   const nickname = cleanNickname(payload.nickname);
-  const gender = cleanString(payload.gender, 20);
-  const campusRole = cleanString(payload.campusRole, 20);
-  const department = cleanString(payload.department, 30);
-  const bio = cleanString(payload.bio, 100);
+  const gender = cleanUserText(payload.gender, 20);
+  const campusRole = cleanUserText(payload.campusRole, 20);
+  const department = cleanUserText(payload.department, 30);
+  const bio = cleanUserText(payload.bio, 100);
 
   if (!nickname) {
     throw new RequestValidationError("닉네임을 입력해 주세요.", 400);

@@ -92,11 +92,22 @@ test("keeps large UI and style concerns in focused modules", async () => {
 });
 
 test("enforces attendance and role-based rating rules", async () => {
-  const [ratingRoute, participantRoute, ratingSheet, profile, migration] =
+  const [
+    ratingRoute,
+    participantRoute,
+    participantRepository,
+    ratingSheet,
+    profile,
+    migration,
+  ] =
     await Promise.all([
       readFile(new URL("app/api/ratings/route.ts", root), "utf8"),
       readFile(
         new URL("app/api/activities/[id]/participants/route.ts", root),
+        "utf8",
+      ),
+      readFile(
+        new URL("server/repositories/activity-participant.repository.ts", root),
         "utf8",
       ),
       readFile(new URL("components/rating/rating-sheet.tsx", root), "utf8"),
@@ -108,7 +119,8 @@ test("enforces attendance and role-based rating rules", async () => {
   assert.match(ratingRoute, /참석이 확인된 구성원만 평가할 수 있어요/);
   assert.match(participantRoute, /모임장만 출석을 확인할 수 있어요/);
   assert.match(participantRoute, /getActivityForViewer/);
-  assert.match(participantRoute, /participant_rating_stats/);
+  assert.ok(participantRoute.split("\n").length < 190);
+  assert.match(participantRepository, /participant_rating_stats/);
   assert.match(ratingSheet, /출석 확인 및 구성원 평가/);
   assert.match(ratingSheet, /설명 정확도/);
   assert.match(profile, /같이점수/);
@@ -262,16 +274,21 @@ test("meets the user-generated content safety requirements", async () => {
 });
 
 test("adds paginated comments to each activity detail", async () => {
-  const [detailSheet, comments, commentsStyles] = await Promise.all([
+  const [detailSheet, comments, commentsHook, commentsStyles] = await Promise.all([
     readFile(new URL("components/activity/detail-sheet.tsx", root), "utf8"),
     readFile(new URL("components/activity/activity-comments.tsx", root), "utf8"),
+    readFile(new URL("hooks/use-activity-comments.ts", root), "utf8"),
     readFile(new URL("app/styles/comments.css", root), "utf8"),
   ]);
 
   assert.match(detailSheet, /ActivityComments/);
+  assert.ok(comments.split("\n").length < 150);
+  assert.match(comments, /useActivityComments/);
   assert.match(comments, /최근 댓글부터 20개씩 보여줘요/);
   assert.match(comments, /이전 댓글 더 보기/);
   assert.match(comments, /모임 종료 후 24시간/);
+  assert.match(commentsHook, /COMMENT_RENDER_LIMIT/);
+  assert.match(commentsHook, /AbortController/);
   assert.match(commentsStyles, /\.activity-comments/);
   assert.match(commentsStyles, /\.comment-card\.pinned/);
 });

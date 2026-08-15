@@ -2,11 +2,10 @@ import { getSessionUser } from "@/server/auth/session";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
 import { getD1 } from "@/db/index";
 import { createNotifications } from "@/server/services/notification.service";
-import { hasUnsafeUserText } from "@/server/validation/content-moderation";
-
-function cleanString(value: unknown, maxLength: number) {
-  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
-}
+import {
+  cleanUserText,
+  hasUnsafeUserText,
+} from "@/server/validation/content-moderation";
 
 async function getRecipients(db: D1Database, id: string, ownerEmail: string) {
   return db
@@ -31,7 +30,7 @@ export async function PATCH(
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
 
   const payload = (await request.json()) as Record<string, unknown>;
-  const notice = cleanString(payload.notice, 300);
+  const notice = cleanUserText(payload.notice, 300);
   if (!notice) {
     return Response.json({ error: "공지 내용을 입력해 주세요." }, { status: 400 });
   }
@@ -95,7 +94,7 @@ export async function DELETE(
   if (!user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
   const { id } = await params;
   const payload = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-  const cancellationReason = cleanString(payload.cancellationReason, 120);
+  const cancellationReason = cleanUserText(payload.cancellationReason, 120);
   if (cancellationReason.length < 2) {
     return Response.json({ error: "참가자에게 전달할 취소 사유를 입력해 주세요." }, { status: 400 });
   }

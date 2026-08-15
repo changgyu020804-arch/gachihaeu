@@ -1,30 +1,14 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import {
-  LEVELS,
-  SPORT_META,
-  SPORTS,
-  Sport,
-  VENUES,
-  isReservationRequired,
-} from "@/lib/types/activity";
+import type { Sport } from "@/lib/types/activity";
 import { defaultStartTime, getErrorMessage } from "@/lib/utils/ui";
+import {
+  CreateActivityFields,
+  type CreateActivityForm,
+} from "@/components/activity/create-activity-fields";
 
-type CreateForm = {
-  sport: Sport;
-  title: string;
-  venue: string;
-  startsAt: string;
-  durationMinutes: number;
-  capacity: string;
-  level: string;
-  description: string;
-  facilityReserved: boolean;
-  cancellationDeadlineMinutes: number;
-};
-
-const initialForm: CreateForm = {
+const initialForm: CreateActivityForm = {
   sport: "농구",
   title: "",
   venue: "실외농구장",
@@ -46,7 +30,7 @@ type CreateSheetProps = {
 };
 
 export function CreateSheet({ onClose, onCreated, onToast, defaultSport, defaultVenue }: CreateSheetProps) {
-  const [form, setForm] = useState<CreateForm>({
+  const [form, setForm] = useState<CreateActivityForm>({
     ...initialForm,
     sport: defaultSport ?? initialForm.sport,
     venue: defaultVenue ?? initialForm.venue,
@@ -104,143 +88,7 @@ export function CreateSheet({ onClose, onCreated, onToast, defaultSport, default
           <button className="close-button" onClick={onClose}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
-          <fieldset>
-            <legend>운동 종목</legend>
-            <div className="choice-grid">
-              {SPORTS.filter((sport): sport is Sport => sport !== "전체").map((sport) => (
-                <button
-                  type="button"
-                  key={sport}
-                  className={form.sport === sport ? "active" : ""}
-                  onClick={() => setForm((c) => ({ ...c, sport }))}
-                >
-                  {SPORT_META[sport].icon} {sport}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-          <label>
-            모임 제목
-            <input
-              required
-              minLength={2}
-              maxLength={50}
-              value={form.title}
-              placeholder="예: 수업 끝나고 가볍게 농구해요"
-              onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))}
-            />
-          </label>
-          <div className="form-row">
-            <label>
-              날짜와 시간
-              <input
-                required
-                type="datetime-local"
-                value={form.startsAt}
-                onChange={(e) => setForm((c) => ({ ...c, startsAt: e.target.value }))}
-              />
-            </label>
-            <label>
-              진행 시간
-              <select
-                value={form.durationMinutes}
-                onChange={(e) => setForm((c) => ({ ...c, durationMinutes: Number(e.target.value) }))}
-              >
-                <option value={60}>60분</option>
-                <option value={90}>90분</option>
-                <option value={120}>120분</option>
-              </select>
-            </label>
-          </div>
-          <label>
-            참가 취소 마감
-            <select
-              value={form.cancellationDeadlineMinutes}
-              onChange={(e) =>
-                setForm((current) => ({
-                  ...current,
-                  cancellationDeadlineMinutes: Number(e.target.value),
-                }))
-              }
-            >
-              <option value={0}>모임 시작 직전까지</option>
-              <option value={60}>시작 1시간 전</option>
-              <option value={180}>시작 3시간 전</option>
-              <option value={1440}>시작 하루 전</option>
-            </select>
-            <small>마감 이후에는 참가자가 직접 취소할 수 없어요.</small>
-          </label>
-          <label>
-            장소
-            <select
-              value={form.venue}
-              onChange={(e) => setForm((c) => ({ ...c, venue: e.target.value, facilityReserved: false }))}
-            >
-              {VENUES.map((venue) => <option key={venue}>{venue}</option>)}
-            </select>
-          </label>
-          {isReservationRequired(form.venue) && (
-            <div className="wise-notice">
-              <div className="wise-notice-text">
-                <span>⚠️</span>
-                <div>
-                  <strong>이 장소는 WISE 시설예약이 필요해요</strong>
-                  <a href="https://wise.uos.ac.kr/index.do" target="_blank" rel="noopener noreferrer">
-                    WISE에서 예약하기 →
-                  </a>
-                </div>
-              </div>
-              <label className="wise-checkbox">
-                <input
-                  type="checkbox"
-                  checked={form.facilityReserved}
-                  onChange={(e) => setForm((c) => ({ ...c, facilityReserved: e.target.checked }))}
-                />
-                시설 예약 완료했어요
-              </label>
-            </div>
-          )}
-          <div className="form-row">
-            <label>
-              최대 인원
-              <input
-                required
-                type="number"
-                min={2}
-                max={30}
-                step={1}
-                inputMode="numeric"
-                value={form.capacity}
-                onChange={(e) => {
-                  const capacity = e.target.value.replace(/^0+(?=\d)/, "");
-                  setForm((current) => ({ ...current, capacity }));
-                }}
-              />
-            </label>
-            <label>
-              난이도
-              <select
-                value={form.level}
-                onChange={(e) => setForm((c) => ({ ...c, level: e.target.value }))}
-              >
-                {LEVELS.map((level) => <option key={level}>{level}</option>)}
-              </select>
-            </label>
-          </div>
-          <label>
-            상세 설명
-            <textarea
-              maxLength={280}
-              value={form.description}
-              placeholder="준비물이나 모임 방법을 알려주세요. 연락처는 적지 마세요."
-              onChange={(e) => setForm((c) => ({ ...c, description: e.target.value }))}
-            />
-            <small>{form.description.length}/280</small>
-          </label>
-          <div className="community-check">
-            <span>✓</span>
-            교내 시설 이용수칙과 커뮤니티 매너를 지킬게요.
-          </div>
+          <CreateActivityFields form={form} setForm={setForm} />
           {error && <div className="form-error">{error}</div>}
           <button className="primary-button" disabled={submitting}>
             {submitting ? "등록하는 중..." : "모임 등록하기"}
