@@ -290,7 +290,8 @@ test("isolates the App Review account and never stores its password in source", 
   assert.match(reviewData, /@review\.gachihaeu\.com/);
   assert.match(activitiesStore, /reviewMode/);
   assert.match(activitiesStore, /NOT LIKE '%@review\.gachihaeu\.com'/);
-  assert.match(loginSheet, /review-login/);
+  assert.match(loginSheet, /endsWith\("@review\.gachihaeu\.com"\)/);
+  assert.doesNotMatch(loginSheet, />\s*App Store 심사용 계정\s*</);
   assert.doesNotMatch(`${runtimeEnv}\n${reviewRoute}\n${loginSheet}`, /APP_REVIEW_PASSWORD\s*=\s*["'][^"']+/);
 });
 

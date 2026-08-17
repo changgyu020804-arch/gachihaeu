@@ -73,19 +73,6 @@
 }
 
 .login-sheet .text-button:hover { color: var(--blue); }
-.review-login-link {
-  display: block;
-  width: calc(100% - 8px);
-  padding: 12px;
-  margin: 18px 4px 0;
-  color: #667085;
-  font-size: 12px;
-  font-weight: 750;
-  background: #f7f8fa;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  cursor: pointer;
-}
 
 .login-button {
   padding: 7px 14px;

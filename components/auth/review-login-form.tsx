@@ -6,16 +6,23 @@ import { getErrorMessage } from "@/lib/utils/ui";
 import { TermsAgreement } from "@/components/auth/terms-agreement";
 
 type ReviewLoginFormProps = {
+  initialEmail: string;
+  initialTermsAccepted: boolean;
   onBack: () => void;
   onLogin: (user: Viewer) => void;
 };
 
-export function ReviewLoginForm({ onBack, onLogin }: ReviewLoginFormProps) {
-  const [email, setEmail] = useState("");
+export function ReviewLoginForm({
+  initialEmail,
+  initialTermsAccepted,
+  onBack,
+  onLogin,
+}: ReviewLoginFormProps) {
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(initialTermsAccepted);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

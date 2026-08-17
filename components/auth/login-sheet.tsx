@@ -41,6 +41,14 @@ export function LoginSheet({
 
   const handleSendCode = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail.endsWith("@review.gachihaeu.com")) {
+      setEmail(normalizedEmail);
+      setError("");
+      setStep("review");
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
@@ -185,18 +193,13 @@ export function LoginSheet({
               onTermsAcceptedChange={setTermsAccepted}
               onSubmit={handleSendCode}
             />
-            <button
-              type="button"
-              className="review-login-link"
-              onClick={() => { setStep("review"); setError(""); }}
-            >
-              App Store 심사용 계정
-            </button>
           </>
         )}
 
         {step === "review" && (
           <ReviewLoginForm
+            initialEmail={email}
+            initialTermsAccepted={termsAccepted}
             onLogin={onLogin}
             onBack={() => { setStep("email"); setError(""); }}
           />
