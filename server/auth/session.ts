@@ -48,14 +48,17 @@ function textToUint8Array(text: string): Uint8Array {
   return new TextEncoder().encode(text);
 }
 
+let signingKeyPromise: Promise<CryptoKey> | null = null;
+
 async function getSigningKey(): Promise<CryptoKey> {
-  return crypto.subtle.importKey(
+  signingKeyPromise ??= crypto.subtle.importKey(
     "raw",
     textToUint8Array(getJwtSecret()) as unknown as ArrayBuffer,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign", "verify"],
   );
+  return signingKeyPromise;
 }
 
 export async function createJWT(

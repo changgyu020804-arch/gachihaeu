@@ -1,10 +1,10 @@
 import { getAdminEmails, getResendConfig } from "@/server/config/runtime-env";
+import type { ReportType } from "@/lib/types/moderation";
+import { listModerationReportRows } from "@/server/repositories/moderation-report.repository";
 import { createNotifications } from "@/server/services/notification.service";
 
-type ModerationReportType = "activity" | "comment" | "user" | "rating";
-
 type ModerationAlertInput = {
-  reportType: ModerationReportType;
+  reportType: ReportType;
   reportId: string;
   reporterEmail: string;
   targetEmail: string;
@@ -118,54 +118,13 @@ export async function sendModerationAlert(
 }
 
 export async function sendOverdueModerationAlerts(db: D1Database) {
-  const rows = await db
-    .prepare(
-      `SELECT * FROM (
-         SELECT 'activity' AS report_type, r.id AS report_id,
-                r.reporter_email, a.creator_email AS target_email,
-                r.reason, a.title AS content, r.created_at
-         FROM reports r
-         JOIN activities a ON a.id = r.activity_id
-         LEFT JOIN moderation_actions ma
-           ON ma.report_type = 'activity' AND ma.report_id = r.id
-         WHERE ma.id IS NULL
-         UNION ALL
-         SELECT 'comment', cr.id, cr.reporter_email, c.author_email,
-                cr.reason, c.content, cr.created_at
-         FROM comment_reports cr
-         JOIN activity_comments c ON c.id = cr.comment_id
-         LEFT JOIN moderation_actions ma
-           ON ma.report_type = 'comment' AND ma.report_id = cr.id
-         WHERE ma.id IS NULL
-         UNION ALL
-         SELECT 'user', ur.id, ur.reporter_email, ur.reported_email,
-                ur.reason, '사용자 신고', ur.created_at
-         FROM user_reports ur
-         LEFT JOIN moderation_actions ma
-           ON ma.report_type = 'user' AND ma.report_id = ur.id
-         WHERE ma.id IS NULL
-         UNION ALL
-         SELECT 'rating', rt.id, rt.rated_email, rt.rater_email,
-                '받은 한줄 코멘트 신고', rt.comment, rt.reported_at
-         FROM ratings rt
-         LEFT JOIN moderation_actions ma
-           ON ma.report_type = 'rating' AND ma.report_id = rt.id
-         WHERE rt.reported_at IS NOT NULL AND ma.id IS NULL
-       )
-       WHERE datetime(created_at) <= datetime('now', '-20 hours')
-       ORDER BY created_at ASC
-       LIMIT 100`,
-    )
-    .all<{
-      report_type: ModerationReportType;
-      report_id: string;
-      reporter_email: string;
-      target_email: string;
-      reason: string;
-      content: string;
-    }>();
+  const rows = await listModerationReportRows(db, {
+    unresolvedOnly: true,
+    olderThanHours: 20,
+    oldestFirst: true,
+  });
 
-  for (const row of rows.results) {
+  for (const row of rows) {
     await sendModerationAlert(db, {
       reportType: row.report_type,
       reportId: row.report_id,

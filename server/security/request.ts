@@ -112,14 +112,21 @@ function bytesToHex(bytes: Uint8Array) {
   );
 }
 
-async function hashRateIdentifier(value: string) {
-  const key = await crypto.subtle.importKey(
+let rateLimitKeyPromise: Promise<CryptoKey> | null = null;
+
+function getRateLimitKey() {
+  rateLimitKeyPromise ??= crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(getRateLimitSecret()),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
   );
+  return rateLimitKeyPromise;
+}
+
+async function hashRateIdentifier(value: string) {
+  const key = await getRateLimitKey();
   const signature = await crypto.subtle.sign(
     "HMAC",
     key,
@@ -149,33 +156,41 @@ export async function enforceRateLimit(
 ) {
   const windowBucket = Math.floor(Date.now() / (options.windowSeconds * 1000));
   const uniqueIdentifiers = [...new Set(options.identifiers.filter(Boolean))];
+  if (uniqueIdentifiers.length === 0) return null;
 
-  for (const identifier of uniqueIdentifiers) {
-    const keyHash = await hashRateIdentifier(
-      `${options.action}:${identifier.toLowerCase()}`,
+  const keyHashes = await Promise.all(
+    uniqueIdentifiers.map((identifier) =>
+      hashRateIdentifier(`${options.action}:${identifier.toLowerCase()}`),
+    ),
+  );
+  const results = await db.batch(
+    keyHashes.map((keyHash) =>
+      db
+        .prepare(
+          `INSERT INTO security_rate_limits (
+             action, key_hash, window_bucket, request_count, updated_at
+           ) VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
+           ON CONFLICT(action, key_hash, window_bucket) DO UPDATE SET
+             request_count = request_count + 1,
+             updated_at = CURRENT_TIMESTAMP
+           RETURNING request_count`,
+        )
+        .bind(options.action, keyHash, windowBucket),
+    ),
+  );
+
+  const limitExceeded = results.some((result) => {
+    const row = result.results[0] as { request_count?: number } | undefined;
+    return Number(row?.request_count ?? 1) > options.maximum;
+  });
+  if (limitExceeded) {
+    return Response.json(
+      { error: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(options.windowSeconds) },
+      },
     );
-    const result = await db
-      .prepare(
-        `INSERT INTO security_rate_limits (
-           action, key_hash, window_bucket, request_count, updated_at
-         ) VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)
-         ON CONFLICT(action, key_hash, window_bucket) DO UPDATE SET
-           request_count = request_count + 1,
-           updated_at = CURRENT_TIMESTAMP
-         RETURNING request_count`,
-      )
-      .bind(options.action, keyHash, windowBucket)
-      .first<{ request_count: number }>();
-
-    if ((result?.request_count ?? 1) > options.maximum) {
-      return Response.json(
-        { error: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요." },
-        {
-          status: 429,
-          headers: { "Retry-After": String(options.windowSeconds) },
-        },
-      );
-    }
   }
 
   return null;

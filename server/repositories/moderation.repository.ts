@@ -5,18 +5,7 @@ import type {
   ModerationReport,
   ReportType,
 } from "@/lib/types/moderation";
-
-type ReportRow = {
-  report_type: ReportType;
-  report_id: string;
-  reporter_email: string;
-  target_email: string;
-  reason: string;
-  content: string;
-  created_at: string;
-  resolution: string | null;
-  resolution_note: string | null;
-};
+import { listModerationReportRows } from "@/server/repositories/moderation-report.repository";
 
 type SanctionRow = {
   id: string;
@@ -35,41 +24,7 @@ export class ModerationStoreError extends Error {
 
 export async function getModerationDashboard(db: D1Database) {
   const [reportRows, sanctionRows] = await Promise.all([
-    db.prepare(
-      `SELECT * FROM (
-         SELECT 'activity' AS report_type, r.id AS report_id,
-                r.reporter_email, a.creator_email AS target_email,
-                r.reason, a.title AS content, r.created_at,
-                ma.action AS resolution, ma.note AS resolution_note
-         FROM reports r
-         JOIN activities a ON a.id = r.activity_id
-         LEFT JOIN moderation_actions ma
-           ON ma.report_type = 'activity' AND ma.report_id = r.id
-         UNION ALL
-         SELECT 'comment', cr.id, cr.reporter_email, c.author_email,
-                cr.reason, c.content, cr.created_at, ma.action, ma.note
-         FROM comment_reports cr
-         JOIN activity_comments c ON c.id = cr.comment_id
-         LEFT JOIN moderation_actions ma
-           ON ma.report_type = 'comment' AND ma.report_id = cr.id
-         UNION ALL
-         SELECT 'user', ur.id, ur.reporter_email, ur.reported_email,
-                ur.reason, '사용자 신고', ur.created_at, ma.action, ma.note
-         FROM user_reports ur
-         LEFT JOIN moderation_actions ma
-           ON ma.report_type = 'user' AND ma.report_id = ur.id
-         UNION ALL
-         SELECT 'rating', rt.id, rt.rated_email, rt.rater_email,
-                '받은 한줄 코멘트 신고', rt.comment, rt.reported_at,
-                ma.action, ma.note
-         FROM ratings rt
-         LEFT JOIN moderation_actions ma
-           ON ma.report_type = 'rating' AND ma.report_id = rt.id
-         WHERE rt.reported_at IS NOT NULL
-       )
-       ORDER BY resolution IS NOT NULL ASC, created_at DESC
-       LIMIT 100`,
-    ).all<ReportRow>(),
+    listModerationReportRows(db),
     db.prepare(
       `SELECT id, user_email, kind, reason, expires_at, created_at
        FROM user_sanctions
@@ -80,7 +35,7 @@ export async function getModerationDashboard(db: D1Database) {
     ).all<SanctionRow>(),
   ]);
 
-  const reports: ModerationReport[] = reportRows.results.map((row) => ({
+  const reports: ModerationReport[] = reportRows.map((row) => ({
     type: row.report_type,
     id: row.report_id,
     reporterEmail: row.reporter_email,
