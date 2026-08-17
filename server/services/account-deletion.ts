@@ -50,7 +50,38 @@ export async function deleteAccountData(
   securitySubjectHash: string,
   rateLimitKeyHashes: string[],
 ) {
+  const sanction = await db
+    .prepare(
+      `SELECT kind, expires_at
+       FROM user_sanctions
+       WHERE user_email = ?
+         AND revoked_at IS NULL
+         AND kind IN ('suspended', 'banned')
+         AND (expires_at IS NULL OR datetime(expires_at) > datetime('now'))
+       ORDER BY created_at DESC
+       LIMIT 1`,
+    )
+    .bind(email)
+    .first<{ kind: string; expires_at: string | null }>();
+
   const statements = [
+    db
+      .prepare(
+        `INSERT INTO account_security_state (
+           subject_hash, session_version, sanction_kind,
+           sanction_expires_at, updated_at
+         ) VALUES (?, 1, ?, ?, CURRENT_TIMESTAMP)
+         ON CONFLICT(subject_hash) DO UPDATE SET
+           session_version = account_security_state.session_version + 1,
+           sanction_kind = excluded.sanction_kind,
+           sanction_expires_at = excluded.sanction_expires_at,
+           updated_at = CURRENT_TIMESTAMP`,
+      )
+      .bind(
+        securitySubjectHash,
+        sanction?.kind ?? null,
+        sanction?.expires_at ?? null,
+      ),
     db.prepare(`DELETE FROM push_tokens WHERE user_email = ?`).bind(email),
     db.prepare(`DELETE FROM user_sanctions WHERE user_email = ?`).bind(email),
     db.prepare(`DELETE FROM moderation_actions WHERE target_email = ? OR moderator_email = ?`).bind(email, email),

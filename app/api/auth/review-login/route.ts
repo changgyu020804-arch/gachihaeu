@@ -14,6 +14,7 @@ import {
   rejectCrossOriginMutation,
   requestErrorResponse,
 } from "@/server/security/request";
+import { getLoginSecurityState } from "@/server/services/account-security";
 
 export async function POST(request: Request) {
   const originError = rejectCrossOriginMutation(request);
@@ -50,9 +51,19 @@ export async function POST(request: Request) {
       );
     }
 
+    const securityState = await getLoginSecurityState(db, review.email);
+    if (!securityState.allowed) {
+      return Response.json({ error: securityState.error }, { status: 403 });
+    }
+
     await seedReviewData(db, review.email);
     const displayName = "AppReviewer";
-    const token = await createJWT({ email: review.email, displayName, fullName: displayName });
+    const token = await createJWT({
+      email: review.email,
+      displayName,
+      fullName: displayName,
+      sessionVersion: securityState.sessionVersion,
+    });
     const headers = new Headers({
       "Content-Type": "application/json",
       "Cache-Control": "no-store",

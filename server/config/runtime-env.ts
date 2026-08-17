@@ -52,11 +52,14 @@ export function getResendConfig() {
 
 export function isAdminEmail(email: string) {
   const normalized = email.trim().toLowerCase();
+  return getAdminEmails().includes(normalized);
+}
+
+export function getAdminEmails() {
   return readRuntimeValue("ADMIN_EMAILS")
     .split(",")
     .map((item) => item.trim().toLowerCase())
-    .filter(Boolean)
-    .includes(normalized);
+    .filter(Boolean);
 }
 
 export function getAppReviewConfig() {

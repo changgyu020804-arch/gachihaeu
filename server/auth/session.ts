@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
 import { getJwtSecret, isAppReviewEmail } from "@/server/config/runtime-env";
+import { getD1 } from "@/db/index";
+import { isAccountSessionCurrent } from "@/server/services/account-security";
 
 export type SessionUser = {
   email: string;
@@ -157,6 +159,18 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   const payload = await verifyJWT(sessionCookie.value);
   if (!payload || typeof payload.email !== "string") return null;
+
+  const sessionVersion =
+    typeof payload.sessionVersion === "number" ? payload.sessionVersion : 0;
+  if (
+    !(await isAccountSessionCurrent(
+      getD1(),
+      payload.email,
+      sessionVersion,
+    ))
+  ) {
+    return null;
+  }
 
   return {
     email: payload.email,

@@ -169,9 +169,7 @@ export async function POST(request: Request) {
              skill_score = ?,
              manner_score = ?,
              rating_type = ?,
-             comment = ?,
-             comment_hidden = 0,
-             reported_at = NULL
+             comment = ?
          WHERE activity_id = ? AND rater_email = ? AND rated_email = ?`,
       )
       .bind(

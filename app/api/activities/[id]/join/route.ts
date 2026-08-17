@@ -7,6 +7,7 @@ import {
   getUserDisplayName,
   hasBlockedRelationship,
 } from "@/server/policies/activity-policy";
+import { leaveActivityAndPromoteNext } from "@/server/repositories/activity-membership.repository";
 
 export async function POST(
   request: Request,
@@ -156,40 +157,9 @@ export async function DELETE(
     );
   }
 
-  // 참가 취소
-  await db
-    .prepare(`DELETE FROM participants WHERE activity_id = ? AND user_email = ?`)
-    .bind(id, user.email)
-    .run();
-
-  // 대기열 첫 번째 사람 자동 승격
-  const nextInLine = await db
-    .prepare(
-      `SELECT user_email, display_name FROM waitlist
-       WHERE activity_id = ? AND status = 'waiting'
-       ORDER BY position ASC LIMIT 1`,
-    )
-    .bind(id)
-    .first<{ user_email: string; display_name: string }>();
-
-  if (nextInLine) {
-    // participants에 추가
-    await db
-      .prepare(
-        `INSERT OR IGNORE INTO participants (activity_id, user_email, display_name)
-         VALUES (?, ?, ?)`,
-      )
-      .bind(id, nextInLine.user_email, nextInLine.display_name)
-      .run();
-
-    // waitlist에서 상태 변경
-    await db
-      .prepare(
-        `UPDATE waitlist SET status = 'promoted'
-         WHERE activity_id = ? AND user_email = ? AND status = 'waiting'`,
-      )
-      .bind(id, nextInLine.user_email)
-      .run();
+  const membership = await leaveActivityAndPromoteNext(db, id, user.email);
+  if (!membership.left) {
+    return Response.json({ joined: false });
   }
 
   await createNotifications([
@@ -201,15 +171,15 @@ export async function DELETE(
       message: `${getUserDisplayName(user)}님이 ${activity.title} 모임 참가를 취소했어요.`,
       dedupeKey: `participant-left:${id}:${user.email}:${crypto.randomUUID()}`,
     },
-    ...(nextInLine
+    ...(membership.promoted
       ? [
           {
-            userEmail: nextInLine.user_email,
+            userEmail: membership.promoted.userEmail,
             activityId: id,
             type: "promoted" as const,
             title: "참가가 확정됐어요",
             message: `${activity.title} 모임에 자리가 생겨 대기에서 참가로 전환됐어요.`,
-            dedupeKey: `promoted:${id}:${nextInLine.user_email}`,
+            dedupeKey: `promoted:${id}:${membership.promoted.userEmail}`,
           },
         ]
       : []),

@@ -381,3 +381,27 @@ export const userSanctions = sqliteTable(
     ),
   ],
 );
+
+export const accountSecurityState = sqliteTable("account_security_state", {
+  subjectHash: text("subject_hash").primaryKey(),
+  sessionVersion: integer("session_version").notNull().default(1),
+  sanctionKind: text("sanction_kind"),
+  sanctionExpiresAt: text("sanction_expires_at"),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const moderationAlertDeliveries = sqliteTable(
+  "moderation_alert_deliveries",
+  {
+    reportType: text("report_type").notNull(),
+    reportId: text("report_id").notNull(),
+    alertKind: text("alert_kind").notNull(),
+    createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.reportType, table.reportId, table.alertKind],
+    }),
+    index("moderation_alert_deliveries_created_idx").on(table.createdAt),
+  ],
+);

@@ -15,6 +15,7 @@ import {
   requestErrorResponse,
 } from "@/server/security/request";
 import { getD1 } from "@/db/index";
+import { getLoginSecurityState } from "@/server/services/account-security";
 
 const MAX_CODE_ATTEMPTS = 5;
 
@@ -142,6 +143,15 @@ export async function POST(request: Request) {
       );
     }
 
+    const securityState = await getLoginSecurityState(db, email);
+    if (!securityState.allowed) {
+      await recordSecurityEvent(db, "auth_login_restricted", email, request);
+      return Response.json(
+        { error: securityState.error },
+        { status: 403 },
+      );
+    }
+
     await db
       .prepare(
         `INSERT INTO user_profiles (
@@ -172,6 +182,7 @@ export async function POST(request: Request) {
       email,
       displayName,
       fullName: displayName,
+      sessionVersion: securityState.sessionVersion,
     });
     await recordSecurityEvent(db, "auth_login_succeeded", email, request);
 

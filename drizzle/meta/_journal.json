@@ -120,6 +120,13 @@
       "when": 1786329301136,
       "tag": "0016_quick_gideon",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1786952782077,
+      "tag": "0017_nebulous_machine_man",
+      "breakpoints": true
     }
   ]
 }

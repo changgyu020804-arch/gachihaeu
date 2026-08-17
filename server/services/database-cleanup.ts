@@ -100,6 +100,14 @@ export async function runDailyDatabaseCleanup(
            LIMIT ${DELETE_BATCH_SIZE}
          )`,
       ),
+      db.prepare(
+        `DELETE FROM moderation_alert_deliveries
+         WHERE rowid IN (
+           SELECT rowid FROM moderation_alert_deliveries
+           WHERE datetime(created_at) < datetime('now', '-180 days')
+           LIMIT ${DELETE_BATCH_SIZE}
+         )`,
+      ),
     ]);
 
     const evidenceRows = await cleanupExpiredRoleEvidence(db, evidenceBucket);

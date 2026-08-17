@@ -345,5 +345,26 @@ export async function createCurrentSchema(db: D1Database) {
     db.prepare(
       "CREATE INDEX IF NOT EXISTS user_sanctions_active_idx ON user_sanctions(user_email, revoked_at, expires_at)",
     ),
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS account_security_state (
+        subject_hash TEXT PRIMARY KEY NOT NULL,
+        session_version INTEGER DEFAULT 1 NOT NULL,
+        sanction_kind TEXT,
+        sanction_expires_at TEXT,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+      )`,
+    ),
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS moderation_alert_deliveries (
+        report_type TEXT NOT NULL,
+        report_id TEXT NOT NULL,
+        alert_kind TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY (report_type, report_id, alert_kind)
+      )`,
+    ),
+    db.prepare(
+      "CREATE INDEX IF NOT EXISTS moderation_alert_deliveries_created_idx ON moderation_alert_deliveries(created_at)",
+    ),
   ]);
 }

@@ -14,7 +14,9 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
-  triggers: { crons: ["0 18 * * *"] },
+  // The cleanup service keeps its own daily lease. Running the Worker hourly
+  // also gives moderators a warning before the 24-hour response deadline.
+  triggers: { crons: ["0 * * * *"] },
   d1_databases: d1
     ? [
         {

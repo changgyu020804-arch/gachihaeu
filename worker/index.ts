@@ -4,6 +4,7 @@ import handler from "vinext/server/app-router-entry";
 import { runDailyDatabaseCleanup } from "@/server/services/database-cleanup";
 import { isReviewSessionEmail, verifyJWT } from "@/server/auth/session";
 import { isReviewDataEmail } from "@/server/services/review-account";
+import { sendOverdueModerationAlerts } from "@/server/services/moderation-alert.service";
 
 interface Env {
   ASSETS: Fetcher;
@@ -222,7 +223,12 @@ const worker = {
     env: Env,
     ctx: ExecutionContext,
   ) {
-    ctx.waitUntil(runDailyDatabaseCleanup(env.DB, env.ROLE_EVIDENCE));
+    ctx.waitUntil(
+      Promise.all([
+        runDailyDatabaseCleanup(env.DB, env.ROLE_EVIDENCE),
+        sendOverdueModerationAlerts(env.DB),
+      ]),
+    );
   },
 };
 

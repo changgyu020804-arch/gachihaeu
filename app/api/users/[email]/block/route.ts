@@ -8,6 +8,7 @@ import {
   requestErrorResponse,
 } from "@/server/security/request";
 import { getD1 } from "@/db/index";
+import { sendModerationAlert } from "@/server/services/moderation-alert.service";
 
 function parseEmail(value: string) {
   return decodeURIComponent(value).trim().toLowerCase().slice(0, 100);
@@ -59,24 +60,26 @@ export async function POST(
       return Response.json({ error: "사용자를 찾을 수 없어요." }, { status: 404 });
     }
 
-    await db.batch([
-      db
-        .prepare(
-          `INSERT OR IGNORE INTO user_blocks (blocker_email, blocked_email)
-           VALUES (?, ?)`,
-        )
-        .bind(user.email, blockedEmail),
-      db
-        .prepare(
-          `INSERT INTO user_reports (
-             id, reporter_email, reported_email, reason
-           ) VALUES (?, ?, ?, ?)
-           ON CONFLICT(reporter_email, reported_email) DO UPDATE SET
-             reason = excluded.reason,
-             created_at = CURRENT_TIMESTAMP`,
-        )
-        .bind(crypto.randomUUID(), user.email, blockedEmail, `[차단과 함께 신고] ${reason}`),
-    ]);
+    await db
+      .prepare(
+        `INSERT OR IGNORE INTO user_blocks (blocker_email, blocked_email)
+         VALUES (?, ?)`,
+      )
+      .bind(user.email, blockedEmail)
+      .run();
+    const reportReason = `[차단과 함께 신고] ${reason}`;
+    const report = await db
+      .prepare(
+        `INSERT INTO user_reports (
+           id, reporter_email, reported_email, reason
+         ) VALUES (?, ?, ?, ?)
+         ON CONFLICT(reporter_email, reported_email) DO UPDATE SET
+           reason = excluded.reason,
+           created_at = CURRENT_TIMESTAMP
+         RETURNING id`,
+      )
+      .bind(crypto.randomUUID(), user.email, blockedEmail, reportReason)
+      .first<{ id: string }>();
     await recordSecurityEvent(
       db,
       "user_reported_and_blocked",
@@ -84,6 +87,16 @@ export async function POST(
       request,
       `target:${blockedEmail}`,
     );
+    if (report) {
+      await sendModerationAlert(db, {
+        reportType: "user",
+        reportId: report.id,
+        reporterEmail: user.email,
+        targetEmail: blockedEmail,
+        reason: reportReason,
+        content: "차단과 함께 접수된 사용자 신고",
+      });
+    }
 
     return Response.json({ blocked: true, reported: true }, { status: 201 });
   } catch (error) {

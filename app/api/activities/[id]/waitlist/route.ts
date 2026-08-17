@@ -6,6 +6,7 @@ import {
   getUserDisplayName,
   hasBlockedRelationship,
 } from "@/server/policies/activity-policy";
+import { joinActivityWaitlist } from "@/server/repositories/activity-membership.repository";
 
 // GET: 내 대기 상태 + 대기 인원 수 조회
 export async function GET(
@@ -101,32 +102,18 @@ export async function POST(
     return Response.json({ error: "이미 대기 중이에요." }, { status: 400 });
   }
 
-  // 실제로 자리가 없는지 확인
-  const participantCount = await db
-    .prepare(`SELECT COUNT(*) as cnt FROM participants WHERE activity_id = ?`)
-    .bind(id)
-    .first<{ cnt: number }>();
-
-  if ((participantCount?.cnt ?? 0) < activity.capacity) {
-    return Response.json({ error: "아직 자리가 있어요. 바로 참여해 주세요!" }, { status: 400 });
+  const waitlistEntry = await joinActivityWaitlist(db, {
+    activityId: id,
+    userEmail: user.email,
+    displayName: getUserDisplayName(user),
+  });
+  if (!waitlistEntry) {
+    return Response.json(
+      { error: "아직 자리가 있어요. 바로 참여해 주세요!" },
+      { status: 409 },
+    );
   }
-
-  // 현재 대기열 마지막 position 조회
-  const lastPosition = await db
-    .prepare(`SELECT MAX(position) as max_pos FROM waitlist WHERE activity_id = ? AND status = 'waiting'`)
-    .bind(id)
-    .first<{ max_pos: number | null }>();
-
-  const newPosition = (lastPosition?.max_pos ?? 0) + 1;
-
-  // 대기 등록
-  await db
-    .prepare(
-      `INSERT OR IGNORE INTO waitlist (activity_id, user_email, display_name, position, status)
-       VALUES (?, ?, ?, ?, 'waiting')`,
-    )
-    .bind(id, user.email, getUserDisplayName(user), newPosition)
-    .run();
+  const newPosition = waitlistEntry.position;
 
   await createNotifications([
     {
@@ -151,7 +138,10 @@ export async function POST(
       : []),
   ]);
 
-  return Response.json({ position: newPosition, waitlisted: true }, { status: 201 });
+  return Response.json(
+    { position: newPosition, waitlisted: true },
+    { status: waitlistEntry.created ? 201 : 200 },
+  );
 }
 
 // DELETE: 대기 취소

@@ -8,6 +8,7 @@ import {
 } from "@/server/security/request";
 import { cleanUserText } from "@/server/validation/content-moderation";
 import { getD1 } from "@/db/index";
+import { sendModerationAlert } from "@/server/services/moderation-alert.service";
 
 export async function POST(
   request: Request,
@@ -36,12 +37,12 @@ export async function POST(
 
     const comment = await db
       .prepare(
-        `SELECT author_email
+        `SELECT author_email, content
          FROM activity_comments
          WHERE id = ? AND activity_id = ? AND status = 'visible'`,
       )
       .bind(commentId, id)
-      .first<{ author_email: string }>();
+      .first<{ author_email: string; content: string }>();
     if (!comment) {
       return Response.json({ error: "댓글을 찾을 수 없어요." }, { status: 404 });
     }
@@ -52,17 +53,18 @@ export async function POST(
       );
     }
 
-    await db
+    const report = await db
       .prepare(
         `INSERT INTO comment_reports (
            id, comment_id, reporter_email, reason
          ) VALUES (?, ?, ?, ?)
          ON CONFLICT(comment_id, reporter_email) DO UPDATE SET
            reason = excluded.reason,
-           created_at = CURRENT_TIMESTAMP`,
+           created_at = CURRENT_TIMESTAMP
+         RETURNING id`,
       )
       .bind(crypto.randomUUID(), commentId, user.email, reason)
-      .run();
+      .first<{ id: string }>();
     await recordSecurityEvent(
       db,
       "activity_comment_reported",
@@ -70,6 +72,16 @@ export async function POST(
       request,
       `comment:${commentId}`,
     );
+    if (report) {
+      await sendModerationAlert(db, {
+        reportType: "comment",
+        reportId: report.id,
+        reporterEmail: user.email,
+        targetEmail: comment.author_email,
+        reason,
+        content: comment.content,
+      });
+    }
 
     return Response.json({ reported: true }, { status: 201 });
   } catch (error) {

@@ -2,6 +2,7 @@ import { getSessionUser } from "@/server/auth/session";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
 import { cleanUserText } from "@/server/validation/content-moderation";
 import { getD1 } from "@/db/index";
+import { sendModerationAlert } from "@/server/services/moderation-alert.service";
 
 export async function POST(
   request: Request,
@@ -48,17 +49,29 @@ export async function POST(
     );
   }
 
-  await db
+  const report = await db
     .prepare(
       `INSERT INTO user_reports (
          id, reporter_email, reported_email, reason
        ) VALUES (?, ?, ?, ?)
        ON CONFLICT(reporter_email, reported_email) DO UPDATE SET
          reason = excluded.reason,
-         created_at = CURRENT_TIMESTAMP`,
+         created_at = CURRENT_TIMESTAMP
+       RETURNING id`,
     )
     .bind(crypto.randomUUID(), user.email, reportedEmail, reason)
-    .run();
+    .first<{ id: string }>();
+
+  if (report) {
+    await sendModerationAlert(db, {
+      reportType: "user",
+      reportId: report.id,
+      reporterEmail: user.email,
+      targetEmail: reportedEmail,
+      reason,
+      content: "사용자 신고",
+    });
+  }
 
   return Response.json({ reported: true }, { status: 201 });
 }
