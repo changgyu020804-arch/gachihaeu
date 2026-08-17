@@ -146,7 +146,7 @@ test("keeps login while requiring one-time profile onboarding", async () => {
     schema,
     /onboardingCompleted: integer\("onboarding_completed"\)/,
   );
-  assert.match(loginSheet, /type LoginStep = "email" \| "code" \| "profile" \| "review"/);
+  assert.match(loginSheet, /type LoginStep = "email" \| "code" \| "profile"/);
   assert.match(profileSetupForm, /GENDERS/);
   assert.match(profileSetupForm, /CAMPUS_ROLES/);
   assert.match(profileSetupForm, /DEPARTMENTS/);
@@ -275,24 +275,18 @@ test("deletes the account and all directly associated user data", async () => {
   assert.match(deletionPanel, /confirmation !== "탈퇴"/);
 });
 
-test("isolates the App Review account and never stores its password in source", async () => {
-  const [runtimeEnv, reviewRoute, reviewData, activitiesStore, loginSheet] = await Promise.all([
+test("removes the retired App Review account and demo-data paths", async () => {
+  const [runtimeEnv, auth, activitiesStore, loginSheet, worker, migration] = await Promise.all([
     read("server/config/runtime-env.ts"),
-    read("app/api/auth/review-login/route.ts"),
-    read("server/services/review-account.ts"),
+    read("server/auth/session.ts"),
     read("server/repositories/activity.repository.ts"),
     read("components/auth/login-sheet.tsx"),
+    read("worker/index.ts"),
+    read("drizzle/0018_remove_app_review_account.sql"),
   ]);
-  assert.match(runtimeEnv, /APP_REVIEW_PASSWORD/);
-  assert.match(reviewRoute, /getAppReviewConfig/);
-  assert.match(reviewRoute, /constantTimeEqual/);
-  assert.match(reviewRoute, /seedReviewData/);
-  assert.match(reviewData, /@review\.gachihaeu\.com/);
-  assert.match(activitiesStore, /reviewMode/);
-  assert.match(activitiesStore, /NOT LIKE '%@review\.gachihaeu\.com'/);
-  assert.match(loginSheet, /endsWith\("@review\.gachihaeu\.com"\)/);
-  assert.doesNotMatch(loginSheet, />\s*App Store 심사용 계정\s*</);
-  assert.doesNotMatch(`${runtimeEnv}\n${reviewRoute}\n${loginSheet}`, /APP_REVIEW_PASSWORD\s*=\s*["'][^"']+/);
+  assert.doesNotMatch(`${runtimeEnv}\n${auth}\n${activitiesStore}\n${loginSheet}\n${worker}`, /APP_REVIEW|review-login|reviewMode|@review\.gachihaeu\.com/);
+  assert.match(migration, /DELETE FROM `user_profiles` WHERE email LIKE '%@review\.gachihaeu\.com'/);
+  assert.match(migration, /DELETE FROM `activities` WHERE creator_email LIKE '%@review\.gachihaeu\.com'/);
 });
 
 test("supports administrator moderation and active account sanctions", async () => {

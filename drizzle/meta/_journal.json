@@ -127,6 +127,13 @@
       "when": 1786952782077,
       "tag": "0017_nebulous_machine_man",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1786954499320,
+      "tag": "0018_remove_app_review_account",
+      "breakpoints": true
     }
   ]
 }

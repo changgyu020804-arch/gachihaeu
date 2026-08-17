@@ -1,5 +1,4 @@
 import { Activity, ActivitySummary } from "@/lib/types/activity";
-import { isReviewSessionEmail } from "@/server/auth/session";
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 20;
@@ -125,7 +124,6 @@ export async function listActivityPage(
     MAX_PAGE_SIZE,
     Math.max(1, Math.floor(options.limit ?? DEFAULT_PAGE_SIZE)),
   );
-  const reviewMode = isReviewSessionEmail(email) ? 1 : 0;
   const now = new Date(referenceMs).toISOString();
   const upcomingCutoff = new Date(referenceMs - 30 * 60_000).toISOString();
   const historyCutoff = new Date(
@@ -133,11 +131,6 @@ export async function listActivityPage(
   ).toISOString();
   const conditions = [
     "a.status = 'open'",
-    `(
-      (? = 1 AND a.creator_email LIKE '%@review.gachihaeu.com')
-      OR
-      (? = 0 AND a.creator_email NOT LIKE '%@review.gachihaeu.com')
-    )`,
     `(
       a.starts_at >= ?
       OR (
@@ -157,8 +150,6 @@ export async function listActivityPage(
     )`,
   ];
   const bindings: Array<string | number> = [
-    reviewMode,
-    reviewMode,
     upcomingCutoff,
     historyCutoff,
     email,
@@ -302,7 +293,6 @@ export async function getActivitySummary(
   email: string,
   nowMs = Date.now(),
 ): Promise<ActivitySummary> {
-  const reviewMode = isReviewSessionEmail(email) ? 1 : 0;
   const upcomingCutoff = new Date(nowMs - 30 * 60_000).toISOString();
   const result = await db
     .prepare(
@@ -321,11 +311,6 @@ export async function getActivitySummary(
          LEFT JOIN participants p ON p.activity_id = a.id
          WHERE a.status = 'open'
            AND a.starts_at >= ?
-           AND (
-             (? = 1 AND a.creator_email LIKE '%@review.gachihaeu.com')
-             OR
-             (? = 0 AND a.creator_email NOT LIKE '%@review.gachihaeu.com')
-           )
            AND NOT EXISTS (
              SELECT 1 FROM user_blocks ub
              WHERE
@@ -337,7 +322,7 @@ export async function getActivitySummary(
        ) visible
        GROUP BY visible.venue`,
     )
-    .bind(upcomingCutoff, reviewMode, reviewMode, email, email)
+    .bind(upcomingCutoff, email, email)
     .all<{
       venue: string;
       activity_count: number;

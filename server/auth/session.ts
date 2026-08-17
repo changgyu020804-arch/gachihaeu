@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { getJwtSecret, isAppReviewEmail } from "@/server/config/runtime-env";
+import { getJwtSecret } from "@/server/config/runtime-env";
 import { getD1 } from "@/db/index";
 import { isAccountSessionCurrent } from "@/server/services/account-security";
 
@@ -259,11 +259,7 @@ export function isValidUosEmail(email: string): boolean {
 }
 
 export function isValidSessionEmail(email: string): boolean {
-  return isValidUosEmail(email) || isAppReviewEmail(email);
-}
-
-export function isReviewSessionEmail(email: string): boolean {
-  return isAppReviewEmail(email);
+  return isValidUosEmail(email);
 }
 
 export async function hashAttendanceCode(activityId: string, code: string) {

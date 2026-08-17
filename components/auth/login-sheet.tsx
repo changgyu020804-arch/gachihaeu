@@ -4,7 +4,6 @@ import { FormEvent, useState } from "react";
 import { Viewer } from "@/lib/types/activity";
 import { EmailLoginForm, VerificationCodeForm } from "@/components/auth/email-login-forms";
 import { ProfileSetupForm } from "@/components/profile/profile-setup-form";
-import { ReviewLoginForm } from "@/components/auth/review-login-form";
 import { getErrorMessage } from "@/lib/utils/ui";
 
 type LoginSheetProps = {
@@ -13,7 +12,7 @@ type LoginSheetProps = {
   onLogin: (user: Viewer) => void;
 };
 
-type LoginStep = "email" | "code" | "profile" | "review";
+type LoginStep = "email" | "code" | "profile";
 
 export function LoginSheet({
   existingUser = null,
@@ -41,14 +40,6 @@ export function LoginSheet({
 
   const handleSendCode = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const normalizedEmail = email.trim().toLowerCase();
-    if (normalizedEmail.endsWith("@review.gachihaeu.com")) {
-      setEmail(normalizedEmail);
-      setError("");
-      setStep("review");
-      return;
-    }
-
     setLoading(true);
     setError("");
     try {
@@ -194,15 +185,6 @@ export function LoginSheet({
               onSubmit={handleSendCode}
             />
           </>
-        )}
-
-        {step === "review" && (
-          <ReviewLoginForm
-            initialEmail={email}
-            initialTermsAccepted={termsAccepted}
-            onLogin={onLogin}
-            onBack={() => { setStep("email"); setError(""); }}
-          />
         )}
 
         {step === "code" && (

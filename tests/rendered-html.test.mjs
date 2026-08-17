@@ -238,7 +238,6 @@ test("meets the user-generated content safety requirements", async () => {
     loginSheet,
     agreement,
     sendCode,
-    reviewLogin,
     activityRoute,
     activityDetailRoute,
     profileInput,
@@ -250,7 +249,6 @@ test("meets the user-generated content safety requirements", async () => {
     readFile(new URL("components/auth/login-sheet.tsx", root), "utf8"),
     readFile(new URL("components/auth/terms-agreement.tsx", root), "utf8"),
     readFile(new URL("app/api/auth/send-code/route.ts", root), "utf8"),
-    readFile(new URL("app/api/auth/review-login/route.ts", root), "utf8"),
     readFile(new URL("app/api/activities/route.ts", root), "utf8"),
     readFile(new URL("app/api/activities/[id]/route.ts", root), "utf8"),
     readFile(new URL("server/validation/profile-input.ts", root), "utf8"),
@@ -263,7 +261,6 @@ test("meets the user-generated content safety requirements", async () => {
   assert.match(loginSheet, /termsAccepted/);
   assert.match(agreement, /무관용 원칙/);
   assert.match(sendCode, /payload\.termsAccepted !== true/);
-  assert.match(reviewLogin, /payload\.termsAccepted !== true/);
   assert.match(activityRoute, /hasUnsafeUserText\(title\)/);
   assert.match(activityDetailRoute, /hasUnsafeUserText\(notice\)/);
   assert.match(profileInput, /hasUnsafeUserText\(nickname\)/);

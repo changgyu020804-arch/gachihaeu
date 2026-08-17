@@ -2,8 +2,7 @@
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import { runDailyDatabaseCleanup } from "@/server/services/database-cleanup";
-import { isReviewSessionEmail, verifyJWT } from "@/server/auth/session";
-import { isReviewDataEmail } from "@/server/services/review-account";
+import { verifyJWT } from "@/server/auth/session";
 import { sendOverdueModerationAlerts } from "@/server/services/moderation-alert.service";
 
 interface Env {
@@ -103,19 +102,6 @@ async function enforceAccountRestrictions(request: Request, env: Env) {
 
   const email = await getRequestSessionEmail(request);
   if (!email) return null;
-
-  const activityMatch = url.pathname.match(/^\/api\/activities\/([^/]+)/);
-  if (activityMatch) {
-    const activity = await env.DB.prepare(
-      `SELECT creator_email FROM activities WHERE id = ?`,
-    ).bind(decodeURIComponent(activityMatch[1])).first<{ creator_email: string }>();
-    if (
-      activity &&
-      isReviewSessionEmail(email) !== isReviewDataEmail(activity.creator_email)
-    ) {
-      return Response.json({ error: "모임을 찾을 수 없어요." }, { status: 404 });
-    }
-  }
 
   if (!MUTATION_METHODS.has(request.method.toUpperCase())) return null;
   if (
