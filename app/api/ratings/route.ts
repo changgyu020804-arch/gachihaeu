@@ -1,9 +1,12 @@
 import { getSessionUser } from "@/server/auth/session";
-import { AttendanceStatus, RatingType } from "@/lib/types/activity";
+import { RatingType } from "@/lib/types/activity";
 import { enforceRateLimit, getClientIp } from "@/server/security/request";
 import { getD1 } from "@/db/index";
 import { createNotifications } from "@/server/services/notification.service";
-import { hasBlockedRelationship } from "@/server/policies/activity-policy";
+import {
+  getRatingContext,
+  saveRating,
+} from "@/server/repositories/rating-write.repository";
 import {
   cleanUserText,
   hasUnsafeUserText,
@@ -58,31 +61,23 @@ export async function POST(request: Request) {
     );
   }
 
-  const activity = await db
-    .prepare(
-      `SELECT creator_email, title, starts_at, duration_minutes, status
-       FROM activities
-       WHERE id = ?`,
-    )
-    .bind(activityId)
-    .first<{
-      creator_email: string;
-      title: string;
-      starts_at: string;
-      duration_minutes: number;
-      status: string;
-    }>();
+  const context = await getRatingContext(
+    db,
+    activityId,
+    user.email,
+    ratedEmail,
+  );
 
-  if (!activity) {
+  if (!context) {
     return Response.json({ error: "모임을 찾을 수 없어요." }, { status: 404 });
   }
-  if (activity.status !== "open") {
+  if (context.status !== "open") {
     return Response.json({ error: "취소된 모임은 평가할 수 없어요." }, { status: 400 });
   }
 
   const endTime =
-    new Date(activity.starts_at).getTime() +
-    activity.duration_minutes * 60_000;
+    new Date(context.startsAt).getTime() +
+    context.durationMinutes * 60_000;
   if (Date.now() < endTime) {
     return Response.json({ error: "모임이 끝난 후에 평가할 수 있어요." }, { status: 400 });
   }
@@ -90,47 +85,31 @@ export async function POST(request: Request) {
     return Response.json({ error: "평가는 모임 종료 후 30일 안에 작성할 수 있어요." }, { status: 400 });
   }
 
-  if (await hasBlockedRelationship(db, user.email, ratedEmail)) {
+  if (context.hasBlockedRelationship) {
     return Response.json(
       { error: "차단 관계인 사용자와는 평가를 주고받을 수 없어요." },
       { status: 403 },
     );
   }
 
-  const [raterParticipant, ratedParticipant] = await Promise.all([
-    db
-      .prepare(
-        `SELECT attendance_status
-         FROM participants
-         WHERE activity_id = ? AND user_email = ?`,
-      )
-      .bind(activityId, user.email)
-      .first<{ attendance_status: AttendanceStatus }>(),
-    db
-      .prepare(
-        `SELECT attendance_status
-         FROM participants
-         WHERE activity_id = ? AND user_email = ?`,
-      )
-      .bind(activityId, ratedEmail)
-      .first<{ attendance_status: AttendanceStatus }>(),
-  ]);
-
-  if (!raterParticipant || !ratedParticipant) {
+  if (
+    context.raterAttendanceStatus === null ||
+    context.ratedAttendanceStatus === null
+  ) {
     return Response.json(
       { error: "이 모임의 참가자끼리만 평가할 수 있어요." },
       { status: 403 },
     );
   }
 
-  const isOwner = activity.creator_email === user.email;
+  const isOwner = context.creatorEmail === user.email;
   let ratingType: RatingType;
 
   if (isOwner) {
-    if (ratedEmail === activity.creator_email) {
+    if (ratedEmail === context.creatorEmail) {
       return Response.json({ error: "모임장은 자신을 평가할 수 없어요." }, { status: 400 });
     }
-    if (ratedParticipant.attendance_status !== "attended") {
+    if (context.ratedAttendanceStatus !== "attended") {
       return Response.json(
         { error: "참석이 확인된 구성원만 평가할 수 있어요." },
         { status: 400 },
@@ -138,13 +117,13 @@ export async function POST(request: Request) {
     }
     ratingType = "host_to_member";
   } else {
-    if (ratedEmail !== activity.creator_email) {
+    if (ratedEmail !== context.creatorEmail) {
       return Response.json(
         { error: "구성원은 모임장만 평가할 수 있어요." },
         { status: 403 },
       );
     }
-    if (raterParticipant.attendance_status !== "attended") {
+    if (context.raterAttendanceStatus !== "attended") {
       return Response.json(
         { error: "모임장이 참석을 확인한 뒤 평가할 수 있어요." },
         { status: 400 },
@@ -153,59 +132,20 @@ export async function POST(request: Request) {
     ratingType = "member_to_host";
   }
 
-  const existing = await db
-    .prepare(
-      `SELECT 1 FROM ratings
-       WHERE activity_id = ? AND rater_email = ? AND rated_email = ?`,
-    )
-    .bind(activityId, user.email, ratedEmail)
-    .first();
+  const saved = await saveRating(db, {
+    activityId,
+    raterEmail: user.email,
+    ratedEmail,
+    scoreOne,
+    scoreTwo,
+    scoreThree,
+    ratingType,
+    comment,
+  });
 
-  if (existing) {
-    await db
-      .prepare(
-        `UPDATE ratings
-         SET trust_score = ?,
-             skill_score = ?,
-             manner_score = ?,
-             rating_type = ?,
-             comment = ?
-         WHERE activity_id = ? AND rater_email = ? AND rated_email = ?`,
-      )
-      .bind(
-        scoreOne,
-        scoreTwo,
-        scoreThree,
-        ratingType,
-        comment,
-        activityId,
-        user.email,
-        ratedEmail,
-      )
-      .run();
+  if (!saved.created) {
     return Response.json({ updated: true, ratingType });
   }
-
-  const id = crypto.randomUUID();
-  await db
-    .prepare(
-      `INSERT INTO ratings (
-        id, activity_id, rater_email, rated_email,
-        trust_score, skill_score, manner_score, rating_type, comment
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .bind(
-      id,
-      activityId,
-      user.email,
-      ratedEmail,
-      scoreOne,
-      scoreTwo,
-      scoreThree,
-      ratingType,
-      comment,
-    )
-    .run();
 
   await createNotifications([
     {
@@ -213,10 +153,10 @@ export async function POST(request: Request) {
       activityId,
       type: "rated",
       title: "새 평가를 받았어요",
-      message: `${activity.title} 모임에서 익명의 한줄 코멘트와 평가가 도착했어요.`,
+      message: `${context.title} 모임에서 익명의 한줄 코멘트와 평가가 도착했어요.`,
       dedupeKey: `rated:${activityId}:${user.email}`,
     },
   ]);
 
-  return Response.json({ id, ratingType }, { status: 201 });
+  return Response.json({ id: saved.id, ratingType }, { status: 201 });
 }

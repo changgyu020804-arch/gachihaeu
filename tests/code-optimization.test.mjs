@@ -30,3 +30,18 @@ test("batches rate-limit writes and centralizes moderation report queries", asyn
   assert.doesNotMatch(moderationSource, /UNION ALL/);
   assert.doesNotMatch(alertSource, /UNION ALL/);
 });
+
+test("loads rating eligibility once and upserts ratings atomically", async () => {
+  const [routeSource, repositorySource, profileSource] = await Promise.all([
+    readSource("app/api/ratings/route.ts"),
+    readSource("server/repositories/rating-write.repository.ts"),
+    readSource("app/api/profile/route.ts"),
+  ]);
+
+  assert.match(routeSource, /getRatingContext/);
+  assert.match(routeSource, /saveRating/);
+  assert.match(repositorySource, /has_blocked_relationship/);
+  assert.match(repositorySource, /ON CONFLICT\(activity_id, rater_email, rated_email\) DO UPDATE/);
+  assert.doesNotMatch(routeSource, /SELECT 1 FROM ratings|UPDATE ratings|INSERT INTO ratings/);
+  assert.match(profileSource, /await db\.batch\(\[/);
+});

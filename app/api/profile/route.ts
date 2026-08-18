@@ -28,29 +28,28 @@ export async function GET() {
     return Response.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
   const db = getD1();
-  const profile = await db
-    .prepare(
-      `SELECT email, nickname, gender, campus_role, requested_campus_role,
-              role_verification_status, department, bio,
-              preferred_sports, onboarding_completed
-       FROM user_profiles
-       WHERE email = ?`,
-    )
-    .bind(user.email)
-    .first<{
-      email: string;
-      nickname: string;
-      gender: string;
-      campus_role: string;
-      requested_campus_role: string;
-      role_verification_status: "not_required" | "not_submitted" | "pending" | "approved" | "rejected";
-      department: string;
-      bio: string;
-      preferred_sports: string;
-      onboarding_completed: number;
-    }>();
-
-  const [reputation, activityStats, recentRatings] = await Promise.all([
+  const [profile, reputation, activityStats, recentRatings] = await Promise.all([
+    db
+      .prepare(
+        `SELECT email, nickname, gender, campus_role, requested_campus_role,
+                role_verification_status, department, bio,
+                preferred_sports, onboarding_completed
+         FROM user_profiles
+         WHERE email = ?`,
+      )
+      .bind(user.email)
+      .first<{
+        email: string;
+        nickname: string;
+        gender: string;
+        campus_role: string;
+        requested_campus_role: string;
+        role_verification_status: "not_required" | "not_submitted" | "pending" | "approved" | "rejected";
+        department: string;
+        bio: string;
+        preferred_sports: string;
+        onboarding_completed: number;
+      }>(),
     getReputation(db, user.email),
     getActivityStats(db, user.email),
     getRecentRatings(db, user.email),
@@ -108,15 +107,26 @@ export async function PUT(request: Request) {
     });
     if (rateError) return rateError;
 
-    const duplicate = await db
-      .prepare(
-        `SELECT email
-         FROM user_profiles
-         WHERE nickname_normalized = ? AND email <> ?
-         LIMIT 1`,
-      )
-      .bind(nicknameNormalized, user.email)
-      .first<{ email: string }>();
+    const [duplicateResult, currentRoleResult] = await db.batch([
+      db
+        .prepare(
+          `SELECT email
+           FROM user_profiles
+           WHERE nickname_normalized = ? AND email <> ?
+           LIMIT 1`,
+        )
+        .bind(nicknameNormalized, user.email),
+      db
+        .prepare(
+          `SELECT campus_role, requested_campus_role, role_verification_status
+           FROM user_profiles
+           WHERE email = ?`,
+        )
+        .bind(user.email),
+    ]);
+    const duplicate = duplicateResult.results[0] as
+      | { email: string }
+      | undefined;
 
     if (duplicate) {
       return Response.json(
@@ -125,18 +135,13 @@ export async function PUT(request: Request) {
       );
     }
 
-    const currentRole = await db
-      .prepare(
-        `SELECT campus_role, requested_campus_role, role_verification_status
-         FROM user_profiles
-         WHERE email = ?`,
-      )
-      .bind(user.email)
-      .first<{
+    const currentRole = currentRoleResult.results[0] as
+      | {
         campus_role: string;
         requested_campus_role: string;
         role_verification_status: string;
-      }>();
+      }
+      | undefined;
 
     const {
       publicCampusRole,
