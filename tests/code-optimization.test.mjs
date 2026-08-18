@@ -48,7 +48,7 @@ test("loads rating eligibility once and upserts ratings atomically", async () =>
 
 test("keeps repeat app launches light and batches home bootstrap reads", async () => {
   const [
-    workerSource,
+    serviceWorkerSource,
     homeClientSource,
     homeActivitiesSource,
     sessionSource,
@@ -56,9 +56,8 @@ test("keeps repeat app launches light and batches home bootstrap reads", async (
     viewerSource,
     activityRepositorySource,
     pageSource,
-    staticHeadersSource,
   ] = await Promise.all([
-    readSource("worker/index.ts"),
+    readSource("public/service-worker.js"),
     readSource("app/home-client.tsx"),
     readSource("hooks/use-home-activities.ts"),
     readSource("server/auth/session.ts"),
@@ -66,12 +65,11 @@ test("keeps repeat app launches light and batches home bootstrap reads", async (
     readSource("server/services/viewer.ts"),
     readSource("server/repositories/activity.repository.ts"),
     readSource("app/page.tsx"),
-    readSource("public/_headers"),
   ]);
 
-  assert.match(workerSource, /max-age=31536000, immutable/);
-  assert.match(staticHeadersSource, /\/assets\/\*/);
-  assert.match(staticHeadersSource, /max-age=31536000, immutable/);
+  assert.match(serviceWorkerSource, /warmBuildAssets/);
+  assert.match(serviceWorkerSource, /\/assets\\\/\[\^/);
+  assert.match(serviceWorkerSource, /Promise\.allSettled/);
   assert.match(homeClientSource, /lazy\(\(\) =>/);
   assert.match(homeClientSource, /<Suspense fallback=\{null\}>/);
   assert.match(

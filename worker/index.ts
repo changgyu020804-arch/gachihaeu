@@ -157,12 +157,6 @@ function addSecurityHeaders(request: Request, response: Response) {
   );
 
   const pathname = new URL(request.url).pathname;
-  if (pathname.startsWith("/assets/")) {
-    secured.headers.set(
-      "Cache-Control",
-      "public, max-age=31536000, immutable",
-    );
-  }
   if (pathname === "/service-worker.js") {
     secured.headers.set("Cache-Control", "no-cache, no-store, must-revalidate");
     secured.headers.set("Service-Worker-Allowed", "/");

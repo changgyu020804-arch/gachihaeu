@@ -1,4 +1,4 @@
-const CACHE_NAME = "gachihaeu-pwa-v1";
+const CACHE_NAME = "gachihaeu-pwa-v2";
 const OFFLINE_ASSETS = [
   "/offline.html",
   "/manifest.webmanifest",
@@ -6,9 +6,32 @@ const OFFLINE_ASSETS = [
   "/icons/icon-512.png",
 ];
 
+function readBuildAssetUrls(html) {
+  const urls = new Set();
+  const pattern = /["'](\/assets\/[^"'<>\s]+)["']/g;
+  for (const match of html.matchAll(pattern)) urls.add(match[1]);
+  return [...urls];
+}
+
+async function warmBuildAssets(response) {
+  if (!response.ok) return;
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("text/html")) return;
+
+  const urls = readBuildAssetUrls(await response.text());
+  if (urls.length === 0) return;
+  const cache = await caches.open(CACHE_NAME);
+  await Promise.allSettled(urls.map((url) => cache.add(url)));
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_ASSETS)),
+    Promise.all([
+      caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_ASSETS)),
+      fetch("/", { cache: "no-store" })
+        .then((response) => warmBuildAssets(response))
+        .catch(() => undefined),
+    ]),
   );
   self.skipWaiting();
 });
@@ -36,8 +59,14 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
+    const network = fetch(request);
+    event.waitUntil(
+      network
+        .then((response) => warmBuildAssets(response.clone()))
+        .catch(() => undefined),
+    );
     event.respondWith(
-      fetch(request).catch(() => caches.match("/offline.html")),
+      network.catch(() => caches.match("/offline.html")),
     );
     return;
   }
