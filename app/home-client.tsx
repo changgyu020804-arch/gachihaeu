@@ -1,20 +1,50 @@
 "use client";
 
+import { lazy, Suspense } from "react";
 import { Activity, ActivitySummary, Viewer } from "@/lib/types/activity";
 import { BottomNavigation } from "@/components/layout/bottom-navigation";
-import { CreateSheet } from "@/components/activity/create-sheet";
-import { DetailSheet } from "@/components/activity/detail-sheet";
 import { HomeHeader } from "@/components/layout/home-header";
 import { HomeHero } from "@/components/layout/home-hero";
-import { LoginSheet } from "@/components/auth/login-sheet";
 import { ActivitiesSection } from "@/components/activity/activities-section";
-import { NotificationSheet } from "@/components/notifications/notification-sheet";
-import { ProfileSheet } from "@/components/profile/profile-sheet";
-import { RatingSheet } from "@/components/rating/rating-sheet";
-import { UserProfileSheet } from "@/components/profile/user-profile-sheet";
 import { VenueSection } from "@/components/activity/venue-section";
 import { useHomeController } from "@/hooks/use-home-controller";
 import { PolicyLinks } from "@/components/layout/policy-links";
+
+const CreateSheet = lazy(() =>
+  import("@/components/activity/create-sheet").then((module) => ({
+    default: module.CreateSheet,
+  })),
+);
+const DetailSheet = lazy(() =>
+  import("@/components/activity/detail-sheet").then((module) => ({
+    default: module.DetailSheet,
+  })),
+);
+const LoginSheet = lazy(() =>
+  import("@/components/auth/login-sheet").then((module) => ({
+    default: module.LoginSheet,
+  })),
+);
+const NotificationSheet = lazy(() =>
+  import("@/components/notifications/notification-sheet").then((module) => ({
+    default: module.NotificationSheet,
+  })),
+);
+const ProfileSheet = lazy(() =>
+  import("@/components/profile/profile-sheet").then((module) => ({
+    default: module.ProfileSheet,
+  })),
+);
+const RatingSheet = lazy(() =>
+  import("@/components/rating/rating-sheet").then((module) => ({
+    default: module.RatingSheet,
+  })),
+);
+const UserProfileSheet = lazy(() =>
+  import("@/components/profile/user-profile-sheet").then((module) => ({
+    default: module.UserProfileSheet,
+  })),
+);
 
 type HomeClientProps = {
   initialUser: Viewer | null;
@@ -95,77 +125,79 @@ export function HomeClient({
           onProfile={home.goProfile}
         />
 
-        {home.showLogin && (
-          <LoginSheet
-            existingUser={home.currentUser}
-            onClose={() => home.setShowLogin(false)}
-            onLogin={home.handleLogin}
-          />
-        )}
+        <Suspense fallback={null}>
+          {home.showLogin && (
+            <LoginSheet
+              existingUser={home.currentUser}
+              onClose={() => home.setShowLogin(false)}
+              onLogin={home.handleLogin}
+            />
+          )}
 
-        {home.showCreate && (
-          <CreateSheet
-            onClose={() => home.setShowCreate(false)}
-            onCreated={() => void home.loadActivities()}
-            onToast={home.setToast}
-            defaultSport={home.createDefaults.sport}
-            defaultVenue={home.createDefaults.venue}
-          />
-        )}
+          {home.showCreate && (
+            <CreateSheet
+              onClose={() => home.setShowCreate(false)}
+              onCreated={() => void home.loadActivities()}
+              onToast={home.setToast}
+              defaultSport={home.createDefaults.sport}
+              defaultVenue={home.createDefaults.venue}
+            />
+          )}
 
-        {home.selectedActivity && (
-          <DetailSheet
-            activity={home.selectedActivity}
-            submitting={home.submitting}
-            onClose={() => home.setSelectedActivity(null)}
-            onPerformAction={(path, method, message, body) =>
-              void home.performAction(path, method, message, body)
-            }
-            onOpenRating={home.openRating}
-            onReport={(activity) => void home.reportActivity(activity)}
-            onViewProfile={home.setViewingUserEmail}
-            onToast={home.setToast}
-          />
-        )}
+          {home.selectedActivity && (
+            <DetailSheet
+              activity={home.selectedActivity}
+              submitting={home.submitting}
+              onClose={() => home.setSelectedActivity(null)}
+              onPerformAction={(path, method, message, body) =>
+                void home.performAction(path, method, message, body)
+              }
+              onOpenRating={home.openRating}
+              onReport={(activity) => void home.reportActivity(activity)}
+              onViewProfile={home.setViewingUserEmail}
+              onToast={home.setToast}
+            />
+          )}
 
-        {home.showProfile && home.currentUser?.onboardingComplete && (
-          <ProfileSheet
-            user={home.currentUser}
-            onClose={() => home.setShowProfile(false)}
-            onLogout={() => void home.handleLogout()}
-            onAccountDeleted={home.handleAccountDeleted}
-            onToast={home.setToast}
-          />
-        )}
+          {home.showProfile && home.currentUser?.onboardingComplete && (
+            <ProfileSheet
+              user={home.currentUser}
+              onClose={() => home.setShowProfile(false)}
+              onLogout={() => void home.handleLogout()}
+              onAccountDeleted={home.handleAccountDeleted}
+              onToast={home.setToast}
+            />
+          )}
 
-        {home.showNotifications && home.currentUser && (
-          <NotificationSheet
-            onClose={() => home.setShowNotifications(false)}
-            onUnreadChange={home.setUnreadNotifications}
-            onOpenNotification={home.handleOpenNotification}
-          />
-        )}
+          {home.showNotifications && home.currentUser && (
+            <NotificationSheet
+              onClose={() => home.setShowNotifications(false)}
+              onUnreadChange={home.setUnreadNotifications}
+              onOpenNotification={home.handleOpenNotification}
+            />
+          )}
 
-        {home.ratingActivityId && home.currentUser && (
-          <RatingSheet
-            activityId={home.ratingActivityId}
-            onClose={() => home.setRatingActivityId(null)}
-            onToast={home.setToast}
-            onViewProfile={home.setViewingUserEmail}
-          />
-        )}
+          {home.ratingActivityId && home.currentUser && (
+            <RatingSheet
+              activityId={home.ratingActivityId}
+              onClose={() => home.setRatingActivityId(null)}
+              onToast={home.setToast}
+              onViewProfile={home.setViewingUserEmail}
+            />
+          )}
 
-        {home.viewingUserEmail && (
-          <UserProfileSheet
-            email={home.viewingUserEmail}
-            onClose={() => home.setViewingUserEmail(null)}
-            onToast={home.setToast}
-            onRelationshipChanged={async () => {
-              home.setSelectedActivity(null);
-              await home.loadActivities();
-            }}
-          />
-        )}
+          {home.viewingUserEmail && (
+            <UserProfileSheet
+              email={home.viewingUserEmail}
+              onClose={() => home.setViewingUserEmail(null)}
+              onToast={home.setToast}
+              onRelationshipChanged={async () => {
+                home.setSelectedActivity(null);
+                await home.loadActivities();
+              }}
+            />
+          )}
+        </Suspense>
 
         {home.toast && <div className="toast" role="status">{home.toast}</div>}
       </div>

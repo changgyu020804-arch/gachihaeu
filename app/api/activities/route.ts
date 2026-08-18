@@ -1,7 +1,7 @@
 import { getSessionUser } from "@/server/auth/session";
 import { LEVELS, SPORTS, VENUES } from "@/lib/types/activity";
 import {
-  getActivitySummary,
+  getActivityHomeData,
   listActivityPage,
 } from "@/server/repositories/activity.repository";
 import { getUserDisplayName } from "@/server/policies/activity-policy";
@@ -34,23 +34,24 @@ export async function GET(request: Request) {
     const cursor = cleanUserText(url.searchParams.get("cursor"), 180) || null;
     const includeSummary = url.searchParams.get("summary") === "1";
     const db = getD1();
-    const [page, summary] = await Promise.all([
-      listActivityPage(db, user.email, {
-        limit: 20,
-        cursor,
-        sport,
-        dateKey,
-        myOnly: url.searchParams.get("mine") === "1",
-      }),
-      includeSummary
-        ? getActivitySummary(db, user.email)
-        : Promise.resolve(null),
-    ]);
+    const options = {
+      limit: 20,
+      cursor,
+      sport,
+      dateKey,
+      myOnly: url.searchParams.get("mine") === "1",
+    };
+    const result = includeSummary
+      ? await getActivityHomeData(db, user.email, options)
+      : {
+          page: await listActivityPage(db, user.email, options),
+          summary: null,
+        };
 
     return Response.json({
-      activities: page.activities,
-      nextCursor: page.nextCursor,
-      ...(summary ? { summary } : {}),
+      activities: result.page.activities,
+      nextCursor: result.page.nextCursor,
+      ...(result.summary ? { summary: result.summary } : {}),
     });
   } catch {
     console.error("Activity list request failed");

@@ -46,11 +46,41 @@ export async function getLoginSecurityState(
   };
 }
 
-export async function isAccountSessionCurrent(
+export async function getSessionBootstrap(
   db: D1Database,
   email: string,
-  sessionVersion: number,
 ) {
-  const state = await readAccountSecurityState(db, email);
-  return (state?.session_version ?? 0) === sessionVersion;
+  const subjectHash = await getSecuritySubjectHash(email);
+  const [securityResult, profileResult] = await db.batch([
+    db
+      .prepare(
+        `SELECT session_version
+         FROM account_security_state
+         WHERE subject_hash = ?`,
+      )
+      .bind(subjectHash),
+    db
+      .prepare(
+        `SELECT nickname, onboarding_completed
+         FROM user_profiles
+         WHERE email = ?`,
+      )
+      .bind(email),
+  ]);
+  const security = securityResult.results[0] as
+    | { session_version: number }
+    | undefined;
+  const profile = profileResult.results[0] as
+    | { nickname: string; onboarding_completed: number }
+    | undefined;
+
+  return {
+    sessionVersion: security?.session_version ?? 0,
+    profile: profile
+      ? {
+          nickname: profile.nickname,
+          onboardingCompleted: Boolean(profile.onboarding_completed),
+        }
+      : null,
+  };
 }

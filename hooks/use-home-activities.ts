@@ -51,9 +51,7 @@ export function useHomeActivities({
   const [selectedSport, setSelectedSport] = useState<SportFilter>("전체");
   const [selectedDate, setSelectedDate] = useState("전체");
   const [myOnly, setMyOnly] = useState(false);
-  const [loading, setLoading] = useState(
-    canLoad && initialActivities.length === 0,
-  );
+  const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
   const firstLoadRef = useRef(true);
@@ -140,15 +138,15 @@ export function useHomeActivities({
     if (isDefaultFilter) {
       const isInitialServerPage =
         firstLoadRef.current &&
-        initialEmailRef.current === userEmail &&
-        initialActivities.length > 0;
+        initialEmailRef.current === userEmail;
       if (isInitialServerPage) {
         writeActivityCache(userEmail, {
           activities: initialActivities,
           nextCursor: initialNextCursor,
           summary: initialSummary,
         });
-        background = true;
+        firstLoadRef.current = false;
+        return;
       } else {
         cached = readActivityCache(userEmail);
         background = Boolean(cached);

@@ -45,3 +45,43 @@ test("loads rating eligibility once and upserts ratings atomically", async () =>
   assert.doesNotMatch(routeSource, /SELECT 1 FROM ratings|UPDATE ratings|INSERT INTO ratings/);
   assert.match(profileSource, /await db\.batch\(\[/);
 });
+
+test("keeps repeat app launches light and batches home bootstrap reads", async () => {
+  const [
+    workerSource,
+    homeClientSource,
+    homeActivitiesSource,
+    sessionSource,
+    securitySource,
+    viewerSource,
+    activityRepositorySource,
+    pageSource,
+    staticHeadersSource,
+  ] = await Promise.all([
+    readSource("worker/index.ts"),
+    readSource("app/home-client.tsx"),
+    readSource("hooks/use-home-activities.ts"),
+    readSource("server/auth/session.ts"),
+    readSource("server/services/account-security.ts"),
+    readSource("server/services/viewer.ts"),
+    readSource("server/repositories/activity.repository.ts"),
+    readSource("app/page.tsx"),
+    readSource("public/_headers"),
+  ]);
+
+  assert.match(workerSource, /max-age=31536000, immutable/);
+  assert.match(staticHeadersSource, /\/assets\/\*/);
+  assert.match(staticHeadersSource, /max-age=31536000, immutable/);
+  assert.match(homeClientSource, /lazy\(\(\) =>/);
+  assert.match(homeClientSource, /<Suspense fallback=\{null\}>/);
+  assert.match(
+    homeActivitiesSource,
+    /if \(isInitialServerPage\) \{[\s\S]*?firstLoadRef\.current = false;[\s\S]*?return;/,
+  );
+  assert.match(sessionSource, /getSessionBootstrap/);
+  assert.match(securitySource, /const \[securityResult, profileResult\] = await db\.batch/);
+  assert.doesNotMatch(viewerSource, /getD1|SELECT nickname/);
+  assert.match(activityRepositorySource, /getActivityHomeData/);
+  assert.match(activityRepositorySource, /await db\.batch\(\[/);
+  assert.match(pageSource, /getActivityHomeData/);
+});

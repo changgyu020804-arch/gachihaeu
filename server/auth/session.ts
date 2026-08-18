@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { getJwtSecret } from "@/server/config/runtime-env";
 import { getD1 } from "@/db/index";
-import { isAccountSessionCurrent } from "@/server/services/account-security";
+import { getSessionBootstrap } from "@/server/services/account-security";
 
 export type SessionUser = {
   email: string;
@@ -9,6 +9,10 @@ export type SessionUser = {
   fullName: string | null;
   authenticatedAt: number;
   expiresAt: number;
+  profile: {
+    nickname: string;
+    onboardingCompleted: boolean;
+  } | null;
 };
 
 const SESSION_COOKIE = "__Host-gachihaeu_session";
@@ -165,13 +169,8 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   const sessionVersion =
     typeof payload.sessionVersion === "number" ? payload.sessionVersion : 0;
-  if (
-    !(await isAccountSessionCurrent(
-      getD1(),
-      payload.email,
-      sessionVersion,
-    ))
-  ) {
+  const bootstrap = await getSessionBootstrap(getD1(), payload.email);
+  if (bootstrap.sessionVersion !== sessionVersion) {
     return null;
   }
 
@@ -190,6 +189,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
         ? payload.auth_time
         : (payload.iat as number),
     expiresAt: payload.exp as number,
+    profile: bootstrap.profile,
   };
 }
 

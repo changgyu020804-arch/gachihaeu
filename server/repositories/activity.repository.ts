@@ -113,11 +113,11 @@ function getDateRange(dateKey: string | null | undefined) {
   };
 }
 
-export async function listActivityPage(
+function prepareActivityPage(
   db: D1Database,
   email: string,
   options: ActivityListOptions = {},
-): Promise<ActivityPage> {
+) {
   const cursor = readCursor(options.cursor);
   const referenceMs = cursor?.referenceMs ?? options.nowMs ?? Date.now();
   const limit = Math.min(
@@ -227,7 +227,7 @@ export async function listActivityPage(
     now,
     now,
   ];
-  const result = await db
+  const statement = db
     .prepare(
       `SELECT
         a.id,
@@ -274,9 +274,16 @@ export async function listActivityPage(
         a.id ASC
       LIMIT ${limit + 1}`,
     )
-    .bind(...queryBindings)
-    .all<ActivityRow>();
+    .bind(...queryBindings);
 
+  return { statement, limit, referenceMs };
+}
+
+function toActivityPage(
+  result: D1Result<ActivityRow>,
+  limit: number,
+  referenceMs: number,
+): ActivityPage {
   const hasMore = result.results.length > limit;
   const rows = hasMore ? result.results.slice(0, limit) : result.results;
   return {
@@ -288,13 +295,30 @@ export async function listActivityPage(
   };
 }
 
-export async function getActivitySummary(
+export async function listActivityPage(
+  db: D1Database,
+  email: string,
+  options: ActivityListOptions = {},
+): Promise<ActivityPage> {
+  const prepared = prepareActivityPage(db, email, options);
+  const result = await prepared.statement.all<ActivityRow>();
+  return toActivityPage(result, prepared.limit, prepared.referenceMs);
+}
+
+type ActivitySummaryRow = {
+  venue: string;
+  activity_count: number;
+  participant_count: number;
+  remaining_count: number;
+};
+
+function prepareActivitySummary(
   db: D1Database,
   email: string,
   nowMs = Date.now(),
-): Promise<ActivitySummary> {
+) {
   const upcomingCutoff = new Date(nowMs - 30 * 60_000).toISOString();
-  const result = await db
+  return db
     .prepare(
       `SELECT
          visible.venue,
@@ -322,14 +346,12 @@ export async function getActivitySummary(
        ) visible
        GROUP BY visible.venue`,
     )
-    .bind(upcomingCutoff, email, email)
-    .all<{
-      venue: string;
-      activity_count: number;
-      participant_count: number;
-      remaining_count: number;
-    }>();
+    .bind(upcomingCutoff, email, email);
+}
 
+function toActivitySummary(
+  result: D1Result<ActivitySummaryRow>,
+): ActivitySummary {
   return result.results.reduce<ActivitySummary>(
     (summary, row) => {
       const activityCount = Number(row.activity_count);
@@ -341,4 +363,36 @@ export async function getActivitySummary(
     },
     { open: 0, people: 0, remaining: 0, venueCounts: {} },
   );
+}
+
+export async function getActivitySummary(
+  db: D1Database,
+  email: string,
+  nowMs = Date.now(),
+): Promise<ActivitySummary> {
+  const result = await prepareActivitySummary(db, email, nowMs).all<ActivitySummaryRow>();
+  return toActivitySummary(result);
+}
+
+export async function getActivityHomeData(
+  db: D1Database,
+  email: string,
+  options: ActivityListOptions = {},
+) {
+  const nowMs = options.nowMs ?? Date.now();
+  const pageQuery = prepareActivityPage(db, email, { ...options, nowMs });
+  const summaryQuery = prepareActivitySummary(db, email, nowMs);
+  const [pageResult, summaryResult] = await db.batch([
+    pageQuery.statement,
+    summaryQuery,
+  ]);
+
+  return {
+    page: toActivityPage(
+      pageResult as D1Result<ActivityRow>,
+      pageQuery.limit,
+      pageQuery.referenceMs,
+    ),
+    summary: toActivitySummary(summaryResult as D1Result<ActivitySummaryRow>),
+  };
 }

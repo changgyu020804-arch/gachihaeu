@@ -1,10 +1,7 @@
 import { HomeClient } from "@/app/home-client";
 import { getSessionUser } from "@/server/auth/session";
 import { getD1 } from "@/db/index";
-import {
-  getActivitySummary,
-  listActivityPage,
-} from "@/server/repositories/activity.repository";
+import { getActivityHomeData } from "@/server/repositories/activity.repository";
 import { getViewerForSession } from "@/server/services/viewer";
 
 export const dynamic = "force-dynamic";
@@ -23,18 +20,17 @@ export default async function Home() {
   }
 
   const db = getD1();
-  const [user, activityPage, activitySummary] = await Promise.all([
+  const [user, homeData] = await Promise.all([
     getViewerForSession(session),
-    listActivityPage(db, session.email, { limit: 20 }),
-    getActivitySummary(db, session.email),
+    getActivityHomeData(db, session.email, { limit: 20 }),
   ]);
 
   return (
     <HomeClient
       initialUser={user}
-      initialActivities={activityPage.activities}
-      initialNextCursor={activityPage.nextCursor}
-      initialSummary={activitySummary}
+      initialActivities={homeData.page.activities}
+      initialNextCursor={homeData.page.nextCursor}
+      initialSummary={homeData.summary}
     />
   );
 }
