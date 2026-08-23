@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Viewer } from "@/lib/types/activity";
 import { PwaInstallButton } from "@/components/layout/pwa-install-button";
 
@@ -9,7 +10,7 @@ type HomeHeaderProps = {
   onOpenLogin: () => void;
 };
 
-export function HomeHeader({
+export const HomeHeader = memo(function HomeHeader({
   user,
   unreadCount,
   onOpenNotifications,
@@ -44,4 +45,4 @@ export function HomeHeader({
       </div>
     </header>
   );
-}
+});

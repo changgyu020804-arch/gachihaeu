@@ -1,3 +1,4 @@
+import { memo, useState } from "react";
 import { Activity, SPORTS, SportFilter } from "@/lib/types/activity";
 import { ActivityCard } from "@/components/activity/activity-card";
 import { useHorizontalDragScroll } from "@/hooks/use-horizontal-drag-scroll";
@@ -34,7 +35,7 @@ type ActivitiesSectionProps = {
   onCreate: () => void;
 };
 
-export function ActivitiesSection({
+export const ActivitiesSection = memo(function ActivitiesSection({
   activities,
   dateFilters,
   selectedDate,
@@ -57,6 +58,7 @@ export function ActivitiesSection({
 }: ActivitiesSectionProps) {
   const dateScroller = useHorizontalDragScroll<HTMLDivElement>();
   const sportScroller = useHorizontalDragScroll<HTMLDivElement>();
+  const [renderedAt] = useState(() => Date.now());
 
   return (
     <section className="matches-section" id="matches">
@@ -121,6 +123,7 @@ export function ActivitiesSection({
             <ActivityCard
               key={activity.id}
               activity={activity}
+              renderedAt={renderedAt}
               submitting={submitting}
               onSelect={onSelectActivity}
               onPerformAction={onPerformAction}
@@ -162,4 +165,4 @@ export function ActivitiesSection({
       </aside>
     </section>
   );
-}
+});

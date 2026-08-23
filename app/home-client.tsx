@@ -72,11 +72,9 @@ export function HomeClient({
         <HomeHeader
           user={home.currentUser}
           unreadCount={home.unreadNotifications}
-          onOpenNotifications={() => home.setShowNotifications(true)}
-          onOpenProfile={() =>
-            home.requireLogin(() => home.setShowProfile(true))
-          }
-          onOpenLogin={() => home.setShowLogin(true)}
+          onOpenNotifications={home.openNotifications}
+          onOpenProfile={home.openProfile}
+          onOpenLogin={home.openLogin}
         />
         <HomeHero
           openCount={home.stats.open}
@@ -85,12 +83,7 @@ export function HomeClient({
         />
         <VenueSection
           venueCounts={home.venueCounts}
-          onSelectSport={(sport) => {
-            home.setSelectedSport(sport);
-            document
-              .getElementById("matches")
-              ?.scrollIntoView({ behavior: "smooth" });
-          }}
+          onSelectSport={home.selectVenueSport}
         />
         <ActivitiesSection
           activities={home.visibleActivities}
@@ -106,14 +99,12 @@ export function HomeClient({
           onSelectDate={home.setSelectedDate}
           onSelectSport={home.setSelectedSport}
           onSelectActivity={home.setSelectedActivity}
-          onPerformAction={(path, method, message) =>
-            void home.performAction(path, method, message)
-          }
+          onPerformAction={home.performAction}
           onOpenRating={home.openRating}
-          onRetry={() => void home.loadActivities()}
-          onLoadMore={() => void home.loadMore()}
-          onBrowse={() => home.setMyOnly(false)}
-          onCreate={() => home.openCreate()}
+          onRetry={home.loadActivities}
+          onLoadMore={home.loadMore}
+          onBrowse={home.browseActivities}
+          onCreate={home.openCreate}
         />
         <PolicyLinks />
         <BottomNavigation

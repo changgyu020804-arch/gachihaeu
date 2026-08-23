@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { memo } from "react";
 
-export function PolicyLinks() {
+export const PolicyLinks = memo(function PolicyLinks() {
   return (
     <nav className="policy-links" aria-label="서비스 정책">
       <Link href="/privacy">개인정보처리방침</Link>
@@ -9,4 +10,4 @@ export function PolicyLinks() {
       <Link href="/support">고객지원</Link>
     </nav>
   );
-}
+});

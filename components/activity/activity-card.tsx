@@ -1,19 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { memo } from "react";
 import { Activity, SPORT_META } from "@/lib/types/activity";
 import { formatTime, formatShortDate } from "@/lib/utils/ui";
 
 type ActivityCardProps = {
   activity: Activity;
+  renderedAt: number;
   submitting: boolean;
   onSelect: (activity: Activity) => void;
   onPerformAction: (path: string, method: "POST" | "DELETE", msg: string) => void;
   onOpenRating: (activityId: string) => void;
 };
 
-export function ActivityCard({ activity, submitting, onSelect, onPerformAction, onOpenRating }: ActivityCardProps) {
-  const [renderedAt] = useState(() => Date.now());
+export const ActivityCard = memo(function ActivityCard({
+  activity,
+  renderedAt,
+  submitting,
+  onSelect,
+  onPerformAction,
+  onOpenRating,
+}: ActivityCardProps) {
   const meta = SPORT_META[activity.sport];
   const left = activity.capacity - activity.participantCount;
   const hasEnded =
@@ -130,4 +137,4 @@ export function ActivityCard({ activity, submitting, onSelect, onPerformAction, 
       </div>
     </article>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Sport } from "@/lib/types/activity";
 
 const VENUE_ITEMS: Array<{
@@ -23,7 +24,10 @@ type VenueSectionProps = {
   onSelectSport: (sport: Sport) => void;
 };
 
-export function VenueSection({ venueCounts, onSelectSport }: VenueSectionProps) {
+export const VenueSection = memo(function VenueSection({
+  venueCounts,
+  onSelectSport,
+}: VenueSectionProps) {
   return (
     <section className="venue-list-section">
       <div className="section-title-row">
@@ -54,4 +58,4 @@ export function VenueSection({ venueCounts, onSelectSport }: VenueSectionProps) 
       </div>
     </section>
   );
-}
+});

@@ -1,10 +1,12 @@
+import { memo } from "react";
+
 type HomeHeroProps = {
   openCount: number;
   participantCount: number;
   remainingCount: number;
 };
 
-export function HomeHero({
+export const HomeHero = memo(function HomeHero({
   openCount,
   participantCount,
   remainingCount,
@@ -30,4 +32,4 @@ export function HomeHero({
       </div>
     </section>
   );
-}
+});

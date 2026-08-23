@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 export type ActiveNav = "home" | "matches" | "mine" | "profile";
 
 type BottomNavigationProps = {
@@ -9,7 +11,7 @@ type BottomNavigationProps = {
   onProfile: () => void;
 };
 
-export function BottomNavigation({
+export const BottomNavigation = memo(function BottomNavigation({
   activeNav,
   onHome,
   onMatches,
@@ -48,4 +50,4 @@ export function BottomNavigation({
       </button>
     </nav>
   );
-}
+});

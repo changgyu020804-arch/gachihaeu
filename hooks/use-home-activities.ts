@@ -238,7 +238,7 @@ export function useHomeActivities({
     hasMore: Boolean(nextCursor),
     error,
     setError,
-    loadActivities: () => loadActivities(),
+    loadActivities,
     loadMore,
   };
 }
