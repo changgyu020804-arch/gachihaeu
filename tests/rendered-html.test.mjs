@@ -99,6 +99,7 @@ test("enforces attendance and role-based rating rules", async () => {
     ratingSheet,
     profile,
     migration,
+    skillMannerMigration,
   ] =
     await Promise.all([
       readFile(new URL("app/api/ratings/route.ts", root), "utf8"),
@@ -113,6 +114,7 @@ test("enforces attendance and role-based rating rules", async () => {
       readFile(new URL("components/rating/rating-sheet.tsx", root), "utf8"),
       readFile(new URL("components/profile/reputation-panel.tsx", root), "utf8"),
       readFile(new URL("drizzle/0002_lively_sabra.sql", root), "utf8"),
+      readFile(new URL("drizzle/0019_true_captain_cross.sql", root), "utf8"),
     ]);
 
   assert.match(ratingRoute, /구성원은 모임장만 평가할 수 있어요/);
@@ -122,11 +124,14 @@ test("enforces attendance and role-based rating rules", async () => {
   assert.ok(participantRoute.split("\n").length < 190);
   assert.match(participantRepository, /participant_rating_stats/);
   assert.match(ratingSheet, /출석 확인 및 구성원 평가/);
-  assert.match(ratingSheet, /설명 정확도/);
-  assert.match(profile, /같이점수/);
+  assert.match(ratingSheet, /실력과 매너/);
+  assert.match(ratingSheet, /skillScore/);
+  assert.match(profile, /매너점수/);
+  assert.match(profile, /종목별 실력/);
   assert.match(profile, /받은 한줄 코멘트/);
   assert.match(migration, /attendance_status/);
   assert.match(migration, /rating_type/);
+  assert.match(skillMannerMigration, /evaluation_version/);
 });
 
 test("persists and displays user notifications", async () => {

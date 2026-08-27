@@ -9,16 +9,14 @@ export type RatingContext = {
 };
 
 export type Scores = {
-  one: number;
-  two: number;
-  three: number;
+  skill: number;
+  manner: number;
   comment: string;
 };
 
 export const EMPTY_SCORES: Scores = {
-  one: 0,
-  two: 0,
-  three: 0,
+  skill: 0,
+  manner: 0,
   comment: "",
 };
 

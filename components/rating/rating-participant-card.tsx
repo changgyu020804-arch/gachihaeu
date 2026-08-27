@@ -11,7 +11,6 @@ type RatingParticipantCardProps = {
   context: RatingContext;
   scores: Scores | undefined;
   submitting: boolean;
-  categoryLabels: string[];
   onViewProfile: (email: string) => void;
   onSetAttendance: (email: string, status: AttendanceStatus) => void;
   onScoresChange: (email: string, scores: Scores) => void;
@@ -23,7 +22,6 @@ export function RatingParticipantCard({
   context,
   scores,
   submitting,
-  categoryLabels,
   onViewProfile,
   onSetAttendance,
   onScoresChange,
@@ -37,6 +35,23 @@ export function RatingParticipantCard({
     (context.isOwner
       ? participant.attendanceStatus === "attended"
       : memberCanRateHost);
+  const hasMannerScore =
+    participant.mannerRatingCount >= 3 && participant.mannerScore != null;
+  const hasSportSkillScore =
+    participant.sportSkillRatingCount >= 3 &&
+    participant.sportSkillScore != null;
+  const categories = [
+    {
+      key: "skill" as const,
+      label: "실력",
+      description: "이 종목에서 보여준 운동 수행 수준",
+    },
+    {
+      key: "manner" as const,
+      label: "매너",
+      description: "시간 약속·팀워크·배려와 안전 의식",
+    },
+  ];
 
   return (
     <div className="rate-participant">
@@ -60,9 +75,22 @@ export function RatingParticipantCard({
         </button>
         {participant.hasRated ? (
           <span className="rated-badge">평가 완료</span>
-        ) : participant.ratingCount >= 3 ? (
+        ) : hasMannerScore || hasSportSkillScore ? (
           <div className="participant-score">
-            <span><span className="star-sm">★</span>{participant.reputationScore?.toFixed(1)}</span>
+            {hasSportSkillScore && (
+              <span>
+                <small>실력</small>
+                <span className="star-sm">★</span>
+                {participant.sportSkillScore?.toFixed(1)}
+              </span>
+            )}
+            {hasMannerScore && (
+              <span>
+                <small>매너</small>
+                <span className="star-sm">★</span>
+                {participant.mannerScore?.toFixed(1)}
+              </span>
+            )}
           </div>
         ) : (
           <span className="new-mate-badge">새 메이트</span>
@@ -112,24 +140,27 @@ export function RatingParticipantCard({
 
       {canRate && !participant.hasRated && (
         <>
-          {(["one", "two", "three"] as const).map((category, index) => (
-            <div className="rate-category" key={category}>
-              <span className="rate-category-label">{categoryLabels[index]}</span>
+          {categories.map((category) => (
+            <div className="rate-category" key={category.key}>
+              <div className="rate-category-copy">
+                <span className="rate-category-label">{category.label}</span>
+                <small>{category.description}</small>
+              </div>
               <div className="star-input">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     type="button"
                     key={star}
-                    className={star <= current[category] ? "filled" : ""}
+                    className={star <= current[category.key] ? "filled" : ""}
                     onClick={() =>
                       onScoresChange(participant.email, {
                         ...current,
-                        [category]: star,
+                        [category.key]: star,
                       })
                     }
-                    aria-label={`${categoryLabels[index]} ${star}점`}
+                    aria-label={`${category.label} ${star}점`}
                   >
-                    {star <= current[category] ? "★" : "☆"}
+                    {star <= current[category.key] ? "★" : "☆"}
                   </button>
                 ))}
               </div>
@@ -154,9 +185,8 @@ export function RatingParticipantCard({
               className="rate-submit-btn"
               disabled={
                 submitting ||
-                current.one === 0 ||
-                current.two === 0 ||
-                current.three === 0
+                current.skill === 0 ||
+                current.manner === 0
               }
               onClick={() => onSubmitRating(participant.email)}
             >

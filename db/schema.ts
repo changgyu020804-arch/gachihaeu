@@ -120,6 +120,7 @@ export const ratings = sqliteTable(
     skillScore: integer("skill_score").notNull(),
     mannerScore: integer("manner_score").notNull(),
     ratingType: text("rating_type").notNull().default("legacy"),
+    evaluationVersion: text("evaluation_version").notNull().default("role_v1"),
     comment: text("comment").notNull().default(""),
     commentHidden: integer("comment_hidden").notNull().default(0),
     reportedAt: text("reported_at"),

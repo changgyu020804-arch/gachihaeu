@@ -17,8 +17,10 @@ export type ActivityParticipant = {
   displayName: string;
   nickname: string;
   department: string;
-  reputationScore: number | null;
-  ratingCount: number;
+  mannerScore: number | null;
+  mannerRatingCount: number;
+  sportSkillScore: number | null;
+  sportSkillRatingCount: number;
   hasRated: boolean;
   attendanceStatus: AttendanceStatus;
   isHost: boolean;
@@ -30,8 +32,10 @@ type ParticipantRow = {
   attendance_status: AttendanceStatus;
   nickname: string;
   department: string;
-  reputation_score: number | null;
-  rating_count: number;
+  manner_score: number | null;
+  manner_rating_count: number;
+  sport_skill_score: number | null;
+  sport_skill_rating_count: number;
   is_host: number;
   has_rated: number;
 };
@@ -86,12 +90,27 @@ export async function listActivityParticipants(
 ): Promise<ActivityParticipant[]> {
   const rows = await db
     .prepare(
-      `WITH participant_rating_stats AS (
+      `WITH target_sport AS (
+         SELECT sport FROM activities WHERE id = ?
+       ),
+       participant_rating_stats AS (
          SELECT
            r.rated_email,
-           AVG((r.trust_score + r.skill_score + r.manner_score) / 3.0) AS reputation_score,
-           COUNT(*) AS rating_count
+           AVG(r.manner_score) AS manner_score,
+           COUNT(*) AS manner_rating_count,
+           AVG(CASE
+             WHEN r.evaluation_version = 'skill_manner_v2'
+               AND rated_activity.sport = target_sport.sport
+             THEN r.skill_score
+           END) AS sport_skill_score,
+           SUM(CASE
+             WHEN r.evaluation_version = 'skill_manner_v2'
+               AND rated_activity.sport = target_sport.sport
+             THEN 1 ELSE 0
+           END) AS sport_skill_rating_count
          FROM ratings r
+         INNER JOIN activities rated_activity ON rated_activity.id = r.activity_id
+         CROSS JOIN target_sport
          INNER JOIN participants target
            ON target.user_email = r.rated_email AND target.activity_id = ?
          GROUP BY r.rated_email
@@ -102,8 +121,10 @@ export async function listActivityParticipants(
          p.attendance_status,
          COALESCE(up.nickname, '') AS nickname,
          COALESCE(up.department, '') AS department,
-         stats.reputation_score,
-         COALESCE(stats.rating_count, 0) AS rating_count,
+         stats.manner_score,
+         COALESCE(stats.manner_rating_count, 0) AS manner_rating_count,
+         stats.sport_skill_score,
+         COALESCE(stats.sport_skill_rating_count, 0) AS sport_skill_rating_count,
          CASE WHEN p.user_email = ? THEN 1 ELSE 0 END AS is_host,
          CASE WHEN mine.id IS NULL THEN 0 ELSE 1 END AS has_rated
        FROM participants p
@@ -116,7 +137,14 @@ export async function listActivityParticipants(
        WHERE p.activity_id = ?
        ORDER BY is_host DESC, p.joined_at ASC`,
     )
-    .bind(activityId, creatorEmail, activityId, viewerEmail, activityId)
+    .bind(
+      activityId,
+      activityId,
+      creatorEmail,
+      activityId,
+      viewerEmail,
+      activityId,
+    )
     .all<ParticipantRow>();
 
   return rows.results.map((row) => ({
@@ -124,11 +152,16 @@ export async function listActivityParticipants(
     displayName: row.display_name,
     nickname: row.nickname || row.display_name,
     department: row.department,
-    reputationScore:
-      row.reputation_score == null
+    mannerScore:
+      row.manner_score == null
         ? null
-        : Math.round(row.reputation_score * 10) / 10,
-    ratingCount: Number(row.rating_count),
+        : Math.round(row.manner_score * 10) / 10,
+    mannerRatingCount: Number(row.manner_rating_count),
+    sportSkillScore:
+      row.sport_skill_score == null
+        ? null
+        : Math.round(row.sport_skill_score * 10) / 10,
+    sportSkillRatingCount: Number(row.sport_skill_rating_count),
     hasRated: Boolean(row.has_rated),
     attendanceStatus: row.attendance_status,
     isHost: Boolean(row.is_host),

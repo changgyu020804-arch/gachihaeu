@@ -1,0 +1,1 @@
+ALTER TABLE `ratings` ADD `evaluation_version` text DEFAULT 'role_v1' NOT NULL;

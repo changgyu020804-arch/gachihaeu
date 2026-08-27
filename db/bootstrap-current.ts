@@ -150,6 +150,7 @@ export async function createCurrentSchema(db: D1Database) {
         skill_score INTEGER NOT NULL,
         manner_score INTEGER NOT NULL,
         rating_type TEXT DEFAULT 'legacy' NOT NULL,
+        evaluation_version TEXT DEFAULT 'role_v1' NOT NULL,
         comment TEXT DEFAULT '' NOT NULL,
         comment_hidden INTEGER DEFAULT 0 NOT NULL,
         reported_at TEXT,

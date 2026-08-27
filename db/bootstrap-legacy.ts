@@ -112,6 +112,7 @@ async function addMissingRatingColumns(db: D1Database) {
     .all<ColumnInfo>();
   const additions = [
     ["rating_type", "TEXT DEFAULT 'legacy' NOT NULL"],
+    ["evaluation_version", "TEXT DEFAULT 'role_v1' NOT NULL"],
     ["comment_hidden", "INTEGER DEFAULT 0 NOT NULL"],
     ["reported_at", "TEXT"],
   ] as const;

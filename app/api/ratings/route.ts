@@ -36,9 +36,13 @@ export async function POST(request: Request) {
   const payload = (await request.json()) as Record<string, unknown>;
   const activityId = cleanUserText(payload.activityId, 50);
   const ratedEmail = cleanUserText(payload.ratedEmail, 100);
-  const scoreOne = payload.scoreOne;
-  const scoreTwo = payload.scoreTwo;
-  const scoreThree = payload.scoreThree;
+  const isSkillMannerRating =
+    payload.skillScore !== undefined || payload.mannerScore !== undefined;
+  const skillScore = payload.skillScore;
+  const mannerScore = payload.mannerScore;
+  const legacyScoreOne = payload.scoreOne;
+  const legacyScoreTwo = payload.scoreTwo;
+  const legacyScoreThree = payload.scoreThree;
   const comment = cleanUserText(payload.comment, 100);
 
   if (!activityId || !ratedEmail) {
@@ -47,13 +51,23 @@ export async function POST(request: Request) {
   if (ratedEmail === user.email) {
     return Response.json({ error: "자기 자신은 평가할 수 없어요." }, { status: 400 });
   }
-  if (
-    !isValidScore(scoreOne) ||
-    !isValidScore(scoreTwo) ||
-    !isValidScore(scoreThree)
-  ) {
+  const hasValidScores = isSkillMannerRating
+    ? isValidScore(skillScore) && isValidScore(mannerScore)
+    : isValidScore(legacyScoreOne) &&
+      isValidScore(legacyScoreTwo) &&
+      isValidScore(legacyScoreThree);
+  if (!hasValidScores) {
     return Response.json({ error: "점수는 1~5 사이 정수여야 해요." }, { status: 400 });
   }
+  const storedTrustScore = (isSkillMannerRating
+    ? mannerScore
+    : legacyScoreOne) as number;
+  const storedSkillScore = (isSkillMannerRating
+    ? skillScore
+    : legacyScoreTwo) as number;
+  const storedMannerScore = (isSkillMannerRating
+    ? mannerScore
+    : legacyScoreThree) as number;
   if (comment && hasUnsafeUserText(comment)) {
     return Response.json(
       { error: "코멘트에 연락처, 외부 계정 또는 부적절한 표현을 적을 수 없어요." },
@@ -136,10 +150,11 @@ export async function POST(request: Request) {
     activityId,
     raterEmail: user.email,
     ratedEmail,
-    scoreOne,
-    scoreTwo,
-    scoreThree,
+    trustScore: storedTrustScore,
+    skillScore: storedSkillScore,
+    mannerScore: storedMannerScore,
     ratingType,
+    evaluationVersion: isSkillMannerRating ? "skill_manner_v2" : "role_v1",
     comment,
   });
 

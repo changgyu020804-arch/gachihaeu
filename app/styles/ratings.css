@@ -81,14 +81,31 @@
 .rate-category {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #f8faff;
+  border: 1px solid #e8eefc;
+  border-radius: 11px;
+}
+
+.rate-category-copy {
+  min-width: 0;
+}
+
+.rate-category-copy small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.35;
 }
 
 .rate-category-label {
+  color: var(--ink);
   font-size: 13px;
-  color: var(--muted);
-  min-width: 66px;
+  font-weight: 800;
 }
 
 .star-input {
@@ -309,6 +326,8 @@
 
 .participant-score {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 6px;
   font-size: 11px;
   color: var(--muted);
@@ -321,7 +340,20 @@
   gap: 2px;
 }
 
+.participant-score small {
+  color: #667085;
+  font-size: 9px;
+  font-weight: 800;
+}
+
 .participant-score .star-sm {
   color: #f5a623;
   font-size: 11px;
+}
+
+@media (max-width: 420px) {
+  .rate-category {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

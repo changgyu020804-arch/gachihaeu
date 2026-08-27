@@ -100,13 +100,8 @@ export function RatingSheet({
 
   const submitRating = async (ratedEmail: string) => {
     const current = scores[ratedEmail];
-    if (
-      !current ||
-      current.one === 0 ||
-      current.two === 0 ||
-      current.three === 0
-    ) {
-      onToast("모든 항목에 별점을 매겨 주세요.");
+    if (!current || current.skill === 0 || current.manner === 0) {
+      onToast("실력과 매너에 모두 별점을 매겨 주세요.");
       return;
     }
 
@@ -118,9 +113,8 @@ export function RatingSheet({
         body: JSON.stringify({
           activityId,
           ratedEmail,
-          scoreOne: current.one,
-          scoreTwo: current.two,
-          scoreThree: current.three,
+          skillScore: current.skill,
+          mannerScore: current.manner,
           comment: current.comment,
         }),
       });
@@ -148,10 +142,6 @@ export function RatingSheet({
     : context.isOwner
       ? "출석 확인 및 구성원 평가"
       : "모임장 평가";
-  const categoryLabels = context?.isOwner
-    ? ["시간 약속", "팀워크", "매너"]
-    : ["설명 정확도", "진행", "안전·배려"];
-
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <section
@@ -174,12 +164,13 @@ export function RatingSheet({
 
         {context?.hasEnded && context.isOwner && (
           <div className="rating-guide">
-            실제 참석 여부를 먼저 확인해 주세요. 참석한 구성원만 평가할 수 있어요.
+            실제 참석 여부를 먼저 확인해 주세요. 실력은 현재 운동 종목별로,
+            매너는 모든 운동에 공통으로 반영돼요.
           </div>
         )}
         {context?.hasEnded && !context.isOwner && (
           <div className="rating-guide">
-            구성원은 모임장만 평가할 수 있으며 작성자는 프로필에 공개되지 않아요.
+            모임장의 실력과 매너를 평가해 주세요. 작성자는 프로필에 공개되지 않아요.
           </div>
         )}
 
@@ -199,7 +190,6 @@ export function RatingSheet({
               context={context}
               scores={scores[participant.email]}
               submitting={submitting}
-              categoryLabels={categoryLabels}
               onViewProfile={onViewProfile}
               onSetAttendance={(email, status) => void setAttendance(email, status)}
               onScoresChange={(email, nextScores) =>

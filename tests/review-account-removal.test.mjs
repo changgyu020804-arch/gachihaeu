@@ -20,8 +20,13 @@ test("deletes only retired App Review accounts and demo activities", async () =>
   const migrations = (await readdir(migrationsDirectory))
     .filter((filename) => filename.endsWith(".sql"))
     .sort();
+  const removalMigration = migrations.find((filename) =>
+    filename.startsWith("0018_remove_app_review_account"),
+  );
+  assert.ok(removalMigration);
+  const removalIndex = migrations.indexOf(removalMigration);
 
-  for (const migration of migrations.slice(0, -1)) {
+  for (const migration of migrations.slice(0, removalIndex)) {
     await applyMigration(db, migration);
   }
 
@@ -56,7 +61,7 @@ test("deletes only retired App Review accounts and demo activities", async () =>
       ('activity-create', 'student-hash', 1, 1);
   `);
 
-  await applyMigration(db, migrations.at(-1));
+  await applyMigration(db, removalMigration);
 
   assert.equal(
     db.prepare("SELECT COUNT(*) AS count FROM user_profiles").get().count,

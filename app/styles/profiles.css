@@ -163,30 +163,95 @@
   font-weight: 800;
 }
 
-.reputation-groups {
-  display: grid;
-  gap: 1px;
-  background: #e6eaf0;
-}
-
-.reputation-group {
-  padding: 13px 15px;
+.sport-skill-section {
+  padding: 13px 15px 15px;
   background: white;
+  border-top: 1px solid #e6eaf0;
 }
 
-.reputation-group-title {
+.sport-skill-heading {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 9px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
-.reputation-group-title strong {
+.sport-skill-heading strong {
   font-size: 12px;
 }
 
-.reputation-group-title span {
+.sport-skill-heading span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.sport-skill-list {
+  display: grid;
+  gap: 7px;
+}
+
+.sport-skill-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  background: #f7f9fc;
+  border-radius: 11px;
+}
+
+.sport-skill-icon {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  font-size: 17px;
+  background: white;
+  border-radius: 9px;
+}
+
+.sport-skill-item > div strong,
+.sport-skill-item > div small {
+  display: block;
+}
+
+.sport-skill-item > div strong {
+  font-size: 11px;
+}
+
+.sport-skill-item > div small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.sport-skill-item > b {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.sport-skill-item > b span {
+  margin-right: 3px;
+  color: #f5a623;
+}
+
+.sport-skill-item > em {
+  color: var(--blue);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.sport-skill-empty {
+  margin: 0;
+  padding: 11px;
   color: var(--muted);
   font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+  background: #f7f9fc;
+  border-radius: 10px;
 }
 
 .recent-ratings {

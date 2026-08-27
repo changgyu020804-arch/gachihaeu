@@ -1,6 +1,11 @@
 "use client";
 
-import { RecentRating, RatingType, UserProfile } from "@/lib/types/activity";
+import {
+  RecentRating,
+  RatingType,
+  SPORT_META,
+  UserProfile,
+} from "@/lib/types/activity";
 
 type ReputationPanelProps = {
   profile: UserProfile;
@@ -14,96 +19,68 @@ const LABELS: Record<RatingType, [string, string, string]> = {
   legacy: ["신뢰", "실력", "인성"],
 };
 
-function ScoreRow({ label, value }: { label: string; value: number | null }) {
-  if (value == null) return null;
-  const rounded = Math.round(value);
-  return (
-    <div className="rating-score-item">
-      <span className="rating-label">{label}</span>
-      <div className="rating-stars" aria-label={`${value.toFixed(1)}점`}>
-        {"★".repeat(rounded)}
-        {"☆".repeat(5 - rounded)}
-      </div>
-      <span className="rating-value">{value.toFixed(1)}</span>
-    </div>
-  );
-}
-
-function RatingGroup({
-  title,
-  count,
-  scores,
-}: {
-  title: string;
-  count: number;
-  scores: Array<[string, number | null]>;
-}) {
-  if (count === 0) return null;
-  return (
-    <div className="reputation-group">
-      <div className="reputation-group-title">
-        <strong>{title}</strong>
-        <span>{count}개</span>
-      </div>
-      {scores.map(([label, value]) => (
-        <ScoreRow key={label} label={label} value={value} />
-      ))}
-    </div>
-  );
-}
-
 export function ReputationPanel({
   profile,
   recentRatings,
   onHideComment,
 }: ReputationPanelProps) {
-  const scoreVisible = profile.ratingCount >= 3;
+  const mannerVisible = profile.mannerRatingCount >= 3;
 
   return (
     <>
       <div className="reputation-card">
-        {scoreVisible ? (
+        {mannerVisible ? (
           <div className="reputation-overview">
             <div>
-              <small>같이점수</small>
-              <strong>{profile.reputationScore?.toFixed(1) ?? "-"}</strong>
+              <small>매너점수</small>
+              <strong>{profile.mannerScore?.toFixed(1) ?? "-"}</strong>
             </div>
             <span>★</span>
-            <p>검증된 모임에서 받은 {profile.ratingCount}개의 평가</p>
+            <p>모든 운동에서 받은 {profile.mannerRatingCount}개의 매너 평가</p>
           </div>
         ) : (
           <div className="reputation-newcomer">
             <span>🌱</span>
             <div>
               <strong>새로운 메이트</strong>
-              <p>평가가 3개 이상 쌓이면 같이점수가 공개돼요.</p>
+              <p>평가가 3개 이상 쌓이면 매너점수가 공개돼요.</p>
             </div>
-            <small>{profile.ratingCount}/3</small>
+            <small>{Math.min(profile.mannerRatingCount, 3)}/3</small>
           </div>
         )}
 
-        {scoreVisible && (
-          <div className="reputation-groups">
-            <RatingGroup
-              title="메이트로서"
-              count={profile.memberRatingCount}
-              scores={[
-                ["시간 약속", profile.avgPunctuality],
-                ["팀워크", profile.avgTeamwork],
-                ["매너", profile.avgMemberManner],
-              ]}
-            />
-            <RatingGroup
-              title="모임장으로서"
-              count={profile.hostRatingCount}
-              scores={[
-                ["설명 정확도", profile.avgAccuracy],
-                ["진행", profile.avgFacilitation],
-                ["안전·배려", profile.avgSafety],
-              ]}
-            />
+        <div className="sport-skill-section">
+          <div className="sport-skill-heading">
+            <strong>종목별 실력</strong>
+            <span>종목마다 평가 3개부터 공개</span>
           </div>
-        )}
+          {profile.sportSkillScores.length > 0 ? (
+            <div className="sport-skill-list">
+              {profile.sportSkillScores.map((item) => {
+                const visible = item.ratingCount >= 3;
+                const meta = SPORT_META[item.sport];
+                return (
+                  <div className="sport-skill-item" key={item.sport}>
+                    <span className="sport-skill-icon">{meta?.icon ?? "🏅"}</span>
+                    <div>
+                      <strong>{item.sport}</strong>
+                      <small>{visible ? `${item.ratingCount}개의 평가` : `${item.ratingCount}/3 평가`}</small>
+                    </div>
+                    {visible && item.score != null ? (
+                      <b><span>★</span>{item.score.toFixed(1)}</b>
+                    ) : (
+                      <em>평가 수집 중</em>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="sport-skill-empty">
+              새 평가를 받으면 운동 종목별 실력이 여기에 표시돼요.
+            </p>
+          )}
+        </div>
       </div>
 
       {recentRatings.length > 0 && (
@@ -112,6 +89,8 @@ export function ReputationPanel({
           <p className="comments-privacy">작성자는 공개되지 않아요.</p>
           {recentRatings.map((rating) => {
             const labels = LABELS[rating.ratingType];
+            const isSkillManner =
+              rating.evaluationVersion === "skill_manner_v2";
             return (
               <article className="recent-rating-item" key={rating.id}>
                 <div className="recent-rating-topline">
@@ -126,9 +105,18 @@ export function ReputationPanel({
                 </div>
                 <p className="recent-rating-comment">“{rating.comment}”</p>
                 <div className="recent-rating-scores">
-                  <span>{labels[0]} <b>{rating.scoreOne}</b></span>
-                  <span>{labels[1]} <b>{rating.scoreTwo}</b></span>
-                  <span>{labels[2]} <b>{rating.scoreThree}</b></span>
+                  {isSkillManner ? (
+                    <>
+                      <span>실력 <b>{rating.skillScore}</b></span>
+                      <span>매너 <b>{rating.mannerScore}</b></span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{labels[0]} <b>{rating.scoreOne}</b></span>
+                      <span>{labels[1]} <b>{rating.scoreTwo}</b></span>
+                      <span>{labels[2]} <b>{rating.scoreThree}</b></span>
+                    </>
+                  )}
                 </div>
                 <div className="recent-rating-footer">
                   <p>{rating.sport} · {rating.title}</p>

@@ -1,4 +1,8 @@
-import type { AttendanceStatus, RatingType } from "@/lib/types/activity";
+import type {
+  AttendanceStatus,
+  RatingEvaluationVersion,
+  RatingType,
+} from "@/lib/types/activity";
 
 export type RatingContext = {
   creatorEmail: string;
@@ -85,10 +89,11 @@ type SaveRatingInput = {
   activityId: string;
   raterEmail: string;
   ratedEmail: string;
-  scoreOne: number;
-  scoreTwo: number;
-  scoreThree: number;
+  trustScore: number;
+  skillScore: number;
+  mannerScore: number;
   ratingType: RatingType;
+  evaluationVersion: RatingEvaluationVersion;
   comment: string;
 };
 
@@ -98,13 +103,15 @@ export async function saveRating(db: D1Database, input: SaveRatingInput) {
     .prepare(
       `INSERT INTO ratings (
          id, activity_id, rater_email, rated_email,
-         trust_score, skill_score, manner_score, rating_type, comment
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         trust_score, skill_score, manner_score, rating_type,
+         evaluation_version, comment
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(activity_id, rater_email, rated_email) DO UPDATE SET
          trust_score = excluded.trust_score,
          skill_score = excluded.skill_score,
          manner_score = excluded.manner_score,
          rating_type = excluded.rating_type,
+         evaluation_version = excluded.evaluation_version,
          comment = excluded.comment
        RETURNING id`,
     )
@@ -113,10 +120,11 @@ export async function saveRating(db: D1Database, input: SaveRatingInput) {
       input.activityId,
       input.raterEmail,
       input.ratedEmail,
-      input.scoreOne,
-      input.scoreTwo,
-      input.scoreThree,
+      input.trustScore,
+      input.skillScore,
+      input.mannerScore,
       input.ratingType,
+      input.evaluationVersion,
       input.comment,
     )
     .first<{ id: string }>();

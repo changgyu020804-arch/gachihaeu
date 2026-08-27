@@ -104,6 +104,13 @@ export type Viewer = {
 
 export type AttendanceStatus = "pending" | "attended" | "absent" | "no_show";
 export type RatingType = "host_to_member" | "member_to_host" | "legacy";
+export type RatingEvaluationVersion = "role_v1" | "skill_manner_v2";
+
+export type SportSkillRating = {
+  sport: Sport;
+  score: number | null;
+  ratingCount: number;
+};
 
 export const DEPARTMENTS = [
   "선택 안함",
@@ -162,16 +169,9 @@ export type UserProfile = {
   department: string;
   bio: string;
   preferredSports: Sport[];
-  reputationScore: number | null;
-  ratingCount: number;
-  memberRatingCount: number;
-  hostRatingCount: number;
-  avgPunctuality: number | null;
-  avgTeamwork: number | null;
-  avgMemberManner: number | null;
-  avgAccuracy: number | null;
-  avgFacilitation: number | null;
-  avgSafety: number | null;
+  mannerScore: number | null;
+  mannerRatingCount: number;
+  sportSkillScores: SportSkillRating[];
   participationCount: number;
   hostCount: number;
   noShowCount: number;
@@ -186,6 +186,7 @@ export type Rating = {
   skillScore: number;
   mannerScore: number;
   ratingType: RatingType;
+  evaluationVersion: RatingEvaluationVersion;
   comment: string;
   createdAt: string;
 };
@@ -193,9 +194,12 @@ export type Rating = {
 export type RecentRating = {
   id: string;
   ratingType: RatingType;
+  evaluationVersion: RatingEvaluationVersion;
   scoreOne: number;
   scoreTwo: number;
   scoreThree: number;
+  skillScore: number;
+  mannerScore: number;
   comment: string;
   createdAt: string;
   sport: string;
@@ -207,8 +211,10 @@ export type ParticipantInfo = {
   displayName: string;
   nickname: string;
   department: string;
-  reputationScore: number | null;
-  ratingCount: number;
+  mannerScore: number | null;
+  mannerRatingCount: number;
+  sportSkillScore: number | null;
+  sportSkillRatingCount: number;
   hasRated: boolean;
   attendanceStatus: AttendanceStatus;
   isHost: boolean;
