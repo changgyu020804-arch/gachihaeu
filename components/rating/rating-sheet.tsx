@@ -123,13 +123,8 @@ export function RatingSheet({
         throw new Error(payload.error || "평가를 저장하지 못했어요.");
       }
       onToast("평가가 저장됐어요!");
-      setParticipants((previous) =>
-        previous.map((participant) =>
-          participant.email === ratedEmail
-            ? { ...participant, hasRated: true }
-            : participant,
-        ),
-      );
+      onClose();
+      onViewProfile(ratedEmail);
     } catch (error) {
       onToast(getErrorMessage(error));
     } finally {

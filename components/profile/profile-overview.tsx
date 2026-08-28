@@ -12,6 +12,7 @@ type ProfileOverviewProps = {
   onEdit: () => void;
   onOpenAdmin: () => void;
   onOpenModeration: () => void;
+  onPrepareIrDemo: () => void;
   onOpenDeletion: () => void;
   onLogout: () => void;
   onHideComment: (ratingId: string) => void;
@@ -26,6 +27,7 @@ export function ProfileOverview({
   onEdit,
   onOpenAdmin,
   onOpenModeration,
+  onPrepareIrDemo,
   onOpenDeletion,
   onLogout,
   onHideComment,
@@ -107,14 +109,19 @@ export function ProfileOverview({
 
       <button className="edit-profile-button" onClick={onEdit}>프로필 수정</button>
       {profile?.isAdmin && (
-        <div className="admin-link-grid">
-          <button className="admin-verification-link" onClick={onOpenAdmin}>
-            직위 인증 관리
+        <>
+          <div className="admin-link-grid">
+            <button className="admin-verification-link" onClick={onOpenAdmin}>
+              직위 인증 관리
+            </button>
+            <button className="admin-verification-link moderation" onClick={onOpenModeration}>
+              신고·제재 관리
+            </button>
+          </div>
+          <button className="admin-verification-link" onClick={onPrepareIrDemo}>
+            IR 시연 데이터 준비
           </button>
-          <button className="admin-verification-link moderation" onClick={onOpenModeration}>
-            신고·제재 관리
-          </button>
-        </div>
+        </>
       )}
       <button className="signout-link" onClick={onLogout}>로그아웃</button>
       <button className="delete-account-link" onClick={onOpenDeletion}>

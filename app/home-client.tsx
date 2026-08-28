@@ -154,6 +154,10 @@ export function HomeClient({
             <ProfileSheet
               user={home.currentUser}
               onClose={() => home.setShowProfile(false)}
+              onDemoPrepared={() => {
+                home.setShowProfile(false);
+                home.goMine();
+              }}
               onLogout={() => void home.handleLogout()}
               onAccountDeleted={home.handleAccountDeleted}
               onToast={home.setToast}

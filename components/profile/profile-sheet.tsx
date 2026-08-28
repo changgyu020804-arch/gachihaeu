@@ -16,6 +16,7 @@ import { ProfileOverview } from "@/components/profile/profile-overview";
 type ProfileSheetProps = {
   user: Viewer;
   onClose: () => void;
+  onDemoPrepared: () => void;
   onLogout: () => void;
   onAccountDeleted: () => void;
   onToast: (msg: string) => void;
@@ -24,6 +25,7 @@ type ProfileSheetProps = {
 export function ProfileSheet({
   user,
   onClose,
+  onDemoPrepared,
   onLogout,
   onAccountDeleted,
   onToast,
@@ -100,6 +102,30 @@ export function ProfileSheet({
       onToast("코멘트를 숨기고 신고했어요.");
     } catch (hideError) {
       onToast(getErrorMessage(hideError));
+    }
+  };
+
+  const prepareIrDemo = async () => {
+    if (
+      !window.confirm(
+        "IR 시연 데이터를 처음 상태로 준비할까요? 이전에 진행한 시연 평가도 초기화돼요.",
+      )
+    ) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const response = await fetch("/api/admin/ir-demo", { method: "POST" });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error || "시연 데이터를 준비하지 못했어요.");
+      }
+      onToast("시연 준비 완료! 민준러너는 현재 2/3 평가 상태예요.");
+      onDemoPrepared();
+    } catch (prepareError) {
+      onToast(getErrorMessage(prepareError));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -180,6 +206,7 @@ export function ProfileSheet({
             onEdit={() => setEditing(true)}
             onOpenAdmin={() => setShowAdminVerifications(true)}
             onOpenModeration={() => setShowAdminModeration(true)}
+            onPrepareIrDemo={() => void prepareIrDemo()}
             onOpenDeletion={() => setShowDeleteAccount(true)}
             onLogout={onLogout}
             onHideComment={(ratingId) => void hideComment(ratingId)}
