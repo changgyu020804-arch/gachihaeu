@@ -131,7 +131,14 @@ export function UserProfileSheet({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sheet-handle" />
-        <button className="close-button" style={{ position: "absolute", top: 16, right: 16 }} onClick={onClose}>×</button>
+        <button
+          type="button"
+          className="close-button user-profile-close-button"
+          aria-label="사용자 프로필 닫기"
+          onClick={onClose}
+        >
+          ×
+        </button>
         {!profile ? (
           <div className="profile-loading">프로필 불러오는 중...</div>
         ) : (

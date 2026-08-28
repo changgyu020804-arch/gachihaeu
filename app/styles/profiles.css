@@ -3,8 +3,16 @@
 /* User Profile View Modal */
 
 .user-profile-sheet {
+  position: relative;
   max-height: 85vh;
   overflow-y: auto;
+}
+
+.user-profile-close-button {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  z-index: 2;
 }
 
 .user-profile-header {
